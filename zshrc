@@ -57,7 +57,7 @@ export DEFAULT_USER=dave
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
 # export MANPATH="/usr/local/man:$MANPATH"
 export WORKON_HOME=~/envs
-export TERM="xterm-256color"
+# export TERM="xterm-256color"
 
 source $ZSH/oh-my-zsh.sh
 
