@@ -52,12 +52,14 @@ ZSH_THEME="agnoster"
 plugins=(git virtualenvwrapper python pip ubuntu)
 
 # User configuration
-
 export DEFAULT_USER=dave
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export PATH=$PATH:$HOME/.local/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export WORKON_HOME=~/envs
-# export TERM="xterm-256color"
+export PYTHONSTARTUP=~/.pystartup
+export DEBFULLNAME="Dave Hughes"
+export DEBEMAIL="dave@waveform.org.uk"
+export PYTHONSTARTUP=~/.pystartup
 
 source $ZSH/oh-my-zsh.sh
 

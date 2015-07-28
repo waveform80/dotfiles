@@ -20,6 +20,7 @@ sudo apt-get install -y \
 	git-core \
 	zsh \
 	byobu \
+	ipython \
 	python-dev \
 	python-pip \
 	python-virtualenv \
@@ -55,3 +56,5 @@ vim-addons install align supertab taglist vcscommand
 mkdir -p ~/.byobu
 ln -sf ../dotfiles/tmux.conf ~/.byobu/.tmux.conf
 
+# Customize Python
+ln -sf dotfiles/pystartup ~/.pystartup

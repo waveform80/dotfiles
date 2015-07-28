@@ -1,0 +1,44 @@
+import code
+import os
+import sys
+import atexit
+import readline
+import rlcompleter
+
+history_path = os.path.expanduser('~/.pyhistory')
+
+def load_history(filename=history_path):
+    readline.parse_and_bind('tab: complete')
+    if hasattr(readline, 'read_history_file'):
+        try:
+            readline.read_history_file(filename)
+        except IOError:
+            pass
+        atexit.register(save_history)
+
+def save_history(filename=history_path):
+    import readline
+    readline.write_history_file(filename)
+
+def init_prompt():
+    term_with_colors = [
+        'xterm',
+        'xterm-color',
+        'xterm-256color',
+        'linux',
+        'screen',
+        'screen-256color',
+        'screen-bce',
+        'screen-256color-bce',
+        ]
+    if os.environ.get('TERM') in term_with_colors:
+        green='\001\033[32m\002'
+        red='\001\033[31m\002'
+        reset='\001\033[0m\002'
+        sys.ps1 = red + '>>> ' + reset
+        sys.ps2 = green + '... ' + reset
+
+load_history()
+init_prompt()
+
+del code, os, sys, atexit, readline, rlcompleter, load_history, save_history, init_prompt, history_path
