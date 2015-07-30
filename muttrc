@@ -1,0 +1,22 @@
+source ~/.mutt/credentials
+source ~/.mutt/aliases
+
+set editor="vim"
+set edit_headers
+set autoedit
+
+set forward_format="Fwd: %s"
+
+set mbox="~/.maildir"
+set mbox_type=Maildir
+
+set from="dave@waveform.org.uk"
+set realname="Dave Jones"
+
+mailboxes imaps://imap.googlemail.com
+set folder="imaps://imap.googlemail.com:993"
+set spoolfile="+INBOX"
+set postponed="+[Gmail]/Drafts"
+set trash="+[Gmail]/Bin"
+
+set header_cache=~/.mutt/headercache
