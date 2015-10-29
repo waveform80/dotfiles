@@ -24,7 +24,8 @@ sudo apt-get install -y \
 	python-dev \
 	python-pip \
 	python-virtualenv \
-	virtualenvwrapper
+	virtualenvwrapper \
+	exuberant-ctags
 
 # Change default shell to zsh
 chsh -s $(which zsh)
