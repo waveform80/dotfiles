@@ -23,6 +23,7 @@ NeoBundle 'ctrlpvim/ctrlp.vim'
 "NeoBundle 'flazz/vim-colorschemes'
 NeoBundle 'bling/vim-airline'
 NeoBundle 'dhruvasagar/vim-table-mode'
+NeoBundle 'jtratner/vim-flavored-markdown'
 
 " You can specify revision/branch/tag.
 "NeoBundle 'Shougo/vimshell', { 'rev' : '3787e5' }
@@ -174,6 +175,7 @@ if has("autocmd") && has("eval")
 	autocmd FileType xhtml set et sw=2 sts=2
 	autocmd FileType html set et sw=2 sts=2
 	autocmd FileType python set et sw=4 sts=4
+	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
 
 	" Set line/relative numbers depending on mode
 	autocmd InsertEnter * :set nornu number
