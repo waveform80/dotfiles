@@ -132,7 +132,9 @@ if has("gui_running")
 	highlight SpecialKey guibg=bg
 elseif &term =~ "xterm" || &term =~ "screen"
 	set background=dark
-	" set t_Co=256         " yes, the terminal can handle 256 colors
+	if !empty($DISPLAY)
+		set t_Co=256         " yes, the terminal can handle 256 colors
+	endif
 	if &termencoding == ""
 		set termencoding=utf-8
 	endif
