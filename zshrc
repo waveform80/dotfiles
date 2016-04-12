@@ -5,7 +5,7 @@ export ZSH=~/.oh-my-zsh
 # Look in ~/.oh-my-zsh/themes/
 # Optionally, if you set this to "random", it'll load a random theme each
 # time that oh-my-zsh is loaded.
-ZSH_THEME="agnoster"
+ZSH_THEME="agnoster-waveform"
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
@@ -57,7 +57,7 @@ export PATH=$PATH:$HOME/.local/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
-export DEBFULLNAME="Dave Hughes"
+export DEBFULLNAME="Dave Jones"
 export DEBEMAIL="dave@waveform.org.uk"
 export PYTHONSTARTUP=~/.pystartup
 
@@ -78,6 +78,15 @@ source $ZSH/oh-my-zsh.sh
 
 # ssh
 # export SSH_KEY_PATH="~/.ssh/dsa_id"
+
+# GPG key
+export GPGKEY=A057F8D5
+
+# AWS keys
+[ -f $HOME/Dropkeys/keys ] && source $HOME/Dropbox/keys/aws.sh
+
+# Disable automatic changing of dir without "cd"
+unsetopt AUTO_CD
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh

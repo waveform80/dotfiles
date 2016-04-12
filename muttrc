@@ -20,3 +20,6 @@ set postponed="+[Gmail]/Drafts"
 set trash="+[Gmail]/Bin"
 
 set header_cache=~/.mutt/headercache
+
+auto_view text/html
+alternative_order text/plain text/enriched text/html

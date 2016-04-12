@@ -47,6 +47,7 @@ curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | 
 curl -L https://raw.githubusercontent.com/Shougo/neobundle.vim/master/bin/install.sh | bash
 
 # Set up zsh
+ln -sf ../../dotfiles/agnoster-waveform.zsh-theme ~/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
 ln -sf dotfiles/zshrc ~/.zshrc
 
 # Set up vim with all your favourite plugins and bits
