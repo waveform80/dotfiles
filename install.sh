@@ -62,5 +62,4 @@ ln -sf ../dotfiles/tmux.conf ~/.byobu/.tmux.conf
 ln -sf dotfiles/pystartup ~/.pystartup
 
 # Customize git
-git config --global user.email "dave@waveform.org.uk"
-git config --global user.name "Dave Jones"
+ln -sf dotfiles/gitconfig ~/.gitconfig

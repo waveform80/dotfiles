@@ -1,0 +1,11 @@
+[user]
+	email = dave@waveform.org.uk
+	name = Dave Jones
+[push]
+	default = current
+[merge]
+	tool = meld
+[diff]
+	tool = meld
+[core]
+	excludesfile = ~/.gitignore
