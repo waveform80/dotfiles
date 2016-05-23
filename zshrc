@@ -59,7 +59,6 @@ export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
 export DEBFULLNAME="Dave Jones"
 export DEBEMAIL="dave@waveform.org.uk"
-export PYTHONSTARTUP=~/.pystartup
 
 source $ZSH/oh-my-zsh.sh
 

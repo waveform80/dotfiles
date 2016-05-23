@@ -1,5 +1,7 @@
 #!/bin/bash
 
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
 # Disable annoying bits of unity
 gsettings set com.canonical.Unity.Lenses remote-content-search "none"
 gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
@@ -13,7 +15,7 @@ sudo apt-get update
 sudo apt-get install -y \
 	build-essential \
 	curl \
-	vim-gnome \
+	vim-nox \
 	vim-addon-manager \
 	vim-scripts \
 	git \
@@ -21,9 +23,13 @@ sudo apt-get install -y \
 	zsh \
 	byobu \
 	ipython \
+	ipython3 \
 	python-dev \
 	python-pip \
 	python-virtualenv \
+	python3-dev \
+	python3-pip \
+	python3-virtualenv \
 	virtualenvwrapper \
 	exuberant-ctags
 
@@ -35,11 +41,6 @@ cd
 git clone https://github.com/powerline/fonts.git
 fonts/install.sh
 
-# Install solarized theme for Gnome Terminal and set it to use Inconsolata powerline font
-git clone https://github.com/sigurdga/gnome-terminal-colors-solarized.git
-gnome-terminal-colors-solarized/install.sh -s dark -p Solarized
-gconftool-2 --set "/apps/gnome-terminal/profiles/Solarized/font" --type string "Inconsolata for Powerline Medium 12"
-
 # Install oh-my-zsh
 curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash
 
@@ -47,19 +48,22 @@ curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | 
 curl -L https://raw.githubusercontent.com/Shougo/neobundle.vim/master/bin/install.sh | bash
 
 # Set up zsh
-ln -sf ../../dotfiles/agnoster-waveform.zsh-theme ~/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
-ln -sf dotfiles/zshrc ~/.zshrc
+ln -sf $HOME/dotfiles/agnoster-waveform.zsh-theme $HOME/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
+ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
 # Set up vim with all your favourite plugins and bits
-ln -sf dotfiles/vimrc ~/.vimrc
+ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
 vim-addons install align supertab taglist vcscommand
 
 # Set up byobu with some tmux tweaks
-mkdir -p ~/.byobu
-ln -sf ../dotfiles/tmux.conf ~/.byobu/.tmux.conf
+BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/.byobu}
+mkdir -p $BYOBU_CONFIG_DIR
+ln -sf $HOME/dotfiles/tmux.conf $BYOBU_CONFIG_DIR/.tmux.conf
 
 # Customize Python
-ln -sf dotfiles/pystartup ~/.pystartup
+ln -sf $HOME/dotfiles/pystartup $HOME/.pystartup
 
 # Customize git
-ln -sf dotfiles/gitconfig ~/.gitconfig
+mkdir -p $XDG_CONFIG_HOME/git
+ln -sf $HOME/dotfiles/gitconfig $XDG_CONFIG_HOME/git/config
+ln -sf $HOME/dotfiles/gitignore $XDG_CONFIG_HOME/git/ignore

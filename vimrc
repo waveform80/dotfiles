@@ -122,7 +122,6 @@ endif
 
 " GUI/Terminal specific configuration
 if has("gui_running")
-	colorscheme solarized
 	set background=dark
 	"set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
 	set guifont=Inconsolata\ for\ Powerline\ Medium\ 12
