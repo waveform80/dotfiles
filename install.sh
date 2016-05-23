@@ -56,7 +56,7 @@ ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
 vim-addons install align supertab taglist vcscommand
 
 # Set up byobu with some tmux tweaks
-BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/.byobu}
+BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/byobu}
 mkdir -p $BYOBU_CONFIG_DIR
 ln -sf $HOME/dotfiles/tmux.conf $BYOBU_CONFIG_DIR/.tmux.conf
 
