@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eu
+
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
 # Disable annoying bits of unity
