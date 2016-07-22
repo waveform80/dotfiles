@@ -39,7 +39,7 @@ if [ $(lsb_release -is) = "Ubuntu" ]; then
 fi
 
 # Change default shell to zsh
-chsh -s $(which zsh)
+chsh -s $(which zsh) || true
 
 # Install powerline fonts
 cd
