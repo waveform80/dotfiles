@@ -2,16 +2,6 @@
 
 set -eu
 
-XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-
-# Disable annoying bits of unity
-gsettings set com.canonical.Unity.Lenses remote-content-search "none"
-gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
-
-# Style it nicely
-gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
-gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
-
 # Install stuff
 sudo apt-get update
 sudo apt-get install -y \
@@ -33,7 +23,20 @@ sudo apt-get install -y \
 	python3-pip \
 	python3-virtualenv \
 	virtualenvwrapper \
-	exuberant-ctags
+	exuberant-ctags \
+	lsb-release
+
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
+if [ $(lsb_release -is) = "Ubuntu" ]; then
+    # Disable annoying bits of unity
+    gsettings set com.canonical.Unity.Lenses remote-content-search "none"
+    gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
+
+    # Style it nicely
+    gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
+    gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+fi
 
 # Change default shell to zsh
 chsh -s $(which zsh)
