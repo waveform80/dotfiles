@@ -32,11 +32,12 @@ def init_prompt():
         'screen-256color-bce',
         ]
     if os.environ.get('TERM') in term_with_colors:
-        green='\001\033[32m\002'
-        red='\001\033[31m\002'
-        reset='\001\033[0m\002'
-        sys.ps1 = red + '>>> ' + reset
-        sys.ps2 = green + '... ' + reset
+        if not 'bpython' in sys.modules:
+            green='\001\033[32m\002'
+            red='\001\033[31m\002'
+            reset='\001\033[0m\002'
+            sys.ps1 = red + '>>> ' + reset
+            sys.ps2 = green + '... ' + reset
 
 load_history()
 init_prompt()
