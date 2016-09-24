@@ -1,47 +1,21 @@
-"NeoBundle Scripts-----------------------------
-if has('vim_starting')
-  if &compatible
-    set nocompatible               " Be iMproved
-  endif
+"dein Scripts-----------------------------
+set nocompatible               " Be iMproved
+set runtimepath+=~/.vim/bundle/dein.vim/repos/github.com/Shougo/dein.vim
 
-  " Required:
-  set runtimepath+=~/.vim/bundle/neobundle.vim/
-endif
+call dein#begin($HOME . '/.vim/bundle/dein.vim')
+call dein#add('Shougo/dein.vim')
 
-" Required:
-call neobundle#begin($HOME . "/.vim/bundle")
+" Add or remove your plugins here:
+call dein#add('ctrlpvim/ctrlp.vim')
+call dein#add('vim-airline/vim-airline')
+call dein#add('vim-airline/vim-airline-themes')
+call dein#add('dhruvasagar/vim-table-mode')
+call dein#add('jtratner/vim-flavored-markdown')
 
-" Let NeoBundle manage NeoBundle
-" Required:
-NeoBundleFetch 'Shougo/neobundle.vim'
-
-" Add or remove your Bundles here:
-"NeoBundle 'Shougo/neosnippet.vim'
-"NeoBundle 'Shougo/neosnippet-snippets'
-"NeoBundle 'tpope/vim-fugitive'
-NeoBundle 'ctrlpvim/ctrlp.vim'
-"NeoBundle 'flazz/vim-colorschemes'
-NeoBundle 'vim-airline/vim-airline'
-NeoBundle 'vim-airline/vim-airline-themes'
-NeoBundle 'dhruvasagar/vim-table-mode'
-NeoBundle 'jtratner/vim-flavored-markdown'
-
-" You can specify revision/branch/tag.
-"NeoBundle 'Shougo/vimshell', { 'rev' : '3787e5' }
-
-" Required:
-call neobundle#end()
-
-" Required:
-filetype plugin indent on
-
-" If there are uninstalled bundles found on startup,
-" this will conveniently prompt you to install them.
-NeoBundleCheck
-"End NeoBundle Scripts-------------------------
+call dein#end()
+"End dein Scripts-------------------------
 
 " General options
-set nocompatible        " don't be vi compatible
 set backspace=indent,eol,start " make backspace delete lots of things
 set autoindent          " use auto-indent
 set ruler               " display a ruler

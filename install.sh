@@ -49,8 +49,10 @@ fonts/install.sh
 # Install oh-my-zsh
 curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash
 
-# Install NeoBundle
-curl -L https://raw.githubusercontent.com/Shougo/neobundle.vim/master/bin/install.sh | bash
+# Install dein
+curl -L https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.sh > installer.sh
+bash installer.sh $HOME/.vim/bundle/dein.vim
+rm installer.sh
 
 # Set up zsh
 ln -sf $HOME/dotfiles/agnoster-waveform.zsh-theme $HOME/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
