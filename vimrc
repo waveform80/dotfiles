@@ -55,7 +55,7 @@ set incsearch           " incrementally search during / command
 set lazyredraw          " speed up macros
 set noerrorbells        " switch off annoying error beeps
 set novisualbell        " disable the visual bell too
-set noexpandtab         " do not expand tab characters
+set expandtab           " expand tab characters
 set tabstop=4           " tab characters are 4 spaces wide
 set softtabstop=4       " soft-tab stops are 4 spaces wide
 set shiftwidth=4        " shift commands shift 4 chars left / right
@@ -176,7 +176,9 @@ if has("autocmd") && has("eval")
 	" Change some settings for certain languages
 	autocmd FileType xhtml set et sw=2 sts=2
 	autocmd FileType html set et sw=2 sts=2
+	autocmd FileType xml set et sw=2 sts=2
 	autocmd FileType python set et sw=4 sts=4
+	autocmd FileType make set noet sw=8 ts=8
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
 
 	" Set line/relative numbers depending on mode
@@ -191,5 +193,4 @@ nnoremap q: :q
 " Set up table-mode
 let g:table_mode_corner_corner = "+"
 let g:table_mode_header_fillchar = "="
-
 
