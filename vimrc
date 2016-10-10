@@ -11,9 +11,11 @@ call dein#add('vim-airline/vim-airline')
 call dein#add('vim-airline/vim-airline-themes')
 call dein#add('dhruvasagar/vim-table-mode')
 call dein#add('jtratner/vim-flavored-markdown')
+call dein#add('terryma/vim-multiple-cursors')
 
 call dein#end()
 "End dein Scripts-------------------------
+
 
 " General options
 set backspace=indent,eol,start " make backspace delete lots of things
@@ -168,3 +170,5 @@ nnoremap q: :q
 let g:table_mode_corner_corner = "+"
 let g:table_mode_header_fillchar = "="
 
+" Get multi-cursor to play nice with CtrlP
+let g:multi_cursor_prev_key='<C-u>'
