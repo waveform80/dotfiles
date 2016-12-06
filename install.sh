@@ -7,7 +7,7 @@ sudo apt-get update
 sudo apt-get install -y \
 	build-essential \
 	curl \
-	vim-nox \
+	vim-gtk \
 	vim-addon-manager \
 	vim-scripts \
 	git \
@@ -24,7 +24,13 @@ sudo apt-get install -y \
 	python3-virtualenv \
 	virtualenvwrapper \
 	exuberant-ctags \
-	lsb-release
+	lsb-release \
+	libjpeg-dev \
+	libtiff5-dev \
+	libfreetype6-dev \
+	liblcms2-dev
+
+set +e
 
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
