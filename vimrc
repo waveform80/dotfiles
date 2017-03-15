@@ -12,6 +12,7 @@ call dein#add('vim-airline/vim-airline-themes')
 call dein#add('dhruvasagar/vim-table-mode')
 call dein#add('jtratner/vim-flavored-markdown')
 call dein#add('terryma/vim-multiple-cursors')
+call dein#add('tmhedberg/SimpylFold')
 
 call dein#end()
 "End dein Scripts-------------------------
