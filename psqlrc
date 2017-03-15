@@ -1,0 +1,9 @@
+\set AUTOCOMMIT off
+\set ON_ERROR_ROLLBACK interactive
+\set COMP_KEYWORD_CASE upper
+
+\pset pager off
+\pset null '-'
+\pset format wrapped
+\pset linestyle unicode
+\pset border 1
