@@ -8,7 +8,7 @@ export ZSH=~/.oh-my-zsh
 ZSH_THEME="agnoster-waveform"
 
 # Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
+CASE_SENSITIVE="true"
 
 # Uncomment the following line to use hyphen-insensitive completion. Case
 # sensitive completion must be off. _ and - will be interchangeable.
@@ -84,8 +84,25 @@ export GPGKEY=A057F8D5
 # AWS keys
 [ -f $HOME/Dropkeys/keys ] && source $HOME/Dropbox/keys/aws.sh
 
+# Use uneven column widths when listing completions to reduce the number of
+# rows printed
+setopt LIST_PACKED
+
 # Disable automatic changing of dir without "cd"
 unsetopt AUTO_CD
+
+# Disable auto-pushd on cd
+unsetopt AUTO_PUSHD
+
+# Execute history expansions on request instead of editing them first
+unsetopt HIST_VERIFY
+
+# Enable sharing history like KSH, disable mutually excl. options
+unsetopt INC_APPEND_HISTORY
+setopt SHARE_HISTORY
+
+# Act like sh/ksh with >> against non-existing file
+setopt APPEND_CREATE
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
