@@ -173,3 +173,12 @@ let g:table_mode_header_fillchar = "="
 
 " Get multi-cursor to play nice with CtrlP
 let g:multi_cursor_prev_key='<C-u>'
+
+inoremap ,... …
+inoremap ,-- –
+inoremap ,--- —
+inoremap ,(c) ©
+inoremap ,(r) ®
+inoremap ,o °
+inoremap ,+- ±
+
