@@ -52,7 +52,7 @@ set history=500
 " Use the tab completion menu and ignore certain files
 if has("wildmenu")
 	set wildmenu
-	set wildignore+=*~,*.pyc,*.pyd,*.pyo
+	set wildignore+=*~,*.pyc,*.pyd,*.pyo,*.P
 endif
 
 " Set up a fancy status line
