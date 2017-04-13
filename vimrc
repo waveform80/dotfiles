@@ -172,7 +172,10 @@ let g:table_mode_corner_corner = "+"
 let g:table_mode_header_fillchar = "="
 
 " Get multi-cursor to play nice with CtrlP
-let g:multi_cursor_prev_key='<C-u>'
+let g:multi_cursor_prev_key = '<C-u>'
+
+" Have CtrlP use git ls-files
+let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
 
 inoremap ,... …
 inoremap ,-- –
