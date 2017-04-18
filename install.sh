@@ -66,7 +66,7 @@ ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
 # Set up vim with all your favourite plugins and bits
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
-vim-addons install align supertab taglist vcscommand
+vim-addons install align supertab taglist
 
 # Set up byobu with some tmux tweaks
 BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/byobu}

@@ -7,6 +7,8 @@ call dein#add('Shougo/dein.vim')
 
 " Add or remove your plugins here:
 call dein#add('ctrlpvim/ctrlp.vim')
+call dein#add('tpope/vim-fugitive')
+call dein#add('tpope/vim-rhubarb')
 call dein#add('vim-airline/vim-airline')
 call dein#add('vim-airline/vim-airline-themes')
 call dein#add('dhruvasagar/vim-table-mode')
@@ -154,7 +156,7 @@ if has("autocmd") && has("eval")
 	autocmd FileType xhtml set et sw=2 sts=2
 	autocmd FileType html set et sw=2 sts=2
 	autocmd FileType xml set et sw=2 sts=2
-	autocmd FileType python set et sw=4 sts=4
+	autocmd FileType python set et sw=4 sts=4 foldlevel=3
 	autocmd FileType make set noet sw=8 ts=8
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
 
@@ -166,6 +168,10 @@ endif
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
 nnoremap q: :q
+
+" Don't fold docstrings or imports
+let g:SimpylFold_fold_docstring = 0
+let g:SimpylFold_fold_import = 0
 
 " Set up table-mode
 let g:table_mode_corner_corner = "+"
