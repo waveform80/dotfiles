@@ -7,8 +7,13 @@ call dein#add('Shougo/dein.vim')
 
 " Add or remove your plugins here:
 call dein#add('ctrlpvim/ctrlp.vim')
+call dein#add('chrisbra/csv.vim')
 call dein#add('tpope/vim-fugitive')
 call dein#add('tpope/vim-rhubarb')
+call dein#add('jmcantrell/vim-virtualenv')
+call dein#add('majutsushi/tagbar')
+call dein#add('scrooloose/syntastic')
+call dein#add('mhinz/vim-signify')
 call dein#add('vim-airline/vim-airline')
 call dein#add('vim-airline/vim-airline-themes')
 call dein#add('dhruvasagar/vim-table-mode')
@@ -62,7 +67,6 @@ if has("statusline")
 	set laststatus=2
 	let g:airline_powerline_fonts = 1
 	let g:airline_theme = "powerlineish"
-	let g:airline#extensions#branch#use_vcscommand = 1
 	let g:airline#extensions#tabline#enabled = 1
 endif
 
