@@ -3,49 +3,55 @@
 set -eu
 
 # Install stuff
-sudo apt-get update
-sudo apt-get install -y \
-	build-essential \
-	curl \
-	vim-gtk \
-	vim-addon-manager \
-	vim-scripts \
-	git \
-	git-core \
-	zsh \
-	byobu \
-	ipython \
-	ipython3 \
-	python-dev \
-	python-pip \
-	python-virtualenv \
-	python3-dev \
-	python3-pip \
-	python3-virtualenv \
-	virtualenvwrapper \
-	exuberant-ctags \
-	lsb-release \
-	libjpeg-dev \
-	libtiff5-dev \
-	libfreetype6-dev \
-	liblcms2-dev
+sudo apt update
+
+PACKAGES="\
+    build-essential \
+    curl \
+    vim-gtk \
+    vim-addon-manager \
+    vim-scripts \
+    git \
+    git-core \
+    zsh \
+    byobu \
+    ipython \
+    ipython3 \
+    python-dev \
+    python-pip \
+    python-virtualenv \
+    python3-dev \
+    python3-pip \
+    virtualenvwrapper \
+    exuberant-ctags \
+    lsb-release \
+    libjpeg-dev \
+    libtiff5-dev \
+    libfreetype6-dev \
+    liblcms2-dev"
+
+# python3-virtualenv was added in 16.04
+if dpkg -l python3-virtualenv >/dev/null 2>&1; then
+    PACKAGES="$PACKAGES python3-virtualenv"
+fi
+
+sudo apt install -y $PACKAGES
 
 set +e
 
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
-if [ $(lsb_release -is) = "Ubuntu" ]; then
-    # Disable annoying bits of unity
-    gsettings set com.canonical.Unity.Lenses remote-content-search "none"
-    gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
+if command -v gsettings >/dev/null; then
+    if [ $(lsb_release -is) = "Ubuntu" ]; then
+        # Disable annoying bits of unity
+        gsettings set com.canonical.Unity.Lenses remote-content-search "none"
+        gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
 
-    # Style it nicely
-    gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
-    gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+        # Style it nicely
+        gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
+        gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+    fi
 fi
-
-# Change default shell to zsh
-chsh -s $(which zsh) || true
 
 # Install powerline fonts
 cd

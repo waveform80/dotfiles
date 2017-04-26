@@ -10,16 +10,17 @@ call dein#add('ctrlpvim/ctrlp.vim')
 call dein#add('chrisbra/csv.vim')
 call dein#add('tpope/vim-fugitive')
 call dein#add('tpope/vim-rhubarb')
-call dein#add('jmcantrell/vim-virtualenv')
+call dein#add('python-mode/python-mode')
+"call dein#add('tmhedberg/SimpylFold')
+"call dein#add('jmcantrell/vim-virtualenv')
 call dein#add('majutsushi/tagbar')
-call dein#add('scrooloose/syntastic')
+"call dein#add('scrooloose/syntastic')
 call dein#add('mhinz/vim-signify')
 call dein#add('vim-airline/vim-airline')
 call dein#add('vim-airline/vim-airline-themes')
 call dein#add('dhruvasagar/vim-table-mode')
 call dein#add('jtratner/vim-flavored-markdown')
 call dein#add('terryma/vim-multiple-cursors')
-call dein#add('tmhedberg/SimpylFold')
 
 call dein#end()
 "End dein Scripts-------------------------
@@ -186,6 +187,11 @@ let g:multi_cursor_prev_key = '<C-u>'
 
 " Have CtrlP use git ls-files
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
+
+" Disable annoying bits of pymode
+let g:pymode_doc = 0
+let g:pymode_lint_ignore = "E501,W391"
+let g:pymode_rope_complete_on_dot = 0
 
 inoremap ,... …
 inoremap ,-- –
