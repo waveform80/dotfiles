@@ -170,13 +170,9 @@ if has("autocmd") && has("eval")
 	autocmd InsertLeave * :set relativenumber
 endif
 
-" Remap some annoying defaults (Q formats paragraphs, q: quits)
-noremap Q gq
-nnoremap q: :q
-
 " Don't fold docstrings or imports
-let g:SimpylFold_fold_docstring = 0
-let g:SimpylFold_fold_import = 0
+"let g:SimpylFold_fold_docstring = 0
+"let g:SimpylFold_fold_import = 0
 
 " Set up table-mode
 let g:table_mode_corner_corner = "+"
@@ -193,11 +189,22 @@ let g:pymode_doc = 0
 let g:pymode_lint_ignore = "E501,W391"
 let g:pymode_rope_complete_on_dot = 0
 
-inoremap ,... …
-inoremap ,-- –
-inoremap ,--- —
-inoremap ,(c) ©
-inoremap ,(r) ®
-inoremap ,o °
-inoremap ,+- ±
+" Disable signify by default
+let g:signify_disable_by_default = 1
 
+" Remap some annoying defaults (Q formats paragraphs, q: quits)
+noremap Q gq
+nnoremap q: :q
+
+" Some mappings for Unicode chars
+inoremap <Leader>... …
+inoremap <Leader>-- –
+inoremap <Leader>--- —
+inoremap <Leader>(c) ©
+inoremap <Leader>(r) ®
+inoremap <Leader>o °
+inoremap <Leader>+- ±
+
+" Some normal-mode mappings for various plugins
+nnoremap <Leader>st :SignifyToggle<CR>
+nnoremap <Leader>tb :TagbarToggle<CR>
