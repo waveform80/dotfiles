@@ -15,6 +15,7 @@ PACKAGES="\
     git-core \
     zsh \
     byobu \
+    ranger \
     ipython \
     ipython3 \
     python-dev \

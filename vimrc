@@ -186,7 +186,7 @@ let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standar
 
 " Disable annoying bits of pymode
 let g:pymode_doc = 0
-let g:pymode_lint_ignore = "E501,W391"
+let g:pymode_lint_ignore = "E501,W391,E261,E262"
 let g:pymode_rope_complete_on_dot = 0
 
 " Disable signify by default
