@@ -7,3 +7,5 @@
 	tool = meld
 [diff]
 	tool = meld
+[core]
+	excludesfile = /home/dave/dotfiles/gitignore
