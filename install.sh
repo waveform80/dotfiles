@@ -76,6 +76,10 @@ ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
 vim-addons install align supertab taglist
 
+# Set up elinks
+mkdir -p $HOME/.elinks
+ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
+
 # Set up byobu with some tmux tweaks
 BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/byobu}
 mkdir -p $BYOBU_CONFIG_DIR
