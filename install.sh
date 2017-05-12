@@ -69,7 +69,6 @@ bash installer.sh $HOME/.vim/bundle/dein.vim
 rm installer.sh
 
 # Set up zsh
-ln -sf $HOME/dotfiles/agnoster-waveform.zsh-theme $HOME/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
 ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
 # Set up vim with all your favourite plugins and bits
