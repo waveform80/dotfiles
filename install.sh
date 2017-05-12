@@ -21,6 +21,7 @@ PACKAGES="\
     python-dev \
     python-pip \
     python-virtualenv \
+    python-pygments \
     python3-dev \
     python3-pip \
     virtualenvwrapper \

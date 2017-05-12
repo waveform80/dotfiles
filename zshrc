@@ -59,6 +59,8 @@ export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
 export DEBFULLNAME="Dave Jones"
 export DEBEMAIL="dave@waveform.org.uk"
+export LESS=" -R"
+export LESSOPEN="| /usr/bin/pygmentize -f terminal256 -O style=perldoc %s"
 
 source $ZSH/oh-my-zsh.sh
 
