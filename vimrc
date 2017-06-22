@@ -51,6 +51,7 @@ set hidden              " allow edit buffers to be hidden
 set virtualedit=block   " enable virtual editing (partial tabs) in vblock
 set modelines=10        " read 10 lines for modes
 set cc=80               " display a bar at 80 columns
+set completeopt=menu    " don't display preview window with completions
 let mapleader=","       " leader key is a comma
 
 " Permit a huge viminfo and command history
@@ -189,7 +190,6 @@ let g:pymode_doc = 0
 let g:pymode_lint = 0
 let g:pymode_lint_ignore = "E501"
 "let g:pymode_lint_ignore = "E501,W391,E261,E262"
-let g:pymode_rope_complete_on_dot = 0
 
 " Disable signify by default
 let g:signify_disable_by_default = 1
