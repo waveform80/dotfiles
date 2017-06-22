@@ -1,0 +1,3 @@
+#!/bin/sh
+
+compare $2 $1 png:- | montage -geometry 640x1056 $2 - $1 png:- | display -title "$1" -
