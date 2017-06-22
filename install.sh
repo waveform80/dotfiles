@@ -8,6 +8,7 @@ sudo apt update
 PACKAGES="\
     build-essential \
     curl \
+    mutt \
     vim-gtk \
     vim-addon-manager \
     vim-scripts \
@@ -79,6 +80,12 @@ vim-addons install align supertab taglist
 # Set up elinks
 mkdir -p $HOME/.elinks
 ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
+
+# Set up mutt
+mkdir -p $HOME/.mutt
+mkdir -p $HOME/.mutt/cache
+ln -sf $HOME/dotfiles/muttsidebar $HOME/.mutt/sidebar.muttrc
+ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
 
 # Set up byobu with some tmux tweaks
 BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/byobu}

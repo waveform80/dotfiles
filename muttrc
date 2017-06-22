@@ -1,25 +1,44 @@
-source ~/.mutt/credentials
-source ~/.mutt/aliases
-
-set editor="vim"
+set editor = "vim"
 set edit_headers
 set autoedit
+set sleep_time = 0
 
-set forward_format="Fwd: %s"
+set from = "dave@waveform.org.uk"
+set realname = "Dave Jones"
+set forward_format = "Fwd: %s"
 
-set mbox="~/.maildir"
-set mbox_type=Maildir
+# IMAP configuration
+source ~/.mutt/credentials
+set imap_user = $my_user
+set imap_pass = $my_pass
+set folder = "imaps://imap.googlemail.com/"
+set spoolfile = "+INBOX"
+set postponed = "+[Gmail]/Drafts"
+set trash = "+[Gmail]/Bin"
+set imap_check_subscribed
+unset record
+unset imap_passive
 
-set from="dave@waveform.org.uk"
-set realname="Dave Jones"
+# SMTP configuration
+set smtp_url = smtps://$my_user:$my_pass@smtp.gmail.com
+set ssl_force_tls
 
-mailboxes imaps://imap.googlemail.com
-set folder="imaps://imap.googlemail.com:993"
-set spoolfile="+INBOX"
-set postponed="+[Gmail]/Drafts"
-set trash="+[Gmail]/Bin"
+# Storage configuration
+set header_cache = ~/.mutt/cache
+set message_cachedir = ~/.mutt/cache
 
-set header_cache=~/.mutt/headercache
+# Keybindings
+bind pager j next-line
+bind pager k previous-line
+bind attach,index,pager \Cf next-page
+bind attach,index,pager \Cb previous-page
+bind pager g top
+bind pager G bottom
+bind attach,index g first-entry
+bind attach,index G last-entry
 
 auto_view text/html
 alternative_order text/plain text/enriched text/html
+
+#source ~/.mutt/aliases
+source ~/.mutt/sidebar.muttrc
