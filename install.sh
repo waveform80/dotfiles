@@ -8,7 +8,7 @@ sudo apt update
 PACKAGES="\
     build-essential \
     curl \
-    mutt \
+    mutt-patched \
     vim-gtk \
     vim-addon-manager \
     vim-scripts \
