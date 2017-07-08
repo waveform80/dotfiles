@@ -75,7 +75,7 @@ ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
 # Set up vim with all your favourite plugins and bits
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
-vim-addons install align supertab taglist
+vim-addons install align supertab
 
 # Set up elinks
 mkdir -p $HOME/.elinks

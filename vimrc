@@ -11,7 +11,6 @@ call dein#add('chrisbra/csv.vim')
 call dein#add('tpope/vim-fugitive')
 call dein#add('tpope/vim-rhubarb')
 call dein#add('python-mode/python-mode')
-"call dein#add('tmhedberg/SimpylFold')
 "call dein#add('jmcantrell/vim-virtualenv')
 call dein#add('majutsushi/tagbar')
 "call dein#add('scrooloose/syntastic')
@@ -171,10 +170,6 @@ if has("autocmd") && has("eval")
 	autocmd InsertLeave * :set relativenumber
 endif
 
-" Don't fold docstrings or imports
-"let g:SimpylFold_fold_docstring = 0
-"let g:SimpylFold_fold_import = 0
-
 " Set up table-mode
 let g:table_mode_corner_corner = "+"
 let g:table_mode_header_fillchar = "="
@@ -190,6 +185,7 @@ let g:pymode_doc = 0
 let g:pymode_lint = 0
 let g:pymode_lint_ignore = "E501"
 "let g:pymode_lint_ignore = "E501,W391,E261,E262"
+let g:pymode_folding = 0
 
 " Disable signify by default
 let g:signify_disable_by_default = 1
