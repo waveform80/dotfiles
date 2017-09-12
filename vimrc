@@ -8,7 +8,6 @@ call dein#add('Shougo/dein.vim')
 " Add or remove your plugins here:
 call dein#add('Shougo/vimproc.vim')
 call dein#add('Shougo/unite.vim')
-call dein#add('chrisbra/csv.vim')
 call dein#add('tpope/vim-fugitive')
 call dein#add('tpope/vim-rhubarb')
 call dein#add('python-mode/python-mode')

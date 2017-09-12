@@ -32,6 +32,7 @@ PACKAGES="\
     libtiff5-dev \
     libfreetype6-dev \
     liblcms2-dev \
+    sc \
     silversearcher-ag"
 
 # python3-virtualenv was added in 16.04
