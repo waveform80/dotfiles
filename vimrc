@@ -6,14 +6,14 @@ call dein#begin($HOME . '/.vim/bundle/dein.vim')
 call dein#add('Shougo/dein.vim')
 
 " Add or remove your plugins here:
-call dein#add('ctrlpvim/ctrlp.vim')
+call dein#add('Shougo/vimproc.vim')
+call dein#add('Shougo/unite.vim')
 call dein#add('chrisbra/csv.vim')
 call dein#add('tpope/vim-fugitive')
 call dein#add('tpope/vim-rhubarb')
 call dein#add('python-mode/python-mode')
 "call dein#add('jmcantrell/vim-virtualenv')
 call dein#add('majutsushi/tagbar')
-"call dein#add('scrooloose/syntastic')
 call dein#add('mhinz/vim-signify')
 call dein#add('vim-airline/vim-airline')
 call dein#add('vim-airline/vim-airline-themes')
@@ -36,6 +36,8 @@ set showcmd             " show partial commands in the status line
 set showmatch           " highlight matching parens
 set hlsearch            " highlight prior search matches
 set incsearch           " incrementally search during / command
+set ignorecase          " ignore case in searches...
+set smartcase           " ... but only when everything's lowercase
 set lazyredraw          " speed up macros
 set noerrorbells        " switch off annoying error beeps
 set novisualbell        " disable the visual bell too
@@ -49,7 +51,7 @@ set sidescrolloff=4     " show four columns of context when scrolling
 set hidden              " allow edit buffers to be hidden
 set virtualedit=block   " enable virtual editing (partial tabs) in vblock
 set modelines=10        " read 10 lines for modes
-set cc=80               " display a bar at 80 columns
+set colorcolumn=+1,80   " display a bar just after "textwidth" and at 80
 set completeopt=menu    " don't display preview window with completions
 let mapleader=","       " leader key is a comma
 
@@ -174,11 +176,14 @@ endif
 let g:table_mode_corner_corner = "+"
 let g:table_mode_header_fillchar = "="
 
-" Get multi-cursor to play nice with CtrlP
-let g:multi_cursor_prev_key = '<C-u>'
-
-" Have CtrlP use git ls-files
-let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
+" Unite configuration
+call unite#filters#matcher_default#use(['matcher_fuzzy'])
+call unite#custom#profile('files', 'context', {
+            \'split': 0, 'start_insert': 1,
+            \'prompt_visible': 1, 'prompt': '>'})
+let g:unite_source_grep_command = 'ag'
+let g:unite_source_grep_default_opts = '-i --vimgrep'
+let g:unite_source_grep_recursive_opt = ''
 
 " Disable annoying bits of pymode
 let g:pymode_doc = 0
@@ -207,3 +212,6 @@ inoremap <Leader>+- ±
 nnoremap <Leader>st :SignifyToggle<CR>
 nnoremap <Leader>tb :TagbarToggle<CR>
 nnoremap <Leader>pl :call pymode#lint#check()<CR>
+nnoremap <leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
+nnoremap <leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
+nnoremap <leader>fb :<C-u>Unite -buffer-name=files buffer<CR>

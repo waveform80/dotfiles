@@ -31,7 +31,8 @@ PACKAGES="\
     libjpeg-dev \
     libtiff5-dev \
     libfreetype6-dev \
-    liblcms2-dev"
+    liblcms2-dev \
+    silversearcher-ag"
 
 # python3-virtualenv was added in 16.04
 if dpkg -l python3-virtualenv >/dev/null 2>&1; then
