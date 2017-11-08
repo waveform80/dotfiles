@@ -6,6 +6,7 @@ set -eu
 sudo apt update
 
 PACKAGES="\
+    atools \
     build-essential \
     curl \
     mutt-patched \
@@ -88,6 +89,11 @@ mkdir -p $HOME/.mutt
 mkdir -p $HOME/.mutt/cache
 ln -sf $HOME/dotfiles/muttsidebar $HOME/.mutt/sidebar.muttrc
 ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
+
+# Set up ranger
+mkdir -p $HOME/.config/ranger
+cp /usr/share/doc/ranger/config/scope.sh $HOME/.config/ranger/
+chmod +x $HOME/.config/ranger/scope.sh
 
 # Set up byobu with some tmux tweaks
 BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/byobu}
