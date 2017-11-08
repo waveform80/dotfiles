@@ -102,6 +102,7 @@ ln -sf $HOME/dotfiles/tmux.conf $BYOBU_CONFIG_DIR/.tmux.conf
 
 # Customize Python
 ln -sf $HOME/dotfiles/pystartup $HOME/.pystartup
+ln -sf $HOME/dotfiles/pylintrc $HOME/.pylintrc
 
 # Customize git
 mkdir -p $XDG_CONFIG_HOME/git

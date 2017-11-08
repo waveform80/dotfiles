@@ -10,7 +10,8 @@ call dein#add('Shougo/vimproc.vim')
 call dein#add('Shougo/unite.vim')
 call dein#add('tpope/vim-fugitive')
 call dein#add('tpope/vim-rhubarb')
-call dein#add('python-mode/python-mode')
+call dein#add('davidhalter/jedi-vim')
+call dein#add('vim-syntastic/syntastic')
 "call dein#add('jmcantrell/vim-virtualenv')
 call dein#add('majutsushi/tagbar')
 call dein#add('mhinz/vim-signify')
@@ -178,21 +179,28 @@ let g:table_mode_header_fillchar = "="
 " Unite configuration
 call unite#filters#matcher_default#use(['matcher_fuzzy'])
 call unite#custom#profile('files', 'context', {
-            \'split': 0, 'start_insert': 1,
-            \'prompt_visible': 1, 'prompt': '>'})
+	\'split': 0, 'start_insert': 1,
+	\'prompt_visible': 1, 'prompt': '>'})
 let g:unite_source_grep_command = 'ag'
 let g:unite_source_grep_default_opts = '-i --vimgrep'
 let g:unite_source_grep_recursive_opt = ''
 
-" Disable annoying bits of pymode
-let g:pymode_doc = 0
-let g:pymode_lint = 0
-let g:pymode_lint_ignore = "E501"
-"let g:pymode_lint_ignore = "E501,W391,E261,E262"
-let g:pymode_folding = 0
-
 " Disable signify by default
 let g:signify_disable_by_default = 1
+
+" Configure syntastic
+let g:syntastic_mode_map = {
+	\ "mode": "active",
+	\ "active_filetypes": [],
+	\ "passive_filetypes": ["python"] }
+let g:syntastic_always_populate_loc_list = 1
+if &termencoding == "utf-8"
+	let g:syntastic_error_symbol = "\u274C"
+	let g:syntastic_warning_symbol = "\u2757"
+else
+	let g:syntastic_error_symbol = "X"
+	let g:syntastic_warning_symbol = "!"
+endif
 
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
@@ -210,7 +218,11 @@ inoremap <Leader>+- ±
 " Some normal-mode mappings for various plugins
 nnoremap <Leader>st :SignifyToggle<CR>
 nnoremap <Leader>tb :TagbarToggle<CR>
-nnoremap <Leader>pl :call pymode#lint#check()<CR>
-nnoremap <leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
-nnoremap <leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
-nnoremap <leader>fb :<C-u>Unite -buffer-name=files buffer<CR>
+nnoremap <Leader>pl :SyntasticCheck<CR>:lopen<CR>
+nnoremap <Leader>pr :SyntasticReset<CR>
+nnoremap <Leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
+nnoremap <Leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
+nnoremap <Leader>fb :<C-u>Unite -buffer-name=files buffer<CR>
+
+nnoremap ]e :lnext<CR>
+nnoremap [e :lprevious<CR>
