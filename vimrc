@@ -11,6 +11,7 @@ call dein#add('Shougo/unite.vim')
 call dein#add('tpope/vim-fugitive')
 call dein#add('tpope/vim-rhubarb')
 call dein#add('davidhalter/jedi-vim')
+call dein#add('Vimjas/vim-python-pep8-indent')
 call dein#add('vim-syntastic/syntastic')
 "call dein#add('jmcantrell/vim-virtualenv')
 call dein#add('majutsushi/tagbar')
@@ -194,12 +195,17 @@ let g:syntastic_mode_map = {
 	\ "active_filetypes": [],
 	\ "passive_filetypes": ["python"] }
 let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_python_checkers = ['pylint', 'flake8']
 if &termencoding == "utf-8"
 	let g:syntastic_error_symbol = "\u274C"
 	let g:syntastic_warning_symbol = "\u2757"
+	let g:syntastic_style_error_symbol = "\u2753"
+	let g:syntastic_style_warning_symbol = "\u2753"
 else
 	let g:syntastic_error_symbol = "X"
 	let g:syntastic_warning_symbol = "!"
+	let g:syntastic_style_error_symbol = "?"
+	let g:syntastic_style_warning_symbol = "?"
 endif
 
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
@@ -219,7 +225,7 @@ inoremap <Leader>+- ±
 nnoremap <Leader>st :SignifyToggle<CR>
 nnoremap <Leader>tb :TagbarToggle<CR>
 nnoremap <Leader>pl :SyntasticCheck<CR>:lopen<CR>
-nnoremap <Leader>pr :SyntasticReset<CR>
+nnoremap <Leader>pr :SyntasticReset<CR>:lclose<CR>
 nnoremap <Leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
 nnoremap <Leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
 nnoremap <Leader>fb :<C-u>Unite -buffer-name=files buffer<CR>
