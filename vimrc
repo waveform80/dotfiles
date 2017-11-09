@@ -166,6 +166,7 @@ if has("autocmd") && has("eval")
 	autocmd FileType xml set et sw=2 sts=2
 	autocmd FileType python set et sw=4 sts=4 foldlevel=3
 	autocmd FileType make set noet sw=8 ts=8
+	autocmd FileType rst set tw=79
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
 
 	" Set line/relative numbers depending on mode
@@ -191,9 +192,9 @@ let g:signify_disable_by_default = 1
 
 " Configure syntastic
 let g:syntastic_mode_map = {
-	\ "mode": "active",
+	\ "mode": "passive",
 	\ "active_filetypes": [],
-	\ "passive_filetypes": ["python"] }
+	\ "passive_filetypes": [] }
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_python_checkers = ['pylint', 'flake8']
 if &termencoding == "utf-8"
