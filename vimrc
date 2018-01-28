@@ -209,6 +209,9 @@ else
 	let g:syntastic_style_warning_symbol = "?"
 endif
 
+" Disable jedi's auto-import
+let g:jedi#smart_auto_mappings = 0
+
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
 nnoremap q: :q
@@ -219,6 +222,7 @@ inoremap <Leader>-- –
 inoremap <Leader>--- —
 inoremap <Leader>(c) ©
 inoremap <Leader>(r) ®
+inoremap <Leader>tm ™
 inoremap <Leader>o °
 inoremap <Leader>+- ±
 
