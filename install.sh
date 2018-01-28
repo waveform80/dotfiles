@@ -9,7 +9,7 @@ PACKAGES="\
     atools \
     build-essential \
     curl \
-    mutt-patched \
+    mutt \
     vim-gtk \
     vim-addon-manager \
     vim-scripts \
@@ -112,3 +112,7 @@ ln -sf $HOME/dotfiles/gitignore $XDG_CONFIG_HOME/git/ignore
 
 # Customize psql
 ln -sf $HOME/dotfiles/psqlrc $HOME/.psqlrc
+
+# Stuff for Debian packaging
+ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
+ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
