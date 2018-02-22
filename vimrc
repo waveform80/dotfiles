@@ -14,13 +14,14 @@ call dein#add('davidhalter/jedi-vim')
 call dein#add('Vimjas/vim-python-pep8-indent')
 call dein#add('vim-syntastic/syntastic')
 "call dein#add('jmcantrell/vim-virtualenv')
-call dein#add('majutsushi/tagbar')
-call dein#add('mhinz/vim-signify')
+"call dein#add('majutsushi/tagbar')
+"call dein#add('mhinz/vim-signify')
 call dein#add('vim-airline/vim-airline')
 call dein#add('vim-airline/vim-airline-themes')
 call dein#add('dhruvasagar/vim-table-mode')
-call dein#add('jtratner/vim-flavored-markdown')
+"call dein#add('jtratner/vim-flavored-markdown')
 call dein#add('terryma/vim-multiple-cursors')
+call dein#add('ConradIrwin/vim-bracketed-paste')
 
 call dein#end()
 "End dein Scripts-------------------------
@@ -179,16 +180,12 @@ let g:table_mode_corner_corner = "+"
 let g:table_mode_header_fillchar = "="
 
 " Unite configuration
-call unite#filters#matcher_default#use(['matcher_fuzzy'])
 call unite#custom#profile('files', 'context', {
 	\'split': 0, 'start_insert': 1,
 	\'prompt_visible': 1, 'prompt': '>'})
-let g:unite_source_grep_command = 'ag'
-let g:unite_source_grep_default_opts = '-i --vimgrep'
-let g:unite_source_grep_recursive_opt = ''
 
 " Disable signify by default
-let g:signify_disable_by_default = 1
+"let g:signify_disable_by_default = 1
 
 " Configure syntastic
 let g:syntastic_mode_map = {
@@ -224,11 +221,12 @@ inoremap <Leader>(c) ©
 inoremap <Leader>(r) ®
 inoremap <Leader>tm ™
 inoremap <Leader>o °
+inoremap <Leader>O Ω
 inoremap <Leader>+- ±
 
 " Some normal-mode mappings for various plugins
-nnoremap <Leader>st :SignifyToggle<CR>
-nnoremap <Leader>tb :TagbarToggle<CR>
+"nnoremap <Leader>st :SignifyToggle<CR>
+"nnoremap <Leader>tb :TagbarToggle<CR>
 nnoremap <Leader>pl :SyntasticCheck<CR>:lopen<CR>
 nnoremap <Leader>pr :SyntasticReset<CR>:lclose<CR>
 nnoremap <Leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
