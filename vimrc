@@ -193,7 +193,9 @@ let g:syntastic_mode_map = {
 	\ "active_filetypes": [],
 	\ "passive_filetypes": [] }
 let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_python_checkers = ['pylint', 'flake8']
+let g:syntastic_aggregate_errors = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_python_checkers = ['pylint']
 if &termencoding == "utf-8"
 	let g:syntastic_error_symbol = "\u274C"
 	let g:syntastic_warning_symbol = "\u2757"
@@ -316,7 +318,7 @@ inoremap <Leader>FF ↡
 " Some normal-mode mappings for various plugins
 "nnoremap <Leader>st :SignifyToggle<CR>
 "nnoremap <Leader>tb :TagbarToggle<CR>
-nnoremap <Leader>pl :SyntasticCheck<CR>:lopen<CR>
+nnoremap <Leader>pl :SyntasticCheck<CR>
 nnoremap <Leader>pr :SyntasticReset<CR>:lclose<CR>
 nnoremap <Leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
 nnoremap <Leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
