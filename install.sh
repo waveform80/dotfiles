@@ -5,12 +5,29 @@ set -eu
 # Install stuff
 sudo apt update
 
+if [ $(lsb_release -is) = "Ubuntu" ]; then
+    VIM=vim-gtk3
+    MUTT=mutt-patched
+    if command -v gsettings >/dev/null; then
+        # Disable annoying bits of unity
+        gsettings set com.canonical.Unity.Lenses remote-content-search "none"
+        gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
+
+        # Style it nicely
+        gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
+        gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+    fi
+else
+    VIM=vim-gtk
+    MUTT=mutt
+fi
+
 PACKAGES="\
-    atools \
+    atool \
     build-essential \
     curl \
-    mutt \
-    vim-gtk \
+    ${MUTT} \
+    ${VIM} \
     vim-addon-manager \
     vim-scripts \
     git \
@@ -26,6 +43,7 @@ PACKAGES="\
     python-pygments \
     python3-dev \
     python3-pip \
+    python3-virtualenv \
     virtualenvwrapper \
     exuberant-ctags \
     lsb-release \
@@ -33,44 +51,30 @@ PACKAGES="\
     libtiff5-dev \
     libfreetype6-dev \
     liblcms2-dev \
-    sc \
-    silversearcher-ag"
-
-# python3-virtualenv was added in 16.04
-if dpkg -l python3-virtualenv >/dev/null 2>&1; then
-    PACKAGES="$PACKAGES python3-virtualenv"
-fi
+    sc"
 
 sudo apt install -y $PACKAGES
 
-set +e
-
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-
-if command -v gsettings >/dev/null; then
-    if [ $(lsb_release -is) = "Ubuntu" ]; then
-        # Disable annoying bits of unity
-        gsettings set com.canonical.Unity.Lenses remote-content-search "none"
-        gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
-
-        # Style it nicely
-        gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
-        gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
-    fi
-fi
 
 # Install powerline fonts
 cd
-git clone https://github.com/powerline/fonts.git
-fonts/install.sh
+if [ ! -d fonts ]; then
+    git clone https://github.com/powerline/fonts.git
+    fonts/install.sh
+fi
 
 # Install oh-my-zsh
-curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash
+if [ ! -d .oh-my-zsh ]; then
+    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash
+fi
 
 # Install dein
-curl -L https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.sh > installer.sh
-bash installer.sh $HOME/.vim/bundle/dein.vim
-rm installer.sh
+if [ ! -d .vim/bundle/dein.vim ]; then
+    curl -L https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.sh > installer.sh
+    bash installer.sh $HOME/.vim/bundle/dein.vim
+    rm installer.sh
+fi
 
 # Set up zsh
 ln -sf $HOME/dotfiles/agnoster-waveform.zsh-theme $HOME/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
