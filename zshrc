@@ -49,7 +49,7 @@ CASE_SENSITIVE="true"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git virtualenvwrapper python pip ubuntu safe-paste)
+plugins=(git virtualenvwrapper python ubuntu safe-paste zsh-navigation-tools)
 
 # User configuration
 export DEFAULT_USER=dave
@@ -102,3 +102,6 @@ setopt APPEND_CREATE >&/dev/null
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
+
+# Load the landscape dev-env
+[ -f ~/.landscape-env ] && . ~/.landscape-env
