@@ -166,6 +166,7 @@ if has("autocmd") && has("eval")
 	autocmd FileType html set et sw=2 sts=2
 	autocmd FileType xml set et sw=2 sts=2
 	autocmd FileType python set et sw=4 sts=4 foldlevel=3
+	autocmd FileType python inoremap <silent> <buffer> <Tab> <C-x><C-o>
 	autocmd FileType make set noet sw=8 ts=8
 	autocmd FileType rst set tw=79
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
@@ -208,8 +209,9 @@ else
 	let g:syntastic_style_warning_symbol = "?"
 endif
 
-" Disable jedi's auto-import
+" Disable jedi's auto-import, and pop-up on dot
 let g:jedi#smart_auto_mappings = 0
+let g:jedi#popup_on_dot = 0
 
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
