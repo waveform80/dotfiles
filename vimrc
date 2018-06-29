@@ -208,7 +208,8 @@ else
 	let g:syntastic_style_warning_symbol = "?"
 endif
 
-" Disable jedi's auto-import, and pop-up on dot
+" Disable lots of Jedi stuff (too slow on a Pi)
+let g:jedi#show_call_signatures = 0
 let g:jedi#smart_auto_mappings = 0
 let g:jedi#popup_on_dot = 0
 
