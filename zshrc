@@ -80,8 +80,10 @@ setopt LIST_PACKED
 # Disable automatic changing of dir without "cd"
 unsetopt AUTO_CD
 
-# Disable auto-pushd on cd
-unsetopt AUTO_PUSHD
+# Set up a directory stack with "cd"
+export DIRSTACKSIZE=10
+setopt AUTO_PUSHD
+setopt PUSHD_MINUS
 
 # Execute history expansions on request instead of editing them first
 unsetopt HIST_VERIFY
