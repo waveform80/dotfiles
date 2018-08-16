@@ -13,13 +13,9 @@ call dein#add('tpope/vim-rhubarb')
 call dein#add('davidhalter/jedi-vim')
 call dein#add('Vimjas/vim-python-pep8-indent')
 call dein#add('vim-syntastic/syntastic')
-"call dein#add('jmcantrell/vim-virtualenv')
-"call dein#add('majutsushi/tagbar')
-"call dein#add('mhinz/vim-signify')
 call dein#add('vim-airline/vim-airline')
 call dein#add('vim-airline/vim-airline-themes')
 call dein#add('dhruvasagar/vim-table-mode')
-"call dein#add('jtratner/vim-flavored-markdown')
 call dein#add('terryma/vim-multiple-cursors')
 call dein#add('ConradIrwin/vim-bracketed-paste')
 
@@ -49,7 +45,6 @@ set softtabstop=4       " soft-tab stops are 4 spaces wide
 set shiftwidth=4        " shift commands shift 4 chars left / right
 set scrolloff=3         " show three lines of context when scrolling
 set sidescrolloff=4     " show four columns of context when scrolling
-"set whichwrap+=<,>,[,]  " allow left/right cursor to move across lines
 set hidden              " allow edit buffers to be hidden
 set virtualedit=block   " enable virtual editing (partial tabs) in vblock
 set modelines=10        " read 10 lines for modes
@@ -108,16 +103,8 @@ if v:lang =~ "utf8$" || v:lang =~ "UTF-8$"
 	set fileencodings=utf-8,ucs-bom,latin1
 endif
 
-" GUI/Terminal specific configuration
-if has("gui_running")
-	set background=dark
-	"set guifont=DejaVu\ Sans\ Mono\ for\ Powerline\ 10
-	set guifont=Inconsolata\ for\ Powerline\ Medium\ 12
-	set cursorline                                " use cursor row highlighting
-	set list listchars=tab:»\ ,trail:·,extends:…  " visible whitespace
-	"highlight Normal guifg=white guibg=black
-	highlight SpecialKey guibg=bg
-elseif &term =~ "xterm" || &term =~ "screen"
+" Terminal configuration
+if &term =~ "xterm" || &term =~ "screen"
 	set background=dark
 	if !empty($DISPLAY)
 		set t_Co=256         " yes, the terminal can handle 256 colors
@@ -184,9 +171,6 @@ call unite#custom#profile('files', 'context', {
 	\'split': 0, 'start_insert': 1,
 	\'prompt_visible': 1, 'prompt': '>'})
 
-" Disable signify by default
-"let g:signify_disable_by_default = 1
-
 " Configure syntastic
 let g:syntastic_mode_map = {
 	\ "mode": "passive",
@@ -216,6 +200,16 @@ let g:jedi#popup_on_dot = 0
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
 nnoremap q: :q
+
+" Some normal-mode mappings for various plugins
+nnoremap <Leader>pl :SyntasticCheck<CR>
+nnoremap <Leader>pr :SyntasticReset<CR>:lclose<CR>
+nnoremap <Leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
+nnoremap <Leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
+nnoremap <Leader>fb :<C-u>Unite -buffer-name=files buffer<CR>
+
+nnoremap ]e :lnext<CR>
+nnoremap [e :lprevious<CR>
 
 " Some mappings for Unicode chars
 inoremap <Leader>... …
@@ -321,15 +315,3 @@ inoremap <Leader>HT ⇥
 inoremap <Leader>CR ↵
 inoremap <Leader>LF ↴
 inoremap <Leader>FF ↡
-
-" Some normal-mode mappings for various plugins
-"nnoremap <Leader>st :SignifyToggle<CR>
-"nnoremap <Leader>tb :TagbarToggle<CR>
-nnoremap <Leader>pl :SyntasticCheck<CR>
-nnoremap <Leader>pr :SyntasticReset<CR>:lclose<CR>
-nnoremap <Leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
-nnoremap <Leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
-nnoremap <Leader>fb :<C-u>Unite -buffer-name=files buffer<CR>
-
-nnoremap ]e :lnext<CR>
-nnoremap [e :lprevious<CR>
