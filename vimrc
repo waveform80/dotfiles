@@ -257,7 +257,7 @@ inoremap <Leader>and ⋀
 inoremap <Leader>or ⋁
 inoremap <Leader><= ≤
 inoremap <Leader>>= ≥
-inoremap <Leader>0 ∅
+inoremap <Leader>{} ∅
 inoremap <Leader>1/2 ½
 inoremap <Leader>1/3 ⅓
 inoremap <Leader>1/4 ¼
@@ -299,6 +299,7 @@ inoremap <Leader>o °
 inoremap <Leader>oC ℃
 inoremap <Leader>oF ℉
 inoremap <Leader>m µ
+inoremap <Leader>imag ℂ
 inoremap <Leader>comp ℂ
 inoremap <Leader>real ℝ
 inoremap <Leader>int ℤ
