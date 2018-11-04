@@ -104,4 +104,4 @@ setopt APPEND_CREATE >&/dev/null
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 
 # Load the landscape dev-env
-[ -f ~/.landscape-env ] && . ~/.landscape-env
+[ -f ~/.landscape-env ] && . ~/.landscape-env || true
