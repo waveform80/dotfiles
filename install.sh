@@ -37,6 +37,8 @@ PACKAGES="\
     ranger \
     ipython \
     ipython3 \
+    pastebinit \
+    thefuck \
     python-dev \
     python-pip \
     python-virtualenv \
@@ -116,6 +118,9 @@ ln -sf $HOME/dotfiles/gitignore $XDG_CONFIG_HOME/git/ignore
 
 # Customize psql
 ln -sf $HOME/dotfiles/psqlrc $HOME/.psqlrc
+
+# Customize pastebinit
+ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
 
 # Stuff for Debian packaging
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
