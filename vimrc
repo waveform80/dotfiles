@@ -294,7 +294,6 @@ inoremap <Leader>oC ℃
 inoremap <Leader>oF ℉
 inoremap <Leader>m µ
 inoremap <Leader>imag ℂ
-inoremap <Leader>comp ℂ
 inoremap <Leader>real ℝ
 inoremap <Leader>int ℤ
 inoremap <Leader>nat ℕ
