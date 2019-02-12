@@ -29,6 +29,7 @@ set autoindent          " use auto-indent
 set ruler               " display a ruler
 set rnu                 " display relative line numbers
 set nowrap              " do not wrap long lines in display
+set nojoinspaces        " do not use double-spaces after .!? when joining
 set textwidth=0         " turn off wordwrap while editing
 set showcmd             " show partial commands in the status line
 set showmatch           " highlight matching parens

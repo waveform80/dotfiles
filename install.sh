@@ -7,7 +7,6 @@ sudo apt update
 
 if [ $(lsb_release -is) = "Ubuntu" ]; then
     VIM=vim-gtk3
-    MUTT=mutt-patched
     if command -v gsettings >/dev/null; then
         # Disable annoying bits of unity
         gsettings set com.canonical.Unity.Lenses remote-content-search "none"
@@ -19,14 +18,13 @@ if [ $(lsb_release -is) = "Ubuntu" ]; then
     fi
 else
     VIM=vim-gtk
-    MUTT=mutt
 fi
 
 PACKAGES="\
     atool \
     build-essential \
     curl \
-    ${MUTT} \
+    mutt \
     ${VIM} \
     vim-addon-manager \
     vim-scripts \
@@ -68,7 +66,7 @@ fi
 
 # Install oh-my-zsh
 if [ ! -d .oh-my-zsh ]; then
-    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash
+    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sed -e 's/chsh/#chsh' | bash
 fi
 
 # Install dein
@@ -82,7 +80,8 @@ fi
 ln -sf $HOME/dotfiles/agnoster-waveform.zsh-theme $HOME/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
 ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
-# Set up vim with all your favourite plugins and bits
+# Set up vim with all your favourite plugins and bits; remember to call
+# dein#update() in vim after this
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
 vim-addons install align supertab
 
@@ -98,7 +97,11 @@ ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
 
 # Set up ranger
 mkdir -p $HOME/.config/ranger
-cp /usr/share/doc/ranger/config/scope.sh $HOME/.config/ranger/
+if [ -f /usr/share/doc/ranger/config/scope.sh ]; then
+    cp /usr/share/doc/ranger/config/scope.sh $HOME/.config/ranger/
+elif [ -f /usr/share/doc/ranger/config/scope.sh.gz ]; then
+    gunzip -c /usr/share/doc/ranger/config/scope.sh.gz > $HOME/.config/ranger/scope.sh
+fi
 chmod +x $HOME/.config/ranger/scope.sh
 
 # Set up byobu with some tmux tweaks
