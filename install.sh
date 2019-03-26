@@ -5,26 +5,38 @@ set -eu
 # Install stuff
 sudo apt update
 
-if [ $(lsb_release -is) = "Ubuntu" ]; then
-    VIM=vim-gtk3
-    if command -v gsettings >/dev/null; then
-        # Disable annoying bits of unity
-        gsettings set com.canonical.Unity.Lenses remote-content-search "none"
-        gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
+if which X >/dev/null 2>&1; then
+    if [ $(lsb_release -is) = "Ubuntu" ]; then
+        VIM=vim-gtk3
+        if command -v gsettings >/dev/null; then
+            # Disable annoying bits of unity
+            gsettings set com.canonical.Unity.Lenses remote-content-search "none"
+            gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
 
-        # Style it nicely
-        gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
-        gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+            # Style it nicely
+            gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
+            gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+        fi
+    else
+        VIM=vim-gtk
     fi
 else
-    VIM=vim-gtk
+    VIM=vim-nox
+fi
+
+if apt-cache show pspg >/dev/null 2>&1; then
+    PSPG=pspg
+else
+    PSPG=
 fi
 
 PACKAGES="\
+    ssh-import-id \
     atool \
     build-essential \
     curl \
     mutt \
+    elinks \
     ${VIM} \
     vim-addon-manager \
     vim-scripts \
@@ -35,8 +47,9 @@ PACKAGES="\
     ranger \
     ipython \
     ipython3 \
+    ${PSPG} \
+    postgresql-client \
     pastebinit \
-    thefuck \
     python-dev \
     python-pip \
     python-virtualenv \
@@ -51,7 +64,8 @@ PACKAGES="\
     libtiff5-dev \
     libfreetype6-dev \
     liblcms2-dev \
-    sc"
+    sc \
+    zsync"
 
 sudo apt install -y $PACKAGES
 
@@ -66,7 +80,7 @@ fi
 
 # Install oh-my-zsh
 if [ ! -d .oh-my-zsh ]; then
-    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sed -e 's/chsh/#chsh' | bash
+    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sed -e 's/^ *chsh/#chsh/' | bash
 fi
 
 # Install dein
@@ -128,3 +142,6 @@ ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
 # Stuff for Debian packaging
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
 ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
+
+# Import the usual SSH keys
+ssh-import-id lp:waveform
