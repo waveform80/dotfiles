@@ -142,6 +142,7 @@ ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
 # Stuff for Debian packaging
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
 ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
+ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf
 
 # Import the usual SSH keys
 ssh-import-id lp:waveform

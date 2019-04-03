@@ -1,0 +1,25 @@
+[DEFAULT]
+default_host_main = waveform-ppa
+
+[waveform-ppa]
+fqdn = ppa.launchpad.net
+method = sftp
+incoming = ~waveform/ppa/ubuntu/
+login = waveform
+allow_unsigned_uploads = 0
+
+[waveform-pkg]
+fqdn = ppa.launchpad.net
+method = sftp
+incoming = ~waveform/ubuntu/pkg/
+login = waveform
+allow_unsigned_uploads = 0
+
+[mentors]
+fqdn = mentors.debian.net
+incoming = /upload
+method = https
+allow_unsigned_uploads = 0
+progress_indicator = 2
+# Allow uploads for UNRELEASED packages
+allowed_distributions = .*

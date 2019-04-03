@@ -104,7 +104,6 @@ setopt APPEND_CREATE >&/dev/null
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
-eval "$(thefuck --alias)"
 
 # Load the landscape dev-env
 [ -f ~/.landscape-env ] && . ~/.landscape-env || true
