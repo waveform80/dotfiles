@@ -57,6 +57,10 @@ let mapleader=","       " leader key is a comma
 set viminfo='1000,f1,<100,h
 set history=500
 
+" Pretty print options
+set printfont=courier:h9
+set printoptions=paper:a4,formfeed:y,number:y,left:36pt,right:36pt,top:36pt,bottom:36pt
+
 " Use the tab completion menu and ignore certain files
 if has("wildmenu")
 	set wildmenu
