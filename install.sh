@@ -5,28 +5,38 @@ set -eu
 # Install stuff
 sudo apt update
 
-if [ $(lsb_release -is) = "Ubuntu" ]; then
-    VIM=vim-gtk3
-    MUTT=mutt-patched
-    if command -v gsettings >/dev/null; then
-        # Disable annoying bits of unity
-        gsettings set com.canonical.Unity.Lenses remote-content-search "none"
-        gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
+if which X >/dev/null 2>&1; then
+    if [ $(lsb_release -is) = "Ubuntu" ]; then
+        VIM=vim-gtk3
+        if command -v gsettings >/dev/null; then
+            # Disable annoying bits of unity
+            gsettings set com.canonical.Unity.Lenses remote-content-search "none"
+            gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
 
-        # Style it nicely
-        gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
-        gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+            # Style it nicely
+            gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
+            gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
+        fi
+    else
+        VIM=vim-gtk
     fi
 else
-    VIM=vim-gtk
-    MUTT=mutt
+    VIM=vim-nox
+fi
+
+if apt-cache show pspg >/dev/null 2>&1; then
+    PSPG=pspg
+else
+    PSPG=
 fi
 
 PACKAGES="\
+    ssh-import-id \
     atool \
     build-essential \
     curl \
-    ${MUTT} \
+    mutt \
+    elinks \
     ${VIM} \
     vim-addon-manager \
     vim-scripts \
@@ -37,6 +47,9 @@ PACKAGES="\
     ranger \
     ipython \
     ipython3 \
+    ${PSPG} \
+    postgresql-client \
+    pastebinit \
     python-dev \
     python-pip \
     python-virtualenv \
@@ -51,7 +64,8 @@ PACKAGES="\
     libtiff5-dev \
     libfreetype6-dev \
     liblcms2-dev \
-    sc"
+    sc \
+    zsync"
 
 sudo apt install -y $PACKAGES
 
@@ -66,7 +80,7 @@ fi
 
 # Install oh-my-zsh
 if [ ! -d .oh-my-zsh ]; then
-    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash
+    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sed -e 's/^ *chsh/#chsh/' | bash
 fi
 
 # Install dein
@@ -80,7 +94,8 @@ fi
 ln -sf $HOME/dotfiles/agnoster-waveform.zsh-theme $HOME/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
 ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
-# Set up vim with all your favourite plugins and bits
+# Set up vim with all your favourite plugins and bits; remember to call
+# dein#update() in vim after this
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
 vim-addons install align supertab
 
@@ -96,7 +111,11 @@ ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
 
 # Set up ranger
 mkdir -p $HOME/.config/ranger
-cp /usr/share/doc/ranger/config/scope.sh $HOME/.config/ranger/
+if [ -f /usr/share/doc/ranger/config/scope.sh ]; then
+    cp /usr/share/doc/ranger/config/scope.sh $HOME/.config/ranger/
+elif [ -f /usr/share/doc/ranger/config/scope.sh.gz ]; then
+    gunzip -c /usr/share/doc/ranger/config/scope.sh.gz > $HOME/.config/ranger/scope.sh
+fi
 chmod +x $HOME/.config/ranger/scope.sh
 
 # Set up byobu with some tmux tweaks
@@ -117,6 +136,13 @@ ln -sf $HOME/dotfiles/gitignore $XDG_CONFIG_HOME/git/ignore
 # Customize psql
 ln -sf $HOME/dotfiles/psqlrc $HOME/.psqlrc
 
+# Customize pastebinit
+ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
+
 # Stuff for Debian packaging
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
 ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
+ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf
+
+# Import the usual SSH keys
+ssh-import-id lp:waveform

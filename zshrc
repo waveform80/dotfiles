@@ -53,7 +53,7 @@ plugins=(git virtualenvwrapper python ubuntu safe-paste zsh-navigation-tools)
 
 # User configuration
 export DEFAULT_USER=dave
-export PATH=$PATH:$HOME/.local/bin
+export PATH=$PATH:$HOME/.local/bin:/snap/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup

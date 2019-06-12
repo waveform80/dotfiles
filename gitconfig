@@ -12,3 +12,7 @@
 [core]
 	excludesfile = /home/dave/dotfiles/gitignore
 	attributesfile = /home/dave/dotfiles/gitattributes
+[ubuntu]
+	lpuser = waveform
+[gitubuntu]
+	lpuser = waveform

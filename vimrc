@@ -29,6 +29,7 @@ set autoindent          " use auto-indent
 set ruler               " display a ruler
 set rnu                 " display relative line numbers
 set nowrap              " do not wrap long lines in display
+set nojoinspaces        " do not use double-spaces after .!? when joining
 set textwidth=0         " turn off wordwrap while editing
 set showcmd             " show partial commands in the status line
 set showmatch           " highlight matching parens
@@ -55,6 +56,10 @@ let mapleader=","       " leader key is a comma
 " Permit a huge viminfo and command history
 set viminfo='1000,f1,<100,h
 set history=500
+
+" Pretty print options
+set printfont=courier:h9
+set printoptions=paper:a4,formfeed:y,number:y,left:36pt,right:36pt,top:36pt,bottom:36pt
 
 " Use the tab completion menu and ignore certain files
 if has("wildmenu")
@@ -270,7 +275,7 @@ inoremap <Leader>2r √
 inoremap <Leader>3r ∛
 inoremap <Leader>4r ∜
 inoremap <Leader>' ʹ
-inoremap <leader>" ʺ
+inoremap <leader>'' ʺ
 inoremap <Leader>~ ≈
 inoremap <Leader>**0 ⁰
 inoremap <Leader>**1 ¹
@@ -294,7 +299,6 @@ inoremap <Leader>oC ℃
 inoremap <Leader>oF ℉
 inoremap <Leader>m µ
 inoremap <Leader>imag ℂ
-inoremap <Leader>comp ℂ
 inoremap <Leader>real ℝ
 inoremap <Leader>int ℤ
 inoremap <Leader>nat ℕ
@@ -320,3 +324,4 @@ inoremap <Leader>BS ⌫
 inoremap <Leader>SHIFT ⇧
 inoremap <Leader>CAPS ⇬
 inoremap <Leader>NUM ⇭
+inoremap <Leader>SP  

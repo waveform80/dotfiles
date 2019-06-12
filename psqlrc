@@ -1,6 +1,9 @@
 \set AUTOCOMMIT off
 \set ON_ERROR_ROLLBACK interactive
 \set COMP_KEYWORD_CASE upper
+\set poff '\\pset pager off'
+\set less '\\pset pager on\n\\setenv PAGER less'
+\set pspg '\\pset pager on\n\\setenv PAGER \'pspg -bX\''
 
 \pset pager off
 \pset null '-'
