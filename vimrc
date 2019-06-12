@@ -298,6 +298,7 @@ inoremap <Leader>comp ℂ
 inoremap <Leader>real ℝ
 inoremap <Leader>int ℤ
 inoremap <Leader>nat ℕ
+inoremap <Leader>inf ∞
 inoremap <Leader>(c) ©
 inoremap <Leader>(r) ®
 inoremap <Leader>tm ™
@@ -315,3 +316,7 @@ inoremap <Leader>HT ⇥
 inoremap <Leader>CR ↵
 inoremap <Leader>LF ↴
 inoremap <Leader>FF ↡
+inoremap <Leader>BS ⌫
+inoremap <Leader>SHIFT ⇧
+inoremap <Leader>CAPS ⇬
+inoremap <Leader>NUM ⇭

@@ -107,3 +107,4 @@ alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 
 # Load the landscape dev-env
 [ -f ~/.landscape-env ] && . ~/.landscape-env || true
+[ -f ~/.landscape-api ] && . ~/.landscape-api || true
