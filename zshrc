@@ -49,7 +49,7 @@ CASE_SENSITIVE="true"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git virtualenvwrapper python ubuntu safe-paste zsh-navigation-tools)
+plugins=(git virtualenvwrapper dotenv python zsh-navigation-tools)
 
 # User configuration
 export DEFAULT_USER=dave
@@ -69,9 +69,6 @@ source $ZSH/oh-my-zsh.sh
 
 # GPG key
 export GPGKEY=A057F8D5
-
-# AWS keys
-[ -f $HOME/Dropkeys/keys ] && source $HOME/Dropbox/keys/aws.sh
 
 # Use uneven column widths when listing completions to reduce the number of
 # rows printed
@@ -104,7 +101,3 @@ setopt APPEND_CREATE >&/dev/null
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
-
-# Load the landscape dev-env
-[ -f ~/.landscape-env ] && . ~/.landscape-env || true
-[ -f ~/.landscape-api ] && . ~/.landscape-api || true
