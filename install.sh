@@ -42,6 +42,7 @@ PACKAGES="\
     vim-scripts \
     git \
     git-core \
+    tig \
     zsh \
     byobu \
     ranger \
