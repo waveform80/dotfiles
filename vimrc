@@ -252,8 +252,8 @@ inoremap <Leader>sup ⊃
 inoremap <Leader>supe ⊇
 inoremap <Leader>& ⋂
 inoremap <Leader>\| ⋃
-inoremap <Leader>and ⋀
-inoremap <Leader>or ⋁
+inoremap <Leader>&& ⋀
+inoremap <Leader>\|\| ⋁
 inoremap <Leader><= ≤
 inoremap <Leader>>= ≥
 inoremap <Leader>{} ∅
@@ -274,9 +274,9 @@ inoremap <Leader>7/8 ⅞
 inoremap <Leader>2r √
 inoremap <Leader>3r ∛
 inoremap <Leader>4r ∜
-inoremap <Leader>' ʹ
-inoremap <leader>'' ʺ
-inoremap <Leader>~ ≈
+inoremap <Leader>p ʹ
+inoremap <leader>pp ʺ
+inoremap <Leader>~= ≈
 inoremap <Leader>**0 ⁰
 inoremap <Leader>**1 ¹
 inoremap <Leader>**2 ²
