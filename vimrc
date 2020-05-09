@@ -326,3 +326,5 @@ inoremap <Leader>SHIFT ⇧
 inoremap <Leader>CAPS ⇬
 inoremap <Leader>NUM ⇭
 inoremap <Leader>SP  
+inoremap <Leader>tick ✓
+inoremap <Leader>cross ✗
