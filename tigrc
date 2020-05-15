@@ -204,10 +204,8 @@ bind generic	g	view-grep
 # View manipulation
 bind generic	<Enter>	enter			# Enter and open selected entry
 bind generic	<Lt>	back			# Go back to the previous view state
-bind generic	<Down>	next			# Move to next
 bind generic	<C-N>	next
 bind generic	J	next
-bind generic	<Up>	previous		# Move to previous
 bind generic	<C-P>	previous
 bind generic	K	previous
 bind generic	,	parent			# Move to parent
@@ -240,6 +238,8 @@ bind main	F	:toggle commit-title-refs  # Toggle reference display (tags/branches
 # Cursor navigation
 bind generic	j	move-down
 bind generic	k	move-up
+bind generic	<Up>	move-up
+bind generic	<Down>	move-down
 bind generic	<C-D>	move-half-page-down
 bind generic	<C-U>	move-half-page-up
 bind generic	<PgDown> move-page-down
@@ -248,6 +248,8 @@ bind generic	<PgUp>	move-page-up
 bind generic	-	move-page-up
 bind generic	<Home>	move-first-line
 bind generic	<End>	move-last-line
+bind generic	g	move-first-line
+bind generic	G	move-last-line
 
 # Scrolling
 bind generic	|	scroll-first-col
@@ -259,6 +261,8 @@ bind generic	<Del>	scroll-line-down
 bind generic	<C-E>	scroll-line-down
 bind generic	<SBack>	scroll-page-up
 bind generic	<SFwd>	scroll-page-down
+bind generic	<C-B>	scroll-page-up
+bind generic	<C-F>	scroll-page-down
 
 # Searching
 bind generic	/	search
