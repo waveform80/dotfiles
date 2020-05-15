@@ -123,6 +123,9 @@ ln -sf $HOME/dotfiles/psqlrc $HOME/.psqlrc
 # Customize pastebinit
 ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
 
+# Customize tig
+ln -sf $HOME/dotfiles/tigrc $HOME/.tigrc
+
 # Stuff for Debian packaging
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
 ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
