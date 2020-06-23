@@ -107,7 +107,6 @@ ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
 # Set up mutt
 mkdir -p $HOME/.mutt
 mkdir -p $HOME/.mutt/cache
-ln -sf $HOME/dotfiles/muttsidebar $HOME/.mutt/sidebar.muttrc
 ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
 
 # Set up ranger
