@@ -8,15 +8,6 @@ sudo apt update
 if which X >/dev/null 2>&1; then
     if [ $(lsb_release -is) = "Ubuntu" ]; then
         VIM=vim-gtk3
-        if command -v gsettings >/dev/null; then
-            # Disable annoying bits of unity
-            gsettings set com.canonical.Unity.Lenses remote-content-search "none"
-            gsettings set com.canonical.Unity.ApplicationsLens display-available-apps false
-
-            # Style it nicely
-            gsettings set org.gnome.desktop.interface gtk-theme 'Radiance'
-            gsettings set org.gnome.desktop.wm.preferences theme 'Radiance'
-        fi
     else
         VIM=vim-gtk
     fi
@@ -46,25 +37,17 @@ PACKAGES="\
     zsh \
     byobu \
     ranger \
-    ipython \
     ipython3 \
     ${PSPG} \
     postgresql-client \
     pastebinit \
-    python-dev \
-    python-pip \
-    python-virtualenv \
-    python-pygments \
     python3-dev \
     python3-pip \
     python3-virtualenv \
+    python3-pygments \
     virtualenvwrapper \
     exuberant-ctags \
     lsb-release \
-    libjpeg-dev \
-    libtiff5-dev \
-    libfreetype6-dev \
-    liblcms2-dev \
     sc \
     zsync"
 
@@ -138,6 +121,9 @@ ln -sf $HOME/dotfiles/psqlrc $HOME/.psqlrc
 
 # Customize pastebinit
 ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
+
+# Customize tig
+ln -sf $HOME/dotfiles/tigrc $HOME/.tigrc
 
 # Stuff for Debian packaging
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
