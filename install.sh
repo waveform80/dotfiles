@@ -49,6 +49,7 @@ PACKAGES="\
     exuberant-ctags \
     lsb-release \
     sc \
+    jq \
     zsync"
 
 sudo apt install -y $PACKAGES

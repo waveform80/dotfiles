@@ -100,4 +100,5 @@ setopt APPEND_CREATE >&/dev/null
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
