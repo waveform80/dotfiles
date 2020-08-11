@@ -63,6 +63,7 @@ export LESS=" -R"
 export LESSOPEN="| /usr/bin/pygmentize -f terminal256 -O style=perldoc %s"
 
 source $ZSH/oh-my-zsh.sh
+source /etc/zsh_command_not_found
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
@@ -102,3 +103,6 @@ setopt APPEND_CREATE >&/dev/null
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
+alias sbs="sbuild --no-arch-any --no-arch-all --source"
+alias sbsf="sbuild --no-arch-any --no-arch-all --source --force-orig-source"
+alias sbb="sbuild --arch-any --arch-all --no-source"
