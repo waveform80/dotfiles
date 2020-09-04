@@ -63,7 +63,7 @@ export LESS=" -R"
 export LESSOPEN="| /usr/bin/pygmentize -f terminal256 -O style=perldoc %s"
 
 source $ZSH/oh-my-zsh.sh
-source /etc/zsh_command_not_found
+[ -f /etc/zsh_comment_not_found ] && source /etc/zsh_command_not_found
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
