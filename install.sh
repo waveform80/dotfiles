@@ -35,6 +35,9 @@ PACKAGES="\
     git-core \
     tig \
     zsh \
+    zplug \
+    direnv \
+    fzy \
     byobu \
     ranger \
     ipython3 \
