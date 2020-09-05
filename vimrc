@@ -1,30 +1,5 @@
-"dein Scripts-----------------------------
-set nocompatible               " Be iMproved
-set runtimepath+=~/.vim/bundle/dein.vim/repos/github.com/Shougo/dein.vim
-
-call dein#begin($HOME . '/.vim/bundle/dein.vim')
-call dein#add('Shougo/dein.vim')
-
-" Add or remove your plugins here:
-call dein#add('Shougo/vimproc.vim')
-call dein#add('Shougo/unite.vim')
-call dein#add('tpope/vim-fugitive')
-call dein#add('tpope/vim-rhubarb')
-call dein#add('tpope/vim-unimpaired')
-call dein#add('davidhalter/jedi-vim')
-call dein#add('Vimjas/vim-python-pep8-indent')
-call dein#add('vim-syntastic/syntastic')
-call dein#add('vim-airline/vim-airline')
-call dein#add('vim-airline/vim-airline-themes')
-call dein#add('dhruvasagar/vim-table-mode')
-call dein#add('terryma/vim-multiple-cursors')
-call dein#add('ConradIrwin/vim-bracketed-paste')
-
-call dein#end()
-"End dein Scripts-------------------------
-
-
 " General options
+set nocompatible               " Be iMproved
 set backspace=indent,eol,start " make backspace delete lots of things
 set autoindent          " use auto-indent
 set ruler               " display a ruler
@@ -158,7 +133,6 @@ if has("autocmd") && has("eval")
 	autocmd FileType xhtml set et sw=2 sts=2
 	autocmd FileType html set et sw=2 sts=2
 	autocmd FileType xml set et sw=2 sts=2
-	autocmd FileType python set et sw=4 sts=4 foldlevel=3
 	autocmd FileType make set noet sw=8 ts=8
 	autocmd FileType rst set tw=79
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
@@ -171,11 +145,6 @@ endif
 " Set up table-mode
 let g:table_mode_corner_corner = "+"
 let g:table_mode_header_fillchar = "="
-
-" Unite configuration
-call unite#custom#profile('files', 'context', {
-	\'split': 0, 'start_insert': 1,
-	\'prompt_visible': 1, 'prompt': '>'})
 
 " Configure syntastic
 let g:syntastic_mode_map = {
@@ -210,9 +179,9 @@ nnoremap q: :q
 " Some normal-mode mappings for various plugins
 nnoremap <Leader>pl :SyntasticCheck<CR>
 nnoremap <Leader>pr :SyntasticReset<CR>:lclose<CR>
-nnoremap <Leader>ff :<C-u>Unite -buffer-name=files file_rec/async<CR>
-nnoremap <Leader>fg :<C-u>Unite -buffer-name=files file_rec/git:--cached:--others:--exclude-standard<CR>
-nnoremap <Leader>fb :<C-u>Unite -buffer-name=files buffer<CR>
+nnoremap <Leader>ff :PickerEdit<CR>
+nnoremap <Leader>fg :PickerEdit<CR>
+nnoremap <Leader>fb :PickerBuffer<CR>
 
 nnoremap ]e :lnext<CR>
 nnoremap [e :lprevious<CR>

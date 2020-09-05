@@ -29,8 +29,13 @@ PACKAGES="\
     mutt \
     elinks \
     ${VIM} \
+    fonts-powerline \
     vim-addon-manager \
     vim-scripts \
+    vim-airline \
+    vim-airline-themes \
+    vim-python-jedi \
+    vim-syntastic \
     git \
     git-core \
     tig \
@@ -59,33 +64,21 @@ sudo apt install -y $PACKAGES
 
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
-# Install powerline fonts
-cd
-if [ ! -d fonts ]; then
-    git clone https://github.com/powerline/fonts.git
-    fonts/install.sh
-fi
-
-# Install oh-my-zsh
-if [ ! -d .oh-my-zsh ]; then
-    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sed -e 's/^ *chsh/#chsh/' | bash
-fi
-
-# Install dein
-if [ ! -d .vim/bundle/dein.vim ]; then
-    curl -L https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.sh > installer.sh
-    bash installer.sh $HOME/.vim/bundle/dein.vim
-    rm installer.sh
-fi
-
 # Set up zsh
-ln -sf $HOME/dotfiles/agnoster-waveform.zsh-theme $HOME/.oh-my-zsh/themes/agnoster-waveform.zsh-theme
 ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
-# Set up vim with all your favourite plugins and bits; remember to call
-# dein#update() in vim after this
+# Set up vim with all your favourite plugins and bits
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
-vim-addons install align supertab
+vim-addons install align supertab python-jedi
+VIM_PACK=$HOME/.vim/pack/plugins/start
+mkdir -p $VIM_PACK
+git clone https://tpope.io/vim/unimpaired.git $VIM_PACK/unimpaired
+vim -u NONE -c "helptags $VIM_PACK/unimpaired/doc" -c q
+git clone https://github.com/srstevenson/vim-picker $VIM_PACK/vim-picker
+git clone https://github.com/dhruvasagar/vim-table-mode $VIM_PACK/vim-table-mode
+git clone https://github.com/ConradIrwin/vim-bracketed-paste $VIM_PACK/vim-bracketed-paste
+#git clone https://github.com/Vimjas/vim-python-pep8-indent $VIM_PACK/vim-python-pep8-indent
+#git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
 
 # Set up elinks
 mkdir -p $HOME/.elinks
