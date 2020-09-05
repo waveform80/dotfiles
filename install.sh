@@ -30,6 +30,7 @@ PACKAGES="\
     elinks \
     ${VIM} \
     fonts-powerline \
+    fonts-inconsolata \
     vim-addon-manager \
     vim-scripts \
     vim-airline \
