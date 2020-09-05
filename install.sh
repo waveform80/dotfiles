@@ -69,7 +69,7 @@ ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
 
 # Set up vim with all your favourite plugins and bits
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
-vim-addons install align supertab python-jedi
+vim-addons install align supertab python-jedi python-indent
 VIM_PACK=$HOME/.vim/pack/plugins/start
 mkdir -p $VIM_PACK
 git clone https://tpope.io/vim/unimpaired.git $VIM_PACK/unimpaired

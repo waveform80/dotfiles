@@ -9,8 +9,6 @@ export DEBEMAIL="dave@waveform.org.uk"
 export LESS=" -R"
 export LESSOPEN="| /usr/bin/pygmentize -f terminal256 -O style=perldoc %s"
 
-#[ -f /etc/zsh_comment_not_found ] && source /etc/zsh_command_not_found
-
 # GPG key
 export GPGKEY=A057F8D5
 
@@ -18,29 +16,35 @@ export GPGKEY=A057F8D5
 # rows printed
 setopt LIST_PACKED
 
-# Disable automatic changing of dir without "cd"
-unsetopt AUTO_CD
-
 # Set up a directory stack with "cd"
-export DIRSTACKSIZE=10
+DIRSTACKSIZE=10
 setopt AUTO_PUSHD
 setopt PUSHD_MINUS
 
 # Execute history expansions on request instead of editing them first
-unsetopt HIST_VERIFY
-
-# Enable sharing history like KSH, disable mutually excl. options
-#unsetopt INC_APPEND_HISTORY
-#setopt SHARE_HISTORY
+HISTSIZE=1500
+SAVEHIST=1000
+HISTFILE=~/.zsh_history
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_SPACE
+setopt EXTENDED_HISTORY
 
 # Act like sh/ksh with >> against non-existing file
 setopt APPEND_CREATE >&/dev/null
 
+alias ls="ls --color=auto"
+alias dir="dir --color=auto"
+alias vdir="vdir --color=auto"
+alias grep="grep --color=auto"
+alias egrep="egrep --color=auto"
+alias fgrep="fgrep --color=auto"
 alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 alias sbs="sbuild --no-arch-any --no-arch-all --source"
 alias sbsf="sbuild --no-arch-any --no-arch-all --source --force-orig-source"
 alias sbb="sbuild --arch-any --arch-all --no-source"
+
+[ -f /etc/zsh_comment_not_found ] && source /etc/zsh_command_not_found
 
 source /usr/share/zplug/init.zsh
 zplug "agnoster/agnoster-zsh-theme", as:theme, use:"*.zsh-theme"
