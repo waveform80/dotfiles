@@ -77,3 +77,6 @@ AGNOSTER_PROMPT_SEGMENTS[3]=my_prompt_virtualenv
 AGNOSTER_PROMPT_SEGMENTS[4]=my_prompt_dir
 
 eval "$(direnv hook zsh)"
+if [ -z "$SSH_AUTH_SOCK" -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
+    eval $(ssh-agent -s)
+fi
