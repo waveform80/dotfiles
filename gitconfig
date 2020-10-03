@@ -3,6 +3,8 @@
 	name = Dave Jones
 [push]
 	default = current
+[pull]
+	ff = only
 [merge]
 	tool = meld
 [diff]
