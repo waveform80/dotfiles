@@ -64,11 +64,11 @@ bindkey '^R' fzy-history-widget
 bindkey '^P' fzy-proc-widget
 
 my_prompt_virtualenv() {
-  if [[ -n $VIRTUAL_ENV ]]; then
-    color=blue
-    prompt_segment $color $PRIMARY_FG
-    print -Pn " $(basename $VIRTUAL_ENV) "
-  fi
+    if [[ -n $VIRTUAL_ENV ]]; then
+        color=blue
+        prompt_segment $color $PRIMARY_FG
+        print -Pn " $(basename $VIRTUAL_ENV) "
+    fi
 }
 my_prompt_dir() {
     prompt_segment cyan $PRIMARY_FG ' %~ '
