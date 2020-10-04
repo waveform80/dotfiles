@@ -44,6 +44,8 @@ PACKAGES="\
     zplug \
     direnv \
     fzy \
+    cmus \
+    aewan \
     byobu \
     ranger \
     ipython3 \
@@ -57,6 +59,7 @@ PACKAGES="\
     virtualenvwrapper \
     exuberant-ctags \
     lsb-release \
+    shed \
     sc \
     jq \
     zsync"
