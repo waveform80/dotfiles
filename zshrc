@@ -44,7 +44,7 @@ alias sbs="sbuild --no-arch-any --no-arch-all --source"
 alias sbsf="sbuild --no-arch-any --no-arch-all --source --force-orig-source"
 alias sbb="sbuild --arch-any --arch-all --no-source"
 
-[ -f /etc/zsh_comment_not_found ] && source /etc/zsh_command_not_found
+[ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
 
 source /usr/share/zplug/init.zsh
 zplug "agnoster/agnoster-zsh-theme", as:theme, use:"*.zsh-theme"
