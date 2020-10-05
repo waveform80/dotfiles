@@ -13,7 +13,6 @@
 keymap	C-@	NULL
 keymap	C-_	NULL
 keymap	C-a	NULL
-keymap	C-b	NULL
 keymap	C-m	NULL
 keymap	C-n	NULL
 keymap	C-p	NULL
@@ -79,6 +78,7 @@ keymap	M-v	NULL
 keymap	M-w	NULL
 keymap	M-[28~	NULL
 
+keymap	C-b	PREV_PAGE
 keymap	C-e	UP
 keymap	C-f	NEXT_PAGE
 keymap	C-g	LINE_INFO

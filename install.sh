@@ -27,6 +27,7 @@ PACKAGES="\
     build-essential \
     curl \
     mutt \
+    w3m \
     elinks \
     ${VIM} \
     fonts-powerline \

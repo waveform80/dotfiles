@@ -63,6 +63,13 @@ bindkey '^F' fzy-file-widget
 bindkey '^R' fzy-history-widget
 bindkey '^P' fzy-proc-widget
 
+function w3g() { w3m google.com/search\?q="$1"; }
+function w3w() { w3m en.wikipedia.org/w/index.php\?search="$1"; }
+function w3up() { w3m packages.ubuntu.com/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
+function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
+function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
+function bug() { w3m launchpad.net/bugs/$1; }
+
 my_prompt_virtualenv() {
     if [[ -n $VIRTUAL_ENV ]]; then
         color=blue
