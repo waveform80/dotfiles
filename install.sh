@@ -84,15 +84,6 @@ git clone https://github.com/ConradIrwin/vim-bracketed-paste $VIM_PACK/vim-brack
 #git clone https://github.com/Vimjas/vim-python-pep8-indent $VIM_PACK/vim-python-pep8-indent
 #git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
 
-# Set up elinks
-mkdir -p $HOME/.elinks
-ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
-
-# Set up mutt
-mkdir -p $HOME/.mutt
-mkdir -p $HOME/.mutt/cache
-ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
-
 # Set up ranger
 mkdir -p $HOME/.config/ranger
 if [ -f /usr/share/doc/ranger/config/scope.sh ]; then
@@ -107,26 +98,24 @@ BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/byobu}
 mkdir -p $BYOBU_CONFIG_DIR
 ln -sf $HOME/dotfiles/tmux.conf $BYOBU_CONFIG_DIR/.tmux.conf
 
-# Customize Python
+# Link all the other config files
+mkdir -p $HOME/.mutt
+mkdir -p $HOME/.mutt/cache
+ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
+mkdir -p $HOME/.elinks
+ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
+mkdir -p $HOME/.w3m
+ln -sf $HOME/dotfiles/w3mrc $HOME/.w3m/config
+ln -sf $HOME/dotfiles/w3mkeys $HOME/.w3m/keymap
 ln -sf $HOME/dotfiles/pystartup $HOME/.pystartup
 ln -sf $HOME/dotfiles/pylintrc $HOME/.pylintrc
 ln -sf $HOME/dotfiles/flake8 $HOME/.flake8
-
-# Customize git
 mkdir -p $XDG_CONFIG_HOME/git
 ln -sf $HOME/dotfiles/gitconfig $XDG_CONFIG_HOME/git/config
 ln -sf $HOME/dotfiles/gitignore $XDG_CONFIG_HOME/git/ignore
-
-# Customize psql
 ln -sf $HOME/dotfiles/psqlrc $HOME/.psqlrc
-
-# Customize pastebinit
 ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
-
-# Customize tig
 ln -sf $HOME/dotfiles/tigrc $HOME/.tigrc
-
-# Stuff for Debian packaging
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
 ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
 ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf

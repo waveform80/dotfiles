@@ -1,0 +1,153 @@
+# A sample of ~/.w3m/keymap (default)
+#
+# Ctrl  : C-, ^
+# Escape: ESC-, M-, ^[
+# Space : SPC, ' '
+# Tab   : TAB, ^i, ^I
+# Delete: DEL, ^?
+# Up    : UP, ^[[A
+# Down  : DOWN, ^[[B
+# Right : RIGHT, ^[[C
+# Left  : LEFT, ^[[D
+
+keymap	C-@	NULL
+keymap	C-_	NULL
+keymap	C-a	NULL
+keymap	C-b	NULL
+keymap	C-m	NULL
+keymap	C-n	NULL
+keymap	C-p	NULL
+keymap	C-q	NULL
+keymap	C-s	NULL
+keymap	C-v	NULL
+keymap	C-z	NULL
+keymap	SPC	NULL
+keymap	\"	NULL
+keymap	#	NULL
+keymap	(	NULL
+keymap	)	NULL
+keymap	+	NULL
+keymap	,	NULL
+keymap	-	NULL
+keymap	.	NULL
+keymap	:	NULL
+keymap	";"	NULL
+keymap	<	NULL
+keymap	=	NULL
+keymap	>	NULL
+keymap	@	NULL
+keymap	E	NULL
+keymap	F	NULL
+keymap	I	NULL
+keymap	J	NULL
+keymap	K	NULL
+keymap	M	NULL
+keymap	Q	NULL
+keymap	S	NULL
+keymap	U	NULL
+keymap	V	NULL
+keymap	Z	NULL
+keymap	[	NULL
+keymap	]	NULL
+keymap	a	NULL
+keymap	i	NULL
+keymap	s	NULL
+keymap	v	NULL
+keymap	M-TAB	NULL
+keymap	M-C-j	NULL
+keymap	M-C-m	NULL
+keymap	M-:	NULL
+keymap	M-<	NULL
+keymap	M->	NULL
+keymap	M-I	NULL
+keymap	M-M	NULL
+keymap	M-W	NULL
+keymap	M-a	NULL
+keymap	M-b	NULL
+keymap	M-e	NULL
+keymap	M-g	NULL
+keymap	M-k	NULL
+keymap	M-l	NULL
+keymap	M-m	NULL
+keymap	M-n	NULL
+keymap	M-o	NULL
+keymap	M-p	NULL
+keymap	M-s	NULL
+keymap	M-t	NULL
+keymap	M-u	NULL
+keymap	M-v	NULL
+keymap	M-w	NULL
+keymap	M-[28~	NULL
+
+keymap	C-e	UP
+keymap	C-f	NEXT_PAGE
+keymap	C-g	LINE_INFO
+keymap	C-h	HISTORY
+keymap	TAB	NEXT_LINK
+keymap	C-k	COOKIE
+keymap	C-l	REDRAW
+keymap	C-j	GOTO_LINK
+keymap	C-o	UNDO
+keymap	C-r	RELOAD
+keymap	C-t	TAB_LINK
+keymap	C-]	TAB_LINK
+keymap	C-u	VIEW
+keymap	C-w	CLOSE_TAB
+keymap	C-y	DOWN
+
+keymap	0	LINE_BEGIN
+keymap	$	LINE_END
+keymap	/	ISEARCH
+keymap	?	ISEARCH_BACK
+keymap	B	SELECT_MENU
+keymap	D	DOWNLOAD_LIST
+keymap	G	END
+keymap	H	HELP
+keymap	L	LIST
+keymap	N	SEARCH_PREV
+keymap	R	RELOAD
+keymap	T	TAB_MENU
+keymap	W	PREV_WORD
+keymap	\^	LINE_BEGIN
+keymap	b	BACK
+keymap	c	PEEK
+keymap	d	SAVE_LINK
+keymap	gg	BEGIN
+keymap	h	MOVE_LEFT
+keymap	j	MOVE_DOWN
+keymap	k	MOVE_UP
+keymap	l	MOVE_RIGHT
+keymap	m	MARK_URL
+keymap	n	SEARCH_NEXT
+keymap	o	OPTIONS
+keymap	q	QUIT
+keymap	r	RELOAD
+keymap	t	TAB_LINK
+keymap	u	PEEK_LINK
+keymap	w	NEXT_WORD
+keymap	zz	CENTER_V
+keymap	<	PREV_TAB
+keymap	|	PIPE_BUF
+keymap	>	NEXT_TAB
+
+keymap	::	COMMAND
+keymap	:w	SAVE
+keymap	:e	LOAD
+keymap	:o	GOTO
+keymap	:!	SHELL
+keymap	:d	DOWNLOAD_LIST
+
+keymap	UP	MOVE_UP
+keymap	DOWN	MOVE_DOWN
+keymap	RIGHT	MOVE_RIGHT
+keymap	LEFT	MOVE_LEFT
+
+keymap	M-[E	MENU
+keymap	M-[L	MENU
+keymap	M-[Z	PREV_LINK
+
+keymap	M-[1~	LINE_BEGIN
+keymap	M-[2~	MENU
+keymap	M-[4~	LINE_END
+keymap	M-[5~	PREV_PAGE
+keymap	M-[6~	NEXT_PAGE
