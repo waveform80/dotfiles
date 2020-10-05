@@ -79,19 +79,19 @@ AGNOSTER_PROMPT_SEGMENTS[4]=my_prompt_dir
 eval "$(direnv hook zsh)"
 if [ -z "$SSH_AUTH_SOCK" -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
     eval $(ssh-agent -s)
-fi
-
-if ! ssh-add -l >/dev/null; then
-    if setopt | grep -q interactive; then
-        echo -n "Add SSH keys? [y/N] "
-        if read -q; then
-            echo
-            if [ -f $HOME/.ssh/id_rsa ]; then
-                ssh-add
-            fi
-            if [ -f $HOME/.ssh/id_keepass ] && [ -d $HOME/keys ]; then
-                $HOME/keys/db-add-keys -k $HOME/.ssh/id_keepass -e "Local SSH key" $HOME/keys/DavesDb.kdbx
+    if ! ssh-add -l >/dev/null; then
+        if setopt | grep -q interactive; then
+            echo -n "Add SSH keys? [y/N] "
+            if read -q; then
+                echo
+                if [ -f $HOME/.ssh/id_rsa ]; then
+                    ssh-add
+                fi
+                if [ -f $HOME/.ssh/id_keepass ] && [ -d $HOME/keys ]; then
+                    $HOME/keys/db-add-keys -k $HOME/.ssh/id_keepass -e "Local SSH key" $HOME/keys/DavesDb.kdbx
+                fi
             fi
         fi
     fi
 fi
+
