@@ -94,11 +94,6 @@ elif [ -f /usr/share/doc/ranger/config/scope.sh.gz ]; then
 fi
 chmod +x $HOME/.config/ranger/scope.sh
 
-# Set up byobu with some tmux tweaks
-BYOBU_CONFIG_DIR=${BYOBU_CONFIG_DIR:-$XDG_CONFIG_HOME/byobu}
-mkdir -p $BYOBU_CONFIG_DIR
-ln -sf $HOME/dotfiles/tmux.conf $BYOBU_CONFIG_DIR/.tmux.conf
-
 # Link all the other config files
 mkdir -p $HOME/.mutt
 mkdir -p $HOME/.mutt/cache
@@ -122,6 +117,7 @@ ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
 ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf
 ln -sf $HOME/dotfiles/sbuildrc $HOME/.sbuildrc
 ln -sf $HOME/dotfiles/mk-sbuildrc $HOME/.mk-sbuild.rc
+ln -sf $HOME/dotfiles/tmux.conf $HOME/.tmux.conf
 
 # Import the usual SSH keys
 ssh-import-id lp:waveform
