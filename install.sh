@@ -120,6 +120,8 @@ ln -sf $HOME/dotfiles/tigrc $HOME/.tigrc
 ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
 ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
 ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf
+ln -sf $HOME/dotfiles/sbuildrc $HOME/.sbuildrc
+ln -sf $HOME/dotfiles/mk-sbuildrc $HOME/.mk-sbuild.rc
 
 # Import the usual SSH keys
 ssh-import-id lp:waveform

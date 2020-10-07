@@ -1,0 +1,29 @@
+# Name to use as override in .changes files for the Maintainer: field
+# (mandatory, no default!).
+$maintainer_name='Dave Jones <dave.jones@canonical.com>';
+$key_id='dave.jones@canonical.com';
+
+# Default distribution
+$distribution = 'groovy';
+$build_arch_all = 1;
+$build_arch_any = 1;
+$build_source = 0;
+$run_autopkgtest = 0;
+$log_dir = $ENV{HOME}."/ubuntu/logs";
+
+# schroot setup
+$chroot_mode = 'schroot';
+$purge_build_directory = 'successful';
+$purge_session = 'successful';
+$purge_build_deps = 'successful';
+
+## lxd setup
+#$chroot_mode = 'autopkgtest';
+#$autopkgtest_virt_server = 'autopkgtest-virt-lxd';
+#$autopkgtest_virt_server_options = ['autopkgtest/ubuntu/%SBUILD_DISTRIBUTION/%SBUILD_HOST_ARCH'];
+#$purge_build_deps = 'never';
+#$purge_build_directory = 'never';
+#$purge_session = 'always';
+
+# don't remove this, Perl needs it:
+1;
