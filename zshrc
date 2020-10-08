@@ -1,6 +1,7 @@
 # User configuration
 export DEFAULT_USER=dave
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
+[ -d $HOME/keys ] && export PATH=$PATH:$HOME/keys
 # export MANPATH="/usr/local/man:$MANPATH"
 export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
@@ -84,21 +85,13 @@ AGNOSTER_PROMPT_SEGMENTS[3]=my_prompt_virtualenv
 AGNOSTER_PROMPT_SEGMENTS[4]=my_prompt_dir
 
 eval "$(direnv hook zsh)"
-if [ -z "$SSH_AUTH_SOCK" -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
-    eval $(ssh-agent -s)
-    if ! ssh-add -l >/dev/null; then
-        if setopt | grep -q interactive; then
-            echo -n "Add SSH keys? [y/N] "
-            if read -q; then
-                echo
-                if [ -f $HOME/.ssh/id_rsa ]; then
-                    ssh-add
-                fi
-                if [ -f $HOME/.ssh/id_keepass ] && [ -d $HOME/keys ]; then
-                    $HOME/keys/db-add-keys -k $HOME/.ssh/id_keepass -e "Local SSH key" $HOME/keys/DavesDb.kdbx
-                fi
-            fi
-        fi
+
+ssh_agent=$HOME/.ssh-agent
+if [ -z $SSH_AUTH_SOCK -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
+    if [ -S $ssh_agent -a -O $ssh_agent -a -L $ssh_agent ]; then
+        export SSH_AUTH_SOCK=$ssh_agent
+    else
+        eval $(ssh-agent -s)
+        ln -sf $SSH_AUTH_SOCK $ssh_agent
     fi
 fi
-
