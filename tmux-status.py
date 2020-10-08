@@ -12,7 +12,7 @@ from getpass import getuser
 from functools import lru_cache
 
 
-def format_decimal_size(size, suffixes=('B', 'kB', 'MB', 'GB', 'TB', 'PB'),
+def format_decimal_size(size, suffixes=('', 'k', 'M', 'G', 'T', 'P'),
                         zero='0', template='{size:.0f}{suffix}'):
     try:
         index = min(len(suffixes) - 1, int(round(math.log(abs(size), 1000), 2)))
@@ -23,7 +23,7 @@ def format_decimal_size(size, suffixes=('B', 'kB', 'MB', 'GB', 'TB', 'PB'),
                                suffix=suffixes[index])
 
 
-def format_binary_size(size, suffixes=('B', 'kB', 'MB', 'GB', 'TB', 'PB'),
+def format_binary_size(size, suffixes=('', 'k', 'M', 'G', 'T', 'P'),
                        zero='0', template='{size:.0f}{suffix}'):
     try:
         index = min(len(suffixes) - 1, int(round(math.log(abs(size), 2) / 10, 2)))
@@ -70,7 +70,13 @@ class Stat:
     bg = 'black'
 
     def __str__(self):
-        return f'#[fg={self.fg},bg={self.bg}]{self.value or ""}#[default]'
+        try:
+            value = self._cached_value()
+        except StaleError:
+            value = self._raw_value()
+            with self._cache_file().open('wb') as f:
+                pickle.dump(value, f)
+        return self._format_value(value)
 
     def _cache_file(self):
         return cache_dir() / f'{self.name}.cache'
@@ -89,17 +95,10 @@ class Stat:
         raise NotImplementedError
 
     def _format_value(self, value):
-        raise NotImplementedError
-
-    @property
-    def value(self):
-        try:
-            value = self._cached_value()
-        except StaleError:
-            value = self._raw_value()
-            with self._cache_file().open('wb') as f:
-                pickle.dump(value, f)
-        return self._format_value(value)
+        if value:
+            return f'#[fg={self.bg}]#[fg={self.fg},bg={self.bg}] {value or ""} '
+        else:
+            return ''
 
 
 class UpdatesStat(Stat):
@@ -108,7 +107,7 @@ class UpdatesStat(Stat):
     bg = 'red'
 
     def _format_value(self, value):
-        return f'{value}!' if value else ''
+        return super()._format_value(f'#[bright]{value}#[nobright]!' if value else '')
 
     def _raw_value(self):
         cache_file = self._cache_file()
@@ -165,6 +164,8 @@ class UpdatesStat(Stat):
                 for source in source_files
             ):
                 raise StaleError()
+            if dt.datetime.now().timestamp() - cache_stat.st_mtime > self.timeout:
+                raise StaleError()
         with cache_file.open('rb') as f:
             return pickle.load(f)
 
@@ -176,7 +177,7 @@ class UptimeStat(Stat):
     bg = 'white'
 
     def _format_value(self, value):
-        return format_duration(value)
+        return super()._format_value(format_duration(value))
 
     def _raw_value(self):
         with open('/proc/uptime') as f:
@@ -191,7 +192,7 @@ class LoadStat(Stat):
     bg = 'brightyellow'
 
     def _format_value(self, value):
-        return f'{value:.2f}'
+        return super()._format_value(f'{value:.2f}')
 
     def _raw_value(self):
         return os.getloadavg()[0]
@@ -201,10 +202,10 @@ class CPUTempStat(Stat):
     name = 'cputemp'
     timeout = 3
     fg = 'black'
-    bg = 'red'
+    bg = 'brightred'
 
     def _format_value(self, value):
-        return f'{value:.0f}°C'
+        return super()._format_value(f'{value:.0f}°C')
 
     def _raw_value(self):
         with open('/sys/class/thermal/thermal_zone0/temp') as f:
@@ -219,7 +220,7 @@ class NetStat(Stat):
 
     def _format_value(self, value):
         up_count, up_diff, down_count, down_diff = value
-        return f'↑{format_binary_size(diff)}'
+        return super()._format_value(f'↑{format_binary_size(diff)}')
 
 
 class StorageStat(Stat):
@@ -230,7 +231,7 @@ class StorageStat(Stat):
 
     def _format_value(self, value):
         total, used = value
-        return f'{format_binary_size(total)}{used}%'
+        return super()._format_value(f'{format_binary_size(total)}#[bright]{used}%#[nobright]')
 
 
 class MemStat(StorageStat):
@@ -261,7 +262,7 @@ class MemStat(StorageStat):
 
 class SwapStat(StorageStat):
     name = 'swap'
-    bg = 'cyan'
+    bg = 'brightblue'
 
     def _raw_value(self):
         values = {}
@@ -303,4 +304,6 @@ if __name__ == '__main__':
         SwapStat(),
         DiskStat(),
     )
-    print(' '.join(str(stat) for stat in stats))
+    s = ''.join(str(stat) for stat in stats)
+    s += f'#[default,fg={stats[-1].bg},reverse]#[default]'
+    print(s)
