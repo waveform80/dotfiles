@@ -6,13 +6,15 @@ set -eu
 sudo apt update
 
 if which X >/dev/null 2>&1; then
-    if [ $(lsb_release -is) = "Ubuntu" ]; then
-        VIM=vim-gtk3
-    else
-        VIM=vim-gtk
-    fi
+    VIM=vim-gtk3
 else
     VIM=vim-nox
+fi
+
+if apt-cache show bat >/dev/null 2>&1; then
+    HIGHLIGHT=bat
+else
+    HIGHLIGHT=highlight
 fi
 
 if apt-cache show pspg >/dev/null 2>&1; then
@@ -25,6 +27,7 @@ PACKAGES="\
     ssh-import-id \
     atool \
     build-essential \
+    entr \
     curl \
     mutt \
     w3m \
@@ -49,6 +52,7 @@ PACKAGES="\
     aewan \
     byobu \
     ranger \
+    ${HIGHLIGHT} \
     ipython3 \
     ${PSPG} \
     postgresql-client \
@@ -79,20 +83,12 @@ VIM_PACK=$HOME/.vim/pack/plugins/start
 mkdir -p $VIM_PACK
 git clone https://tpope.io/vim/unimpaired.git $VIM_PACK/unimpaired
 vim -u NONE -c "helptags $VIM_PACK/unimpaired/doc" -c q
+git clone https://tpope.io/vim/fugitive.git $VIM_PACK/fugitive
 git clone https://github.com/srstevenson/vim-picker $VIM_PACK/vim-picker
 git clone https://github.com/dhruvasagar/vim-table-mode $VIM_PACK/vim-table-mode
 git clone https://github.com/ConradIrwin/vim-bracketed-paste $VIM_PACK/vim-bracketed-paste
 #git clone https://github.com/Vimjas/vim-python-pep8-indent $VIM_PACK/vim-python-pep8-indent
 #git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
-
-# Set up ranger
-mkdir -p $HOME/.config/ranger
-if [ -f /usr/share/doc/ranger/config/scope.sh ]; then
-    cp /usr/share/doc/ranger/config/scope.sh $HOME/.config/ranger/
-elif [ -f /usr/share/doc/ranger/config/scope.sh.gz ]; then
-    gunzip -c /usr/share/doc/ranger/config/scope.sh.gz > $HOME/.config/ranger/scope.sh
-fi
-chmod +x $HOME/.config/ranger/scope.sh
 
 # Link all the other config files
 mkdir -p $HOME/.mutt
@@ -118,6 +114,12 @@ ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf
 ln -sf $HOME/dotfiles/sbuildrc $HOME/.sbuildrc
 ln -sf $HOME/dotfiles/mk-sbuildrc $HOME/.mk-sbuild.rc
 ln -sf $HOME/dotfiles/tmux.conf $HOME/.tmux.conf
+mkdir -p $XDG_CONFIG_HOME/ranger
+ln -sf $HOME/dotfiles/ranger.conf $XDG_CONFIG_HOME/ranger/rc.conf
+if [ ${HIGHLIGHT} = "bat" ]; then
+    ranger --copy-config=scope
+    sed -i -e 's/\bbat\b/batcat/' $XDG_CONFIG_HOME/ranger/scope.sh
+fi
 
 # Import the usual SSH keys
 ssh-import-id lp:waveform
