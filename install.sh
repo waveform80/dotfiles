@@ -82,12 +82,12 @@ ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
 vim-addons install align supertab python-jedi python-indent
 VIM_PACK=$HOME/.vim/pack/plugins/start
 mkdir -p $VIM_PACK
-git clone https://tpope.io/vim/unimpaired.git $VIM_PACK/unimpaired
+[ -d $VIM_PACK/unimpaired ] || git clone https://tpope.io/vim/unimpaired.git $VIM_PACK/unimpaired
 vim -u NONE -c "helptags $VIM_PACK/unimpaired/doc" -c q
-git clone https://tpope.io/vim/fugitive.git $VIM_PACK/fugitive
-git clone https://github.com/srstevenson/vim-picker $VIM_PACK/vim-picker
-git clone https://github.com/dhruvasagar/vim-table-mode $VIM_PACK/vim-table-mode
-git clone https://github.com/ConradIrwin/vim-bracketed-paste $VIM_PACK/vim-bracketed-paste
+[ -d $VIM_PACK/fugitive ] || git clone https://tpope.io/vim/fugitive.git $VIM_PACK/fugitive
+[ -d $VIM_PACK/vim-picker ] || git clone https://github.com/srstevenson/vim-picker $VIM_PACK/vim-picker
+[ -d $VIM_PACK/vim-table-mode ] || git clone https://github.com/dhruvasagar/vim-table-mode $VIM_PACK/vim-table-mode
+[ -d $VIM_PACK/vim-bracketed-paste ] || git clone https://github.com/ConradIrwin/vim-bracketed-paste $VIM_PACK/vim-bracketed-paste
 #git clone https://github.com/Vimjas/vim-python-pep8-indent $VIM_PACK/vim-python-pep8-indent
 #git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
 
