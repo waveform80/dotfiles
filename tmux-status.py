@@ -49,7 +49,7 @@ def format_duration(seconds):
             return f'{secs:d}s'
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def cache_dir():
     cache_root = Path('/dev/shm')
     user = getuser()
@@ -211,8 +211,11 @@ class CPUTempStat(Stat):
         return super()._format_value(f'{value:.0f}°C')
 
     def _raw_value(self):
-        with open('/sys/class/thermal/thermal_zone0/temp') as f:
-            return int(f.read()) / 1000
+        try:
+            with open('/sys/class/thermal/thermal_zone0/temp') as f:
+                return int(f.read()) / 1000
+        except FileNotFoundError:
+            raise ValueError('no thermal zone')
 
 
 class NetStat(Stat):
