@@ -43,6 +43,7 @@ PACKAGES="\
     vim-syntastic \
     git \
     git-core \
+    htop \
     tig \
     zsh \
     zplug \
