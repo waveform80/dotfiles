@@ -49,7 +49,7 @@ def format_duration(seconds):
             return f'{secs:d}s'
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def cache_dir():
     cache_root = Path('/dev/shm')
     user = getuser()
@@ -71,11 +71,14 @@ class Stat:
 
     def __str__(self):
         try:
-            value = self._cached_value()
-        except StaleError:
-            value = self._raw_value()
-            with self._cache_file().open('wb') as f:
-                pickle.dump(value, f)
+            try:
+                value = self._cached_value()
+            except StaleError:
+                value = self._raw_value()
+                with self._cache_file().open('wb') as f:
+                    pickle.dump(value, f)
+        except ValueError:
+            return ''
         return self._format_value(value)
 
     def _cache_file(self):
@@ -208,8 +211,11 @@ class CPUTempStat(Stat):
         return super()._format_value(f'{value:.0f}°C')
 
     def _raw_value(self):
-        with open('/sys/class/thermal/thermal_zone0/temp') as f:
-            return int(f.read()) / 1000
+        try:
+            with open('/sys/class/thermal/thermal_zone0/temp') as f:
+                return int(f.read()) / 1000
+        except FileNotFoundError:
+            raise ValueError('no thermal zone')
 
 
 class NetStat(Stat):
@@ -256,6 +262,8 @@ class MemStat(StorageStat):
                         break
             else:
                 return ''
+        if not total:
+            raise ValueError('no memory found?!')
         used = 100 - int(free * 100 / total)
         return total, used
 
@@ -279,6 +287,8 @@ class SwapStat(StorageStat):
                         break
             else:
                 return ''
+        if not total:
+            raise ValueError('no swap found')
         used = 100 - int(free * 100 / total)
         return total, used
 
@@ -290,6 +300,8 @@ class DiskStat(StorageStat):
     def _raw_value(self, path='/'):
         stat = os.statvfs(path)
         total = stat.f_blocks * stat.f_frsize
+        if not stat.f_blocks:
+            raise ValueError('root file-system is 0 blocks big?!')
         used = 100 - int(stat.f_bfree * 100 / stat.f_blocks)
         return total, used
 
