@@ -44,6 +44,8 @@ alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 alias sbs="sbuild --no-arch-any --no-arch-all --source"
 alias sbsf="sbuild --no-arch-any --no-arch-all --source --force-orig-source"
 alias sbb="sbuild --arch-any --arch-all --no-source"
+alias muttw="neomutt -F ~/dotfiles/neomuttrc.work"
+alias mutth="neomutt -F ~/dotfiles/neomuttrc.home"
 
 [ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
 

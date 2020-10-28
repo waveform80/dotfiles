@@ -1,0 +1,17 @@
+set from = "dave@waveform.org.uk"
+set mbox_type = Maildir
+set folder = "~/.mail/home/"
+set spoolfile = "+INBOX"
+set record = "+[Gmail].Sent Mail"
+set postponed = "+[Gmail].Drafts"
+set trash = "+[Gmail].Trash"
+mailboxes `\
+for file in ~/.mail/home/*; do \
+    box=$(basename "$file"); \
+    echo -n "\"+$box\" "; \
+done`
+set sendmail = "/usr/bin/msmtp -a home"
+set header_cache = "~/.cache/mutt/home/"
+set attach_save_dir = "~/Downloads"
+
+source "~/dotfiles/neomuttrc.common"

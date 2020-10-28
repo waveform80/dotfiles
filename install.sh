@@ -24,12 +24,15 @@ else
 fi
 
 PACKAGES="\
+    aspell \
     ssh-import-id \
     atool \
     build-essential \
     entr \
     curl \
-    mutt \
+    isync \
+    neomutt \
+    notmuch \
     w3m \
     elinks \
     ${VIM} \
@@ -92,9 +95,7 @@ vim -u NONE -c "helptags $VIM_PACK/unimpaired/doc" -c q
 #git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
 
 # Link all the other config files
-mkdir -p $HOME/.mutt
-mkdir -p $HOME/.mutt/cache
-ln -sf $HOME/dotfiles/muttrc $HOME/.mutt/muttrc
+mkdir -p $HOME/.cache/mutt/{home,work}
 mkdir -p $HOME/.elinks
 ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
 mkdir -p $HOME/.w3m
@@ -115,6 +116,9 @@ ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf
 ln -sf $HOME/dotfiles/sbuildrc $HOME/.sbuildrc
 ln -sf $HOME/dotfiles/mk-sbuildrc $HOME/.mk-sbuild.rc
 ln -sf $HOME/dotfiles/tmux.conf $HOME/.tmux.conf
+ln -sf $HOME/dotfiles/mbsyncrc $HOME/.mbsyncrc
+ln -sf $HOME/dotfiles/msmtprc $HOME/.msmtprc
+chmod 600 $HOME/dotfiles/msmtprc
 mkdir -p $XDG_CONFIG_HOME/ranger
 ln -sf $HOME/dotfiles/ranger.conf $XDG_CONFIG_HOME/ranger/rc.conf
 if [ ${HIGHLIGHT} = "bat" ]; then
