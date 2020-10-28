@@ -18,3 +18,5 @@
 	lpuser = waveform
 [gitubuntu]
 	lpuser = waveform
+[url "git+ssh://waveform@git.launchpad.net/"]
+	insteadof = lp:
