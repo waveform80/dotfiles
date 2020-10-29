@@ -1,0 +1,16 @@
+[database]
+path=.mail/home
+
+[user]
+name=Dave Jones
+primary_email=dave@waveform.org.uk
+
+[new]
+tags=unread;inbox;
+ignore=
+
+[search]
+exclude_tags=deleted;spam;
+
+[maildir]
+synchronize_flags=true

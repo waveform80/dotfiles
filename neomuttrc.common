@@ -1,33 +1,33 @@
-set editor = "vim"
-set ispell = "aspell"
-set edit_headers
 set autoedit
+set auto_tag
+set collapse_all
 set delete
+set edit_headers
+set editor = "vim"
+set forward_references
+set include
+set ispell = "aspell"
 set mail_check = 10
 set mail_check_stats
 set maildir_check_cur
-set reply_to
-set include
-set auto_tag
-set collapse_all
-set forward_references
-set menu_scroll
 set menu_context = 4
-set pager_stop
+set menu_scroll
+set mime_type_query_command = "file -bi"
 set pager_context = 4
 set pager_index_lines = 10
+set pager_stop
+set reply_to
 set search_context = 4
-set skip_quoted_offset = 4
 set send_charset = "us-ascii:utf-8"
+set skip_quoted_offset = 4
+set sleep_time = 0
+set sort = threads
+set strict_threads
 set text_flowed
 set tilde
 set user_agent
 unset mark_old
 unset maildir_header_cache_verify
-#set sleep_time = 0
-set mime_type_query_command = "file -bi"
-set strict_threads
-set sort = threads
 
 set realname = "Dave Jones"
 set forward_format = "Fwd: %s"
@@ -41,7 +41,7 @@ set sidebar_short_path
 set sidebar_folder_indent
 set sidebar_indent_string = "…"
 set sidebar_divider_char = " "
-set index_format = "%[%F %H:%M:%S] │ %-15.15L │ %T │ %?M?+& ?%s%> %?M?[%M]?"
+set index_format = "%[%F %H:%M] │ %-15.15L │ %T │ %?M?+& ?%s%> %?M?[%M]?"
 set sidebar_format = "%B%> %?N?%N/?%S"
 set status_chars = " MRA"
 set status_format = "%f %m messages%?u? (%u unread)?%?t? (%t selected)?%> %P [%r]"
@@ -68,31 +68,44 @@ bind generic,index,pager \Ce next-line
 bind generic,index,pager \Cy previous-line
 bind generic,index,pager \Cd half-down
 bind generic,index,pager \Cu half-up
+bind index,pager N search-opposite
+bind index,pager U mark-as-new
+bind index I read-thread
 bind pager gg top
 bind pager G bottom
 bind generic,index gg first-entry
 bind generic,index G last-entry
 bind generic,index,pager a group-reply
 bind generic,index,pager R group-reply
-bind index c mail
-bind index x tag-entry
-bind index X tag-thread
+bind index,pager c mail
+bind index x tag-thread
 bind index - collapse-thread
 bind index = collapse-thread
 bind index,pager \Cj sidebar-next
 bind index,pager \Ck sidebar-prev
 bind index,pager \C] sidebar-open
 bind index,pager \Cv sidebar-toggle-visible
+bind index,pager s flag-message
+bind generic,index h help
+bind generic,index H display-toggle-weed
+bind index S vfolder-from-query
+bind index < vfolder-window-backward
+bind index > vfolder-window-forward
+#bind index f forward-message
+#bind generic,index,pager / search
+#bind generic : enter-command
+#bind index l limit
+#bind index o sort-mailbox
+#bind index q quit
+#bind generic q exit
 
 macro index gi "<change-folder>+INBOX<enter>" "Go to Inbox"
 macro index ga "<change-folder>+[Gmail].All<tab><enter>" "Go to All Mail"
 macro index gd "<change-folder>+[Gmail].Drafts<enter>" "Go to Drafts"
 macro index gs "<change-folder>+[Gmail].Starred<enter>" "Go to Starred messages"
-macro index gt "<change-folder>+[Gmail].Trash<enter>" "Go to Trash"
 macro index gf "<change-folder>?" "Go to folder..."
-macro index,pager e "<save-message>+[Gmail].All<tab><enter><enter>" "Archive"
-macro index,pager y "<save-message>+[Gmail].All<tab><enter><enter>" "Archive"
-macro index,pager \# "<delete-message><sync-mailbox>" "Trash message"
-macro index,pager d "<delete-message><sync-mailbox>" "Trash message"
-macro index,pager D "<delete-thread><sync-mailbox>" "Trash thread"
-macro index,pager v "<save-message>?" "Move message to folder..."
+macro index e "<save-message>+[Gmail].All<tab><enter><enter><sync-mailbox>" "Archive"
+#macro index y "<save-message>+[Gmail].All<tab><enter><enter><sync-mailbox>" "Archive"
+macro index d "<delete-message><sync-mailbox>" "Trash message"
+macro index \# "<delete-message><sync-mailbox>" "Trash message"
+macro index v "<save-message>?" "Move message to folder..."

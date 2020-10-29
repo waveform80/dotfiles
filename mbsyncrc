@@ -1,14 +1,14 @@
 IMAPAccount gmail-home-account
 Host imap.gmail.com
 User dave@waveform.org.uk
-PassCmd "/usr/bin/gpg -q -d --no-tty --for-your-eyes-only $XDG_RUNTIME_DIR/isync-home 2>/dev/null"
+PassCmd "/usr/bin/gpg -q -d --batch --no-tty --for-your-eyes-only $XDG_RUNTIME_DIR/isync-home 2>/dev/null"
 SSLType IMAPS
 SSLVersions TLSv1.2
 
 IMAPAccount gmail-work-account
 Host imap.gmail.com
 User dave.jones@canonical.com
-PassCmd "/usr/bin/gpg -q -d --no-tty --for-your-eyes-only $XDG_RUNTIME_DIR/isync-work 2>/dev/null"
+PassCmd "/usr/bin/gpg -q -d --batch --no-tty --for-your-eyes-only $XDG_RUNTIME_DIR/isync-work 2>/dev/null"
 SSLType IMAPS
 SSLVersions TLSv1.2
 
@@ -17,6 +17,7 @@ Account gmail-home-account
 
 MaildirStore local-home
 Flatten .
+SubFolders Verbatim
 Path ~/.mail/home/
 Inbox ~/.mail/home/INBOX
 
@@ -25,20 +26,22 @@ Account gmail-work-account
 
 MaildirStore local-work
 Flatten .
+SubFolders Verbatim
 Path ~/.mail/work/
 Inbox ~/.mail/work/INBOX
 
 # Global defaults
-Create Both
-Remove Both
+Create Slave
+Remove Slave
+Expunge Both
 SyncState *
 
 Channel home
 Master :gmail-home:
 Slave :local-home:
-Patterns * ![Gmail]* "[Gmail]/All Mail" "[Gmail]/Sent Mail" "[Gmail]/Drafts" "[Gmail]/Spam" "[Gmail]/Starred" "[Gmail]/Trash"
+Patterns * !.notmuch*
 
 Channel work
 Master :gmail-work:
 Slave :local-work:
-Patterns * ![Gmail]* "[Gmail]/All Mail" "[Gmail]/Sent Mail" "[Gmail]/Drafts" "[Gmail]/Spam" "[Gmail]/Starred" "[Gmail]/Trash"
+Patterns * !.notmuch*

@@ -130,6 +130,8 @@ if has("autocmd") && has("eval")
 	autocmd FileType crontab set backupcopy=yes
 
 	" Change some settings for certain languages
+	autocmd FileType vim set noet tw=79
+	autocmd FileType mail setlocal formatoptions=nawtcq spell
 	autocmd FileType xhtml set et sw=2 sts=2
 	autocmd FileType html set et sw=2 sts=2
 	autocmd FileType xml set et sw=2 sts=2

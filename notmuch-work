@@ -1,0 +1,16 @@
+[database]
+path=.mail/work
+
+[user]
+name=Dave Jones
+primary_email=dave.jones@canonical.com
+
+[new]
+tags=unread;inbox;
+ignore=
+
+[search]
+exclude_tags=deleted;spam;
+
+[maildir]
+synchronize_flags=true

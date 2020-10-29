@@ -44,8 +44,6 @@ alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 alias sbs="sbuild --no-arch-any --no-arch-all --source"
 alias sbsf="sbuild --no-arch-any --no-arch-all --source --force-orig-source"
 alias sbb="sbuild --arch-any --arch-all --no-source"
-alias muttw="neomutt -F ~/dotfiles/neomuttrc.work"
-alias mutth="neomutt -F ~/dotfiles/neomuttrc.home"
 
 [ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
 
@@ -72,6 +70,17 @@ function w3up() { w3m packages.ubuntu.com/search\?searchon=names\&suite=all\&sec
 function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
 function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
 function bug() { w3m launchpad.net/bugs/$1; }
+function sync() {
+    mbsync $1 && NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config notmuch new
+}
+function mutt() {
+    NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config \
+        neomutt -F $HOME/dotfiles/neomuttrc.$1;
+}
+function abook() {
+    /usr/bin/abook --datafile $HOME/.mail/$1/address
+}
+
 
 my_prompt_virtualenv() {
     if [[ -n $VIRTUAL_ENV ]]; then

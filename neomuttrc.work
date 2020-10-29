@@ -7,11 +7,18 @@ set postponed = "+[Gmail].Drafts"
 set trash = "+[Gmail].Trash"
 mailboxes `\
 for file in ~/.mail/work/*; do \
-    box=$(basename "$file"); \
-    echo -n "\"+$box\" "; \
+    if [ -d "$file" ]; then \
+        box=$(basename "$file"); \
+        echo -n "\"+$box\" "; \
+    fi; \
 done`
 set sendmail = "/usr/bin/msmtp -a work"
 set header_cache = "~/.cache/mutt/work/"
 set attach_save_dir = "~/Downloads"
+set query_command = "abook --datafile ~/.mail/work/address --mutt-query '%s'"
 
 source "~/dotfiles/neomuttrc.common"
+
+bind editor <Tab> complete-query
+macro index gt "<change-folder>+[Gmail].Trash<enter>" "Go to Trash"
+macro index,pager a "<pipe-message>abook --datafile ~/.mail/work/address --add-email-quiet<return>" "Add sender to abook"
