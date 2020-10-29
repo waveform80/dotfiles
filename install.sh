@@ -28,6 +28,7 @@ PACKAGES="\
     ssh-import-id \
     atool \
     build-essential \
+    ncdu \
     entr \
     curl \
     isync \
@@ -60,6 +61,7 @@ PACKAGES="\
     ipython3 \
     ${PSPG} \
     postgresql-client \
+    sqlite3 \
     pastebinit \
     python3-dev \
     python3-pip \
