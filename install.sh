@@ -97,6 +97,7 @@ vim -u NONE -c "helptags $VIM_PACK/unimpaired/doc" -c q
 #git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
 
 # Link all the other config files
+mkdir -p $HOME/.mail/{home,work}
 mkdir -p $HOME/.cache/mutt/{home,work}
 mkdir -p $HOME/.elinks
 ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
@@ -119,8 +120,16 @@ ln -sf $HOME/dotfiles/sbuildrc $HOME/.sbuildrc
 ln -sf $HOME/dotfiles/mk-sbuildrc $HOME/.mk-sbuild.rc
 ln -sf $HOME/dotfiles/tmux.conf $HOME/.tmux.conf
 ln -sf $HOME/dotfiles/mbsyncrc $HOME/.mbsyncrc
+ln -sf $HOME/dotfiles/notmuch-home $HOME/.mail/home/.notmuch-config
+ln -sf $HOME/dotfiles/notmuch-work $HOME/.mail/work/.notmuch-config
 ln -sf $HOME/dotfiles/msmtprc $HOME/.msmtprc
 chmod 600 $HOME/dotfiles/msmtprc
+ln -sf $HOME/dotfiles/mailcap $HOME/.mailcap
+mkdir -p $XDG_CONFIG_HOME/systemd/user/
+ln -sf $HOME/dotfiles/mbsync@.service $XDG_CONFIG_HOME/systemd/user/
+ln -sf $HOME/dotfiles/mbsync@.timer $XDG_CONFIG_HOME/systemd/user/
+systemctl enable --user mbsync@home.timer
+systemctl enable --user mbsync@work.timer
 mkdir -p $XDG_CONFIG_HOME/ranger
 ln -sf $HOME/dotfiles/ranger.conf $XDG_CONFIG_HOME/ranger/rc.conf
 if [ ${HIGHLIGHT} = "bat" ]; then
