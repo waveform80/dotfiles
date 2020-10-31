@@ -77,8 +77,14 @@ function mutt() {
     NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config \
         neomutt -F $HOME/dotfiles/neomuttrc.$1;
 }
-function abook() {
-    /usr/bin/abook --datafile $HOME/.mail/$1/address
+function abook() { /usr/bin/abook --datafile $HOME/.mail/$1/address }
+function rm-sbuild() {
+    if [ -d /var/lib/schroot/chroots/$1 ]; then
+        sudo rm -fr /var/lib/schroot/chroots/$1
+        sudo rm /etc/schroot/chroot.d/sbuild-$1
+    else
+        echo "No such chroot: $1" 2>/dev/null
+    fi
 }
 
 

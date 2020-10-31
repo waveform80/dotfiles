@@ -4,7 +4,7 @@ $maintainer_name='Dave Jones <dave.jones@canonical.com>';
 $key_id='dave.jones@canonical.com';
 
 # Default distribution
-$distribution = 'groovy';
+$distribution = 'hirsute';
 $build_arch_all = 1;
 $build_arch_any = 1;
 $build_source = 0;
