@@ -86,6 +86,15 @@ function rm-sbuild() {
         echo "No such chroot: $1" 2>/dev/null
     fi
 }
+function gcal() {
+    while true; do
+        clear
+        gcalcli --lineart=unicode agenda
+        echo
+        gcalcli --lineart=unicode calw --monday
+        sleep 600
+    done
+}
 
 
 my_prompt_virtualenv() {
