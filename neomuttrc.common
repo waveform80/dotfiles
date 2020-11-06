@@ -32,8 +32,8 @@ unset maildir_header_cache_verify
 set realname = "Dave Jones"
 set forward_format = "Fwd: %s"
 
-#auto_view text/html
-#alternative_order text/plain text/enriched text/html
+auto_view text/html
+alternative_order text/plain text/enriched text/html
 
 # Appearance
 set sidebar_visible = no
