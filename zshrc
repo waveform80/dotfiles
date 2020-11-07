@@ -89,9 +89,9 @@ function rm-sbuild() {
 function gcal() {
     while true; do
         clear
-        gcalcli --lineart=unicode agenda
+        gcalcli agenda
         echo
-        gcalcli --lineart=unicode calw --monday
+        gcalcli calw --monday
         sleep 600
     done
 }
