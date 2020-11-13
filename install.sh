@@ -46,6 +46,7 @@ PACKAGES="\
     vim-python-jedi \
     vim-syntastic \
     git \
+    git-email \
     git-core \
     htop \
     tig \
