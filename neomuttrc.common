@@ -36,13 +36,7 @@ auto_view text/html
 alternative_order text/plain text/enriched text/html
 
 # Appearance
-#set sidebar_visible = no
-#set sidebar_short_path
-#set sidebar_folder_indent
-#set sidebar_indent_string = "…"
-#set sidebar_divider_char = " "
 set index_format = "%[%F %H:%M] │ %-15.15L │ %T │ %?M?+& ?%s%> %?M?[%M]?"
-#set sidebar_format = "%B%> %?N?%N/?%S"
 set status_chars = " MRA"
 set status_format = "%f %m messages%?u? (%u unread)?%?t? (%t selected)?%> %P [%r]"
 set status_on_top
@@ -55,8 +49,6 @@ color index color27 default ~v~(~T)         # tagged in collapsed thread
 color index color229 default ~v~(~F)~(!~T)  # flagged in collapsed thread
 color index color88 default ~D
 color index_collapsed green default
-#color sidebar_highlight white blue
-#color sidebar_divider white color61
 color status white color61
 
 # Keybindings
@@ -137,12 +129,6 @@ bind generic,index,pager d delete-message
 bind generic,index,pager \# delete-message
 bind generic,index,pager u undelete-message
 bind generic,index,pager | pipe-message
-
-# Sidebar operations
-#bind index \Cj sidebar-next
-#bind index \Ck sidebar-prev
-#bind index \C] sidebar-open
-#bind index \Cv sidebar-toggle-visible
 
 # Searching / sorting
 bind generic,index,pager / search
