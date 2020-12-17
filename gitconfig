@@ -20,3 +20,5 @@
 	lpuser = waveform
 [url "git+ssh://waveform@git.launchpad.net/"]
 	insteadof = lp:
+[url "git@github.com:"]
+	insteadof = gh:
