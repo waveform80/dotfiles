@@ -28,10 +28,11 @@ SAVEHIST=1000
 HISTFILE=~/.zsh_history
 setopt HIST_EXPIRE_DUPS_FIRST
 setopt HIST_IGNORE_SPACE
-setopt EXTENDED_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt INC_APPEND_HISTORY_TIME
 
 # Act like sh/ksh with >> against non-existing file
-setopt APPEND_CREATE >&/dev/null
+setopt APPEND_CREATE
 
 alias ls="ls --color=auto"
 alias dir="dir --color=auto"
