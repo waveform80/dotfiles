@@ -36,18 +36,21 @@ auto_view text/html
 alternative_order text/plain text/enriched text/html
 
 # Appearance
-set index_format = "%[%F %H:%M] │ %-15.15L │ %T │ %?M?+& ?%s%> %?M?[%M]?"
+set index_format = "%<[y?%<[w?%<[2d?%<[d?%[      Today, %H:%M]&%[  Yesterday, %H:%M]>&  %[%9A, %H:%M]>&%[%a, %d %b, %H:%M]>&  %[%a, %d %b %Y]> │ %-15.15L │ %zt %?M?+%-2M&   ? │ %s"
 set status_chars = " MRA"
+set to_chars = " tTcslr"
 set status_format = "%f %m messages%?u? (%u unread)?%?t? (%t selected)?%> %P [%r]"
-set status_on_top
+#set status_on_top
 color index_date cyan default
 color index white default ~A
+color index color226 default ~F|(~v~(~F))   # flagged
 color index bold white default ~U|(~v~(~U)) # unread
-color index color25 default ~T              # tagged
-color index color226 default ~F!~T          # flagged (but not tagged)
-color index color27 default ~v~(~T)         # tagged in collapsed thread
-color index color229 default ~v~(~F)~(!~T)  # flagged in collapsed thread
-color index color88 default ~D
+color index bold color226 default (~F|(~v~(~F)))(~U|(~v~(~U))) # flagged unread
+color index color88 default ~D              # deleted
+color index color25 default ~v~(~T)         # tagged in collapsed thread
+color index bold color25 default ~v~(~T~U)  # tagged unread in collapsed thread
+color index color27 default ~T              # tagged
+color index bold color27 default ~T(~U|(~v~(~U))) # tagged unread
 color index_collapsed green default
 color status white color61
 
