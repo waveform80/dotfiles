@@ -97,7 +97,7 @@ vim -u NONE -c "helptags $VIM_PACK/unimpaired/doc" -c q
 #git clone https://github.com/Vimjas/vim-python-pep8-indent $VIM_PACK/vim-python-pep8-indent
 #git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
 
-# Link all the other config files
+# Link all the other config files and utils
 mkdir -p $HOME/.mail/{home,work}
 mkdir -p $HOME/.cache/mutt/{home,work}
 mkdir -p $HOME/.elinks
@@ -137,6 +137,8 @@ if [ ${HIGHLIGHT} = "bat" ]; then
     ranger --copy-config=scope
     sed -i -e 's/\bbat\b/batcat/' $XDG_CONFIG_HOME/ranger/scope.sh
 fi
+mkdir -p $HOME/.local/bin
+ln -sf $HOME/dotfiles/merge.sh $HOME/.local/bin/merge
 
 # Import the usual SSH keys
 ssh-import-id lp:waveform
