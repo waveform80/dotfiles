@@ -22,6 +22,7 @@ set send_charset = "us-ascii:utf-8"
 set skip_quoted_offset = 4
 set sleep_time = 0
 set sort = threads
+set sort_aux=last-date-received
 set strict_threads
 set text_flowed
 set tilde
