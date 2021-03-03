@@ -143,6 +143,7 @@ if has("autocmd") && has("eval")
 	autocmd FileType make set noet sw=8 ts=8
 	autocmd FileType rst set tw=79
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
+	autocmd BufNewFile,BufRead *.moin,*.wiki setlocal filetype=moin
 
 	" Set line/relative numbers depending on mode
 	autocmd InsertEnter * :set nornu number
@@ -304,3 +305,22 @@ inoremap <Leader>NUM ⇭
 inoremap <Leader>SP  
 inoremap <Leader>tick ✓
 inoremap <Leader>cross ✗
+
+inoremap <Leader>h ─
+inoremap <Leader>v │
+inoremap <Leader>tl ┌
+inoremap <Leader>tr ┐
+inoremap <Leader>bl └
+inoremap <Leader>br ┘
+inoremap <Leader>lm ┤
+inoremap <Leader>rm ├
+inoremap <Leader>tm ┴
+inoremap <Leader>bm ┬
+inoremap <Leader>mm ┼
+inoremap <Leader>tlr ╭
+inoremap <Leader>trr ╮
+inoremap <Leader>blr ╰
+inoremap <Leader>brr ╯
+inoremap <Leader>df ╱
+inoremap <Leader>db ╲
+inoremap <Leader>dx ╳
