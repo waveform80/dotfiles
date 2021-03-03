@@ -195,6 +195,7 @@ nnoremap ]e :lnext<CR>
 nnoremap [e :lprevious<CR>
 
 " Some mappings for Unicode chars
+inoremap <Leader>,, ,
 inoremap <Leader>... …
 inoremap <Leader>- –
 inoremap <Leader>-- —
@@ -220,27 +221,14 @@ inoremap <Leader>om ω
 inoremap <Leader>Om Ω
 inoremap <Leader>qA ∀
 inoremap <Leader>qE ∃
-inoremap <Leader>in ∈
-inoremap <Leader>nin ∉
-inoremap <Leader>sub ⊂
-inoremap <Leader>nsub ⊄
-inoremap <Leader>sube ⊆
-inoremap <Leader>nsube ⊈
-inoremap <Leader>sup ⊃
-inoremap <Leader>supe ⊇
-inoremap <Leader>& ⋂
-inoremap <Leader>\| ⋃
-inoremap <Leader>&& ⋀
-inoremap <Leader>\|\| ⋁
+inoremap <Leader>~= ≈
 inoremap <Leader><= ≤
 inoremap <Leader>>= ≥
-inoremap <Leader>{} ∅
 inoremap <Leader>1/2 ½
 inoremap <Leader>1/3 ⅓
 inoremap <Leader>1/4 ¼
 inoremap <Leader>1/5 ⅕
 inoremap <Leader>1/8 ⅛
-inoremap <Leader>1/10 ⅒
 inoremap <Leader>2/3 ⅔
 inoremap <Leader>2/5 ⅖
 inoremap <Leader>3/4 ¾
@@ -254,7 +242,6 @@ inoremap <Leader>3r ∛
 inoremap <Leader>4r ∜
 inoremap <Leader>p ʹ
 inoremap <leader>pp ʺ
-inoremap <Leader>~= ≈
 inoremap <Leader>**0 ⁰
 inoremap <Leader>**1 ¹
 inoremap <Leader>**2 ²
@@ -273,13 +260,7 @@ inoremap <Leader>/ ÷
 inoremap <Leader>* ×
 inoremap <Leader>+- ±
 inoremap <Leader>o °
-inoremap <Leader>oC ℃
-inoremap <Leader>oF ℉
 inoremap <Leader>m µ
-inoremap <Leader>imag ℂ
-inoremap <Leader>real ℝ
-inoremap <Leader>int ℤ
-inoremap <Leader>nat ℕ
 inoremap <Leader>inf ∞
 inoremap <Leader>(c) ©
 inoremap <Leader>(r) ®
@@ -317,10 +298,11 @@ inoremap <Leader>rm ├
 inoremap <Leader>tm ┴
 inoremap <Leader>bm ┬
 inoremap <Leader>mm ┼
-inoremap <Leader>tlr ╭
-inoremap <Leader>trr ╮
-inoremap <Leader>blr ╰
-inoremap <Leader>brr ╯
 inoremap <Leader>df ╱
 inoremap <Leader>db ╲
 inoremap <Leader>dx ╳
+
+inoremap <Leader>a> ▸
+inoremap <Leader>a< ◂
+inoremap <Leader>a^ ▴
+inoremap <Leader>av ▾
