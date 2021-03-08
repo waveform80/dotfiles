@@ -5,10 +5,10 @@
 	default = current
 [pull]
 	ff = only
-[merge]
-	tool = meld
-[diff]
-	tool = meld
+[pager]
+	log = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
+	show = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
+	diff = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
 ;[diff "image"]
 ;	command = /home/dave/dotfiles/gitimgdiff
 [core]
