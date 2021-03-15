@@ -133,7 +133,7 @@ keymap	>	NEXT_TAB
 keymap	::	COMMAND
 keymap	:w	SAVE
 keymap	:e	LOAD
-keymap	:o	GOTO
+keymap	:o	GOTO_RELATIVE
 keymap	:!	SHELL
 keymap	:d	DOWNLOAD_LIST
 
