@@ -3,6 +3,7 @@
 set -eu
 
 # Install stuff
+#sudo add-apt-repository ppa:waveform/kmscon
 sudo apt update
 
 if which X >/dev/null 2>&1; then
@@ -39,6 +40,7 @@ PACKAGES="\
     ${VIM} \
     fonts-powerline \
     fonts-inconsolata \
+    fonts-ubuntu \
     vim-addon-manager \
     vim-scripts \
     vim-airline \
@@ -82,6 +84,7 @@ XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
 # Set up zsh
 ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
+sudo chsh -s /usr/bin/zsh $USER
 
 # Set up vim with all your favourite plugins and bits
 ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
