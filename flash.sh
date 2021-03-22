@@ -172,6 +172,13 @@ main() {
                     echo doing it...
                 fi
             fi
+            if [ -e /mnt/boot/config.txt ]; then
+                if ! grep "^disable_overscan=1" /mnt/boot/config.txt >/dev/null; then
+                    sudo sed -i \
+                        -e '/^#disable_overscan/ s/.*/disable_overscan=1/' \
+                        /mnt/boot/config.txt
+                fi
+            fi
             sudo umount /mnt/boot
         else
             warning "No boot partition exists after flash!"
