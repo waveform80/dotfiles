@@ -169,6 +169,7 @@ task_fs() {
                 sed -i -e 's/\bbat\b/batcat/' "$XDG_CONFIG_HOME"/ranger/scope.sh
             fi
             ln -sf "$HOME"/dotfiles/flash.sh "$HOME"/.local/bin/flashcard
+            ln -sf "$HOME"/dotfiles/mount.sh "$HOME"/.local/bin/mountcard
             ;;
     esac
 }
