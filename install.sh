@@ -363,6 +363,7 @@ task_zsh() {
             git clone https://github.com/powerline/fonts
             sudo cp fonts/Terminus/PSF/*.psf.gz /usr/share/consolefonts/
             sudo sh -c 'echo FONT="ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
+            # XXX Run update-initramfs on ubuntu?
             popd
             ;;
     esac
