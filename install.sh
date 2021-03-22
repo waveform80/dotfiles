@@ -2,146 +2,543 @@
 
 set -eu
 
-# Install stuff
-#sudo add-apt-repository ppa:waveform/kmscon
-sudo apt update
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-${HOME}/.config}
 
-if which X >/dev/null 2>&1; then
-    VIM=vim-gtk3
-else
-    VIM=vim-nox
-fi
 
-if apt-cache show bat >/dev/null 2>&1; then
-    HIGHLIGHT=bat
-else
-    HIGHLIGHT=highlight
-fi
+task_apt() {
+    case "$1" in
+        title)
+            echo "Do full apt upgrade"
+            ;;
+        default)
+            echo 0
+            ;;
+        postinst)
+            # No need for apt update; do_install always does that first
+            sudo apt full-upgrade -y --autoremove --purge
+            ;;
+    esac
+}
 
-if apt-cache show pspg >/dev/null 2>&1; then
-    PSPG=pspg
-else
-    PSPG=
-fi
 
-PACKAGES="\
-    aspell \
-    ssh-import-id \
-    atool \
-    build-essential \
-    ncdu \
-    entr \
-    curl \
-    isync \
-    neomutt \
-    notmuch \
-    w3m \
-    elinks \
-    ${VIM} \
-    fonts-powerline \
-    fonts-inconsolata \
-    fonts-ubuntu \
-    vim-addon-manager \
-    vim-scripts \
-    vim-airline \
-    vim-airline-themes \
-    vim-python-jedi \
-    vim-syntastic \
-    git \
-    git-email \
-    git-core \
-    htop \
-    tig \
-    zsh \
-    zplug \
-    direnv \
-    fzy \
-    cmus \
-    aewan \
-    byobu \
-    ranger \
-    ${HIGHLIGHT} \
-    ipython3 \
-    ${PSPG} \
-    postgresql-client \
-    sqlite3 \
-    pastebinit \
-    python3-dev \
-    python3-pip \
-    python3-virtualenv \
-    python3-pygments \
-    virtualenvwrapper \
-    exuberant-ctags \
-    lsb-release \
-    shed \
-    sc \
-    jq \
-    zsync"
+task_dev() {
+    local highlight
 
-sudo apt install -y $PACKAGES
+    case "$1" in
+        title)
+            echo "Install dev tools (git, tig, ctags, ...)"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            if apt-cache show bat >/dev/null 2>&1; then
+                highlight=bat
+            else
+                highlight=highlight
+            fi
+            echo build-essential git git-email tig exuberant-ctags ${highlight}
+            ;;
+        postinst)
+            mkdir -p "$XDG_CONFIG_HOME"/git
+            ln -sf "$HOME"/dotfiles/gitconfig "$XDG_CONFIG_HOME"/git/config
+            ln -sf "$HOME"/dotfiles/gitignore "$XDG_CONFIG_HOME"/git/ignore
+            ln -sf "$HOME"/dotfiles/tigrc "$HOME"/.tigrc
+            ;;
+    esac
+}
 
-XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 
-# Set up zsh
-ln -sf $HOME/dotfiles/zshrc $HOME/.zshrc
-sudo chsh -s /usr/bin/zsh $USER
+task_pack() {
+    case "$1" in
+        title)
+            echo "Install packaging tools (pull-lp-source, sbuild, ...)"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo ubuntu-dev-tools packaging-dev sbuild
+            ;;
+        postinst)
+            ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
+            ln -sf "$HOME"/dotfiles/quiltrc-dpkg "$HOME"/.quiltrc-dpkg
+            ln -sf "$HOME"/dotfiles/dputcf "$HOME"/.dput.cf
+            ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
+            ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
+            ln -sf "$HOME"/dotfiles/merge.sh "$HOME"/.local/bin/merge
+            ;;
+    esac
+}
 
-# Set up vim with all your favourite plugins and bits
-ln -sf $HOME/dotfiles/vimrc $HOME/.vimrc
-vim-addons install align supertab python-jedi python-indent
-VIM_PACK=$HOME/.vim/pack/plugins/start
-mkdir -p $VIM_PACK
-[ -d $VIM_PACK/unimpaired ] || git clone https://tpope.io/vim/unimpaired.git $VIM_PACK/unimpaired
-vim -u NONE -c "helptags $VIM_PACK/unimpaired/doc" -c q
-[ -d $VIM_PACK/fugitive ] || git clone https://tpope.io/vim/fugitive.git $VIM_PACK/fugitive
-[ -d $VIM_PACK/vim-picker ] || git clone https://github.com/srstevenson/vim-picker $VIM_PACK/vim-picker
-[ -d $VIM_PACK/vim-table-mode ] || git clone https://github.com/dhruvasagar/vim-table-mode $VIM_PACK/vim-table-mode
-[ -d $VIM_PACK/vim-bracketed-paste ] || git clone https://github.com/ConradIrwin/vim-bracketed-paste $VIM_PACK/vim-bracketed-paste
-#git clone https://github.com/Vimjas/vim-python-pep8-indent $VIM_PACK/vim-python-pep8-indent
-#git clone https://github.com/mg979/vim-visual-multi $VIM_PACK/vim-visual-multi
 
-# Link all the other config files and utils
-mkdir -p $HOME/.mail/{home,work}
-mkdir -p $HOME/.cache/mutt/{home,work}
-mkdir -p $HOME/.elinks
-ln -sf $HOME/dotfiles/elinks.conf $HOME/.elinks/elinks.conf
-mkdir -p $HOME/.w3m
-ln -sf $HOME/dotfiles/w3mrc $HOME/.w3m/config
-ln -sf $HOME/dotfiles/w3mkeys $HOME/.w3m/keymap
-ln -sf $HOME/dotfiles/pystartup $HOME/.pystartup
-ln -sf $HOME/dotfiles/pylintrc $HOME/.pylintrc
-ln -sf $HOME/dotfiles/flake8 $HOME/.flake8
-mkdir -p $XDG_CONFIG_HOME/git
-ln -sf $HOME/dotfiles/gitconfig $XDG_CONFIG_HOME/git/config
-ln -sf $HOME/dotfiles/gitignore $XDG_CONFIG_HOME/git/ignore
-ln -sf $HOME/dotfiles/psqlrc $HOME/.psqlrc
-ln -sf $HOME/dotfiles/pastebinit.xml $HOME/.pastebinit.xml
-ln -sf $HOME/dotfiles/tigrc $HOME/.tigrc
-ln -sf $HOME/dotfiles/gbp.conf $HOME/.gbp.conf
-ln -sf $HOME/dotfiles/quiltrc-dpkg $HOME/.quiltrc-dpkg
-ln -sf $HOME/dotfiles/dputcf $HOME/.dput.cf
-ln -sf $HOME/dotfiles/sbuildrc $HOME/.sbuildrc
-ln -sf $HOME/dotfiles/mk-sbuildrc $HOME/.mk-sbuild.rc
-ln -sf $HOME/dotfiles/tmux.conf $HOME/.tmux.conf
-ln -sf $HOME/dotfiles/mbsyncrc $HOME/.mbsyncrc
-ln -sf $HOME/dotfiles/notmuch-home $HOME/.mail/home/.notmuch-config
-ln -sf $HOME/dotfiles/notmuch-work $HOME/.mail/work/.notmuch-config
-ln -sf $HOME/dotfiles/msmtprc $HOME/.msmtprc
-chmod 600 $HOME/dotfiles/msmtprc
-ln -sf $HOME/dotfiles/mailcap $HOME/.mailcap
-mkdir -p $XDG_CONFIG_HOME/systemd/user/
-ln -sf $HOME/dotfiles/mbsync@.service $XDG_CONFIG_HOME/systemd/user/
-ln -sf $HOME/dotfiles/mbsync@.timer $XDG_CONFIG_HOME/systemd/user/
-systemctl enable --user mbsync@home.timer
-systemctl enable --user mbsync@work.timer
-mkdir -p $XDG_CONFIG_HOME/ranger
-ln -sf $HOME/dotfiles/ranger.conf $XDG_CONFIG_HOME/ranger/rc.conf
-if [ ${HIGHLIGHT} = "bat" ]; then
-    ranger --copy-config=scope
-    sed -i -e 's/\bbat\b/batcat/' $XDG_CONFIG_HOME/ranger/scope.sh
-fi
-mkdir -p $HOME/.local/bin
-ln -sf $HOME/dotfiles/merge.sh $HOME/.local/bin/merge
+task_db() {
+    case "$1" in
+        title)
+            echo "Install db tools (sqlite3, pg-client)"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo sqlite3 postgresql-client sc jq
+            if apt-cache show pspg >/dev/null 2>&1; then
+                echo pspg
+            fi
+            ;;
+        postinst)
+            ln -sf "$HOME"/dotfiles/psqlrc "$HOME"/.psqlrc
+            ;;
+    esac
+}
 
-# Import the usual SSH keys
-ssh-import-id lp:waveform
+
+task_py() {
+    case "$1" in
+        title)
+            echo "Install Python stuff (ipython, jupyter, libs)"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            cat << EOF
+ipython3
+python3-dev
+python3-pip
+python3-virtualenv
+python3-pygments
+virtualenvwrapper
+EOF
+            ;;
+        postinst)
+            ln -sf "$HOME"/dotfiles/pystartup "$HOME"/.pystartup
+            ln -sf "$HOME"/dotfiles/pylintrc "$HOME"/.pylintrc
+            ln -sf "$HOME"/dotfiles/flake8 "$HOME"/.flake8
+            ;;
+    esac
+}
+
+
+task_email() {
+    case "$1" in
+        title)
+            echo "Install e-mail client (mutt, notmuch, isync)"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo isync neomutt notmuch msmtp-mta
+            ;;
+        postinst)
+            mkdir -p "$HOME"/.mail/{home,work}
+            mkdir -p "$HOME"/.cache/mutt/{home,work}
+            ln -sf "$HOME"/dotfiles/mbsyncrc "$HOME"/.mbsyncrc
+            ln -sf "$HOME"/dotfiles/notmuch-home "$HOME"/.mail/home/.notmuch-config
+            ln -sf "$HOME"/dotfiles/notmuch-work "$HOME"/.mail/work/.notmuch-config
+            ln -sf "$HOME"/dotfiles/msmtprc "$HOME"/.msmtprc
+            chmod 600 "$HOME"/dotfiles/msmtprc
+            ln -sf "$HOME"/dotfiles/mailcap "$HOME"/.mailcap
+            mkdir -p "$XDG_CONFIG_HOME"/systemd/user/
+            ln -sf "$HOME"/dotfiles/mbsync@.service "$XDG_CONFIG_HOME"/systemd/user/
+            ln -sf "$HOME"/dotfiles/mbsync@.timer "$XDG_CONFIG_HOME"/systemd/user/
+            systemctl enable --user mbsync@home.timer
+            systemctl enable --user mbsync@work.timer
+            ;;
+    esac
+}
+
+
+task_fs() {
+    case "$1" in
+        title)
+            echo "Install fs tools (ranger, ncdu, entr, atool)"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo atool ncdu entr inotify-tools ranger shed
+            ;;
+        postinst)
+            mkdir -p "$XDG_CONFIG_HOME"/ranger
+            ln -sf "$HOME"/dotfiles/ranger.conf "$XDG_CONFIG_HOME"/ranger/rc.conf
+            if apt-cache show bat >/dev/null 2>&1; then
+                ranger --copy-config=scope
+                sed -i -e 's/\bbat\b/batcat/' "$XDG_CONFIG_HOME"/ranger/scope.sh
+            fi
+            ln -sf "$HOME"/dotfiles/flash.sh "$HOME"/.local/bin/flashcard
+            ;;
+    esac
+}
+
+
+task_net() {
+    case "$1" in
+        title)
+            echo "Install net tools (curl, w3m, elinks, zsync)"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo curl w3m elinks pastebinit zsync
+            ;;
+        postinst)
+            mkdir -p "$HOME"/.elinks
+            ln -sf "$HOME"/dotfiles/elinks.conf "$HOME"/.elinks/elinks.conf
+            mkdir -p "$HOME"/.w3m
+            ln -sf "$HOME"/dotfiles/w3mrc "$HOME"/.w3m/config
+            ln -sf "$HOME"/dotfiles/w3mkeys "$HOME"/.w3m/keymap
+            ln -sf "$HOME"/dotfiles/pastebinit.xml "$HOME"/.pastebinit.xml
+            ;;
+    esac
+}
+
+
+task_ssh() {
+    case "$1" in
+        title)
+            echo "Install & configure SSH server"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo openssh-server ssh-import-id
+            ;;
+        postinst)
+            sudo sed -i \
+                -e '/#PasswordAuthentication/ s/.*/PasswordAuthentication no/' \
+                -e '/#PermitRootLogin/ s/.*/PermitRootLogin no/' \
+                /etc/ssh/sshd_config
+            ssh-import-id lp:waveform
+            ssh-keygen -t rsa -N "" -f "$HOME"/.ssh/id_rsa
+            sudo systemctl enable ssh.service
+            sudo systemctl restart ssh.service
+            ;;
+    esac
+}
+
+
+task_music() {
+    case "$1" in
+        title)
+            echo "Install media clients (cmus)"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo cmus
+            ;;
+    esac
+}
+
+
+task_kmscon() {
+    case "$1" in
+        title)
+            echo "Install & configure kmscon (EXPERIMENTAL)"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo fonts-powerline fonts-inconsolata fonts-ubuntu kmscon
+            ;;
+        preinst)
+            if which add-apt-repository; then
+                # Add kmscon PPA but don't install it implicitly (still
+                # experimental, etc.)
+                sudo add-apt-repository -y ppa:waveform/kmscon
+            else
+                cat << EOF | sudo sh -c 'cat > /etc/apt/sources.list.d/kmscon.list'
+deb http://ppa.launchpad.net/waveform/kmscon/ubuntu hirsute main
+# deb-src http://ppa.launchpad.net/waveform/kmscon/ubuntu hirsute main
+EOF
+            fi
+            ;;
+        postinst)
+            sudo sed -i \
+                -e '/#font-size=/ s/.*/font-size=14/' \
+                -e '/#font-name=/ s/.*/font-name=Ubuntu Mono/' \
+                /etc/kmscon/kmscon.conf
+            cat << EOF
+Installed in experimental mode: tty1 remains standard getty; all other ttys
+will auto-launch kmscon. Once you are satisfied things are working, switch tty1
+to kmscon like so:
+
+sudo systemctl disable getty@tty1
+sudo systemctl enable kmsconvt@tty1
+EOF
+            ;;
+    esac
+}
+
+
+task_tmux() {
+    case "$1" in
+        title)
+            echo "Install & configure tmux"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo byobu tmux
+            ;;
+        postinst)
+            ln -sf "$HOME"/dotfiles/tmux.conf "$HOME"/.tmux.conf
+            ;;
+    esac
+}
+
+
+task_vim() {
+
+    case "$1" in
+        title)
+            echo "Install & configure vim"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            local vim
+
+            if which X >/dev/null 2>&1; then
+                vim="vim-gtk3"
+            else
+                vim="vim-nox"
+            fi
+            cat << EOF
+aspell
+${vim}
+vim-addon-manager
+vim-scripts
+vim-airline
+vim-airline-themes
+vim-python-jedi
+vim-syntastic
+EOF
+            ;;
+        postinst)
+            local vim_pack
+
+            ln -sf "$HOME"/dotfiles/vimrc "$HOME"/.vimrc
+            vim-addons install align supertab python-jedi python-indent
+            vim_pack="$HOME"/.vim/pack/plugins/start
+            mkdir -p "$vim_pack"
+            [ -d "$vim_pack"/unimpaired ] || git clone https://tpope.io/vim/unimpaired.git "$vim_pack"/unimpaired
+            vim -u NONE -c "helptags $vim_pack/unimpaired/doc" -c q
+            [ -d "$vim_pack"/fugitive ] || git clone https://tpope.io/vim/fugitive.git "$vim_pack"/fugitive
+            [ -d "$vim_pack"/vim-picker ] || git clone https://github.com/srstevenson/vim-picker "$vim_pack"/vim-picker
+            [ -d "$vim_pack"/vim-table-mode ] || git clone https://github.com/dhruvasagar/vim-table-mode "$vim_pack"/vim-table-mode
+            [ -d "$vim_pack"/vim-bracketed-paste ] || git clone https://github.com/ConradIrwin/vim-bracketed-paste "$vim_pack"/vim-bracketed-paste
+            #git clone https://github.com/Vimjas/vim-python-pep8-indent "$vim_pack"/vim-python-pep8-indent
+            #git clone https://github.com/mg979/vim-visual-multi "$vim_pack"/vim-visual-multi
+            ;;
+    esac
+}
+
+
+task_zsh() {
+    case "$1" in
+        title)
+            echo "Install & configure zsh"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo zsh zplug direnv fzy
+            ;;
+        postinst)
+            ln -sf "$HOME"/dotfiles/zshrc "$HOME"/.zshrc
+            sudo chsh -s /usr/bin/zsh "$USER"
+            pushd "$HOME"
+            git clone https://github.com/powerline/fonts
+            sudo cp fonts/Terminus/PSF/*.psf.gz /usr/share/consolefonts/
+            sudo sh -c 'echo FONT="ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
+            popd
+            ;;
+    esac
+}
+
+
+task_uk() {
+    case "$1" in
+        title)
+            echo "UK configuration (wifi, keyboard, etc.)"
+            ;;
+        default)
+            echo 1
+            ;;
+        after)
+            echo task_kmscon
+            ;;
+        postinst)
+            sudo iw reg set GB
+            sudo sed -i \
+                -e '/^XKBLAYOUT=/ s/=.*$/="gb"/' \
+                -e '/^XKBOPTIONS=/ s/=.*$/="ctrl: nocaps"/' \
+                /etc/default/keyboard
+            if [ -e /etc/kmscon/kmscon.conf ]; then
+                sudo sed -i \
+                    -e '/#xkb-layout=/ s/.*/xkb-layout=gb/' \
+                    -e '/#xkb-options=/ s/.*/xkb-options=ctrl:nocaps/' \
+                    -e '/#xkb-repeat-delay=/ s/.*/xkb-repeat-delay=200/' \
+                    -e '/#xkb-repeat-rate=/ s/.*/xkb-repeat-rate=25/' \
+                    -e '/#no-compose/ s/.*/compose/' \
+                    /etc/kmscon/kmscon.conf
+            fi
+            ;;
+    esac
+}
+
+
+all_tasks() {
+    declare -F | sed -e 's/^declare -f //' | grep '^task_'
+}
+
+
+do_task() {
+    for task in $(all_tasks); do
+        $task "$@"
+    done
+}
+
+
+pick_tasks() {
+    local width height max_height menu_height tasks titles defaults menu i
+
+    readarray -t tasks < <(all_tasks)
+    readarray -t titles < <(do_task title)
+    readarray -t defaults < <(do_task default)
+
+    width=$(tput cols)
+    width=$((width - 8 < 20 ? width : width - 8))
+    width=$((width > 80 ? 80 : width))
+
+    menu_height=${#tasks[*]}
+    max_height=$(tput lines)
+    height=$((menu_height + 7))
+
+    if (( height > max_height )); then
+        height=$((max_height - 2))
+        menu_height=$((height - 7))
+    fi
+
+    menu=()
+    for (( i=0 ; i<${#tasks[*]} ; ++i )); do
+        # shellcheck disable=SC2206
+        menu+=(${tasks[$i]} "${titles[$i]}" ${defaults[$i]})
+    done
+
+    whiptail \
+        --title "Dave's Installer" \
+        --backtitle "Hostname: $(hostname)" \
+        --checklist "Select tasks" $height $width $menu_height "${menu[@]}" \
+        --separate-output 3>&1 1>&2 2>&3
+}
+
+
+do_preinst() {
+    local task
+
+    for task in "$@"; do
+        echo "[1;32m$task preinst[0m" >&2
+        $task preinst
+    done
+}
+
+
+do_install() {
+    local -a packages to_install
+
+    to_install=(htop lsb-release)
+    while [ $# -gt 0 ]; do
+        while read -r -a packages; do
+            to_install+=("${packages[@]}")
+        done < <($1 packages)
+        shift
+    done
+    echo "Installing ${to_install[*]}" >&2
+    sudo apt update -y
+    sudo apt install -y "${to_install[@]}"
+}
+
+
+do_postinst() {
+    local task
+
+    mkdir -p "$HOME"/.local/bin
+
+    for task in "$@"; do
+        echo "[1;32m$task postinst[0m" >&2
+        $task postinst
+    done
+}
+
+
+sort_after() {
+    # Output the list of all selected tasks ($@) and all their "after" values.
+    # Each line of output will be of the form "selected-task after-task". In
+    # addition a spurious "all" task which depends on all selected tasks will
+    # also be output (this eases the later join).
+    #
+    # Note that at this point there is no checking that after-task is in the
+    # selected list; we'll deal with that later. The output is sorted on the
+    # after-task field.
+
+    for task in "$@"; do
+        echo all "$task"
+        while read -r -a deps; do
+            for dep in "${deps[@]}"; do
+                echo "$task" "$dep"
+            done
+        done < <($task after)
+    done | sort -k 2
+}
+
+
+sort_selected() {
+    # Ouptut the list of all selected tasks in sorted order.
+
+    for task in "$@"; do
+        echo "$task"
+    done | sort
+}
+
+
+order_tasks() {
+    # Join the output of sort_after and sort_selected on the after-task field
+    # to eliminate any after-dependencies that aren't selected. Pass the
+    # output to tsort to get it in (reverse) dependency order. Filter out
+    # the made up "all" task, and finally reverse the order to get the actual
+    # execution order which is this function's output.
+
+    join -1 2 -2 1 -o '1.1 1.2' <(sort_after "$@") <(sort_selected "$@") | \
+        tsort | grep -v "^all$" | tac
+}
+
+
+main() {
+    local -a selected ordered
+
+    readarray -t selected < <(pick_tasks)
+    if (( ${#selected[*]} > 0 )); then
+        readarray -t ordered < <(order_tasks "${selected[@]}")
+
+        do_preinst "${ordered[@]}"
+        do_install "${ordered[@]}"
+        do_postinst "${ordered[@]}"
+    else
+        echo "Install cancelled" >&2
+        exit 1
+    fi
+}
+
+main
