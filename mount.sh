@@ -88,7 +88,7 @@ clean_all_mounts() {
 
     while grep "^$device" /proc/mounts; do
         info "Removing mount at $(grep "^$device" | cut -f 2 -d " ")"
-        sudo umount "$device"
+        umount "$device"
     done
 }
 
@@ -106,13 +106,18 @@ warning() {
 main() {
     local dev
 
+    if [ $EUID -ne 0 ]; then
+        info "Not running as root, re-execing under sudo"
+        exec sudo -- "$0" "$@"
+    fi
+
     info "Waiting for SD card... "
     dev=$(wait_for_sd)
     echo "Found $dev" >&2
     echo >&2
 
     info "Current partition layout"
-    sudo fdisk -l "$dev"
+    fdisk -l "$dev"
     echo >&2
 
     boot_part="$(boot_partition "$dev")"
@@ -120,19 +125,19 @@ main() {
 
     if [ -e "$boot_part" ]; then
         info "Mounting $boot_part on /mnt/boot"
-        sudo mkdir -p /mnt/boot
-        sudo mount "$boot_part" /mnt/boot
+        mkdir -p /mnt/boot
+        mount "$boot_part" /mnt/boot
         if [ -e "$root_part" ]; then
             info "Mounting $root_part on /mnt/root"
-            sudo mkdir -p /mnt/root
-            sudo mount "$root_part" /mnt/root
+            mkdir -p /mnt/root
+            mount "$root_part" /mnt/root
             launch_shell
-            sudo umount /mnt/root
+            umount /mnt/root
         else
             warning "No root partition; blank media?"
             launch_shell
         fi
-        sudo umount /mnt/boot
+        umount /mnt/boot
     else
         warning "No boot partition; wtf?"
     fi
