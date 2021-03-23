@@ -44,19 +44,29 @@ root_partition() {
 wait_for_sd() {
     local dev
 
-    dev=$(inotifywait -q \
-        --event create \
-        --exclude "[^0-9]$" \
-        --format "%w%f" \
-        /dev)
-    case "$dev" in
-        /dev/sd*[0-9])
-            dev=${dev%[0-9]}
-            ;;
-        /dev/mmcblk*p[0-9])
-            dev=${dev%p[0-9]}
-            ;;
-    esac
+    while true; do
+        dev=$(inotifywait -q \
+            --event create \
+            --exclude "[^0-9]$" \
+            --format "%w%f" \
+            /dev)
+        case "$dev" in
+            /dev/sd*[0-9])
+                dev=${dev%[0-9]}
+                break
+                ;;
+            /dev/mmcblk*p[0-9])
+                dev=${dev%p[0-9]}
+                break
+                ;;
+            /dev/mmcblk[0-9])
+                break
+                ;;
+            *)
+                echo "Ignoring $dev" >&2
+                ;;
+        esac
+    done
     echo "$dev"
 }
 
@@ -68,6 +78,18 @@ launch_shell() {
     info "Launching shell; exit to unmount media"
     "${fields[6]}" -i || true
     info "Unmounting media"
+}
+
+
+clean_all_mounts() {
+    local device
+
+    device="$1"
+
+    while grep "^$device" /proc/mounts; do
+        info "Removing mount at $(grep "^$device" | cut -f 2 -d " ")"
+        sudo umount "$device"
+    done
 }
 
 
@@ -93,12 +115,17 @@ main() {
     sudo fdisk -l "$dev"
     echo >&2
 
-    if [ -e "$(boot_partition "$dev")" ]; then
-        info "Mounting boot partition on /mnt/boot"
-        sudo mount "$(boot_partition "$dev")" /mnt/boot
-        if [ -e "$(root_partition "$dev")" ]; then
-            info "Mounting root partition on /mnt/root"
-            sudo mount "$(root_partition "$dev")" /mnt/root
+    boot_part="$(boot_partition "$dev")"
+    root_part="$(root_partition "$dev")"
+
+    if [ -e "$boot_part" ]; then
+        info "Mounting $boot_part on /mnt/boot"
+        sudo mkdir -p /mnt/boot
+        sudo mount "$boot_part" /mnt/boot
+        if [ -e "$root_part" ]; then
+            info "Mounting $root_part on /mnt/root"
+            sudo mkdir -p /mnt/root
+            sudo mount "$root_part" /mnt/root
             launch_shell
             sudo umount /mnt/root
         else
@@ -109,6 +136,9 @@ main() {
     else
         warning "No boot partition; wtf?"
     fi
+
+    clean_all_mounts "$boot_part"
+    clean_all_mounts "$root_part"
 }
 
 
