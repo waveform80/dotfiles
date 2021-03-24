@@ -2,73 +2,8 @@
 
 set -eu
 
-
-boot_partition() {
-    local dev
-
-    dev=$1
-    case "$dev" in
-        /dev/sd*)
-            echo "$dev"1
-            ;;
-        /dev/mmcblk*)
-            echo "$dev"p1
-            ;;
-        *)
-            echo "Cannot determine boot partition for $dev" >&2
-            return 1
-            ;;
-    esac
-}
-
-
-root_partition() {
-    local dev
-
-    dev=$1
-    case "$dev" in
-        /dev/sd*)
-            echo "$dev"2
-            ;;
-        /dev/mmcblk*)
-            echo "$dev"p2
-            ;;
-        *)
-            echo "Cannot determine root partition for $dev" >&2
-            return 1
-            ;;
-    esac
-}
-
-
-wait_for_sd() {
-    local dev
-
-    while true; do
-        dev=$(inotifywait -q \
-            --event create \
-            --exclude "[^0-9]$" \
-            --format "%w%f" \
-            /dev)
-        case "$dev" in
-            /dev/sd*[0-9])
-                dev=${dev%[0-9]}
-                break
-                ;;
-            /dev/mmcblk*p[0-9])
-                dev=${dev%p[0-9]}
-                break
-                ;;
-            /dev/mmcblk[0-9])
-                break
-                ;;
-            *)
-                echo "Ignoring $dev" >&2
-                ;;
-        esac
-    done
-    echo "$dev"
-}
+# shellcheck source=functions.bash
+. "$(dirname "$(realpath "$0")")"/functions.bash
 
 
 launch_shell() {
@@ -90,16 +25,6 @@ clean_all_mounts() {
         info "Removing mount at $(grep "^$device" | cut -f 2 -d " ")"
         umount "$device"
     done
-}
-
-
-info() {
-    echo "[1;32m$*[0m" >&2
-}
-
-
-warning() {
-    echo "[1;31m$*[0m" >&2
 }
 
 
