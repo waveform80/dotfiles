@@ -34,6 +34,8 @@ setopt INC_APPEND_HISTORY_TIME
 # Act like sh/ksh with >> against non-existing file
 setopt APPEND_CREATE
 
+eval "$(dircolors)"
+
 alias ls="ls --color=auto"
 alias dir="dir --color=auto"
 alias vdir="vdir --color=auto"
