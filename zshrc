@@ -46,6 +46,7 @@ alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 alias sbs="sbuild --no-arch-any --no-arch-all --source"
 alias sbb="sbuild --arch-any --arch-all --no-source"
+alias sba="sbuild --arch-any --arch-all --source"
 alias usbcon="screen -e ^Ta /dev/ttyUSB0 115200"
 alias sercon="screen -e ^Ta /dev/ttyAMA0 115200"
 
