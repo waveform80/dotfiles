@@ -396,6 +396,9 @@ task_uk() {
                     -e '/#no-compose/ s/.*/compose/' \
                     /etc/kmscon/kmscon.conf
             fi
+            if [ -x /usr/bin/gsettings ]; then
+                gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
+            fi
             ;;
     esac
 }
