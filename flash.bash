@@ -6,32 +6,6 @@ set -eu
 . "$(dirname "$(realpath "$0")")"/functions.bash
 
 
-unpack() {
-    local image
-
-    image=$1
-    case "$image" in
-        *.img)
-            cat "$image"
-            ;;
-        *.gz)
-            zcat "$image"
-            ;;
-        *.bz2)
-            bzcat "$image"
-            ;;
-        *.xz)
-            xzcat "$image"
-            ;;
-        *.zip)
-            filename="${image##*/}"
-            filename="${filename%.zip}.img"
-            unzip -p "$image" "$filename"
-            ;;
-    esac
-}
-
-
 show_parts() {
     local dev
 

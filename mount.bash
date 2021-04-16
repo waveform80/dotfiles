@@ -5,6 +5,9 @@ set -eu
 # shellcheck source=functions.bash
 . "$(dirname "$(realpath "$0")")"/functions.bash
 
+IMAGE=""
+DEVICE=""
+
 
 launch_shell() {
     local -a fields
@@ -17,36 +20,53 @@ launch_shell() {
 
 
 clean_all_mounts() {
-    local device
-
-    device="$1"
-
-    while grep "^$device" /proc/mounts; do
-        info "Removing mount at $(grep "^$device" | cut -f 2 -d " ")"
-        umount "$device"
+    while grep "^$DEVICE" /proc/mounts; do
+        info "Removing mount at $(grep "^$DEVICE" | cut -f 2 -d " ")"
+        umount "$DEVICE"
     done
 }
 
 
+cleanup() {
+    [ -n "$DEVICE" ] && losetup -d "$DEVICE"
+    rm -f "$IMAGE"
+}
+
+
 main() {
-    local dev
+    local archive
+
+    if [ $# -gt 1 ]; then
+        echo "Usage: ${0##*/} [image-file-or-archive]" >&2
+        exit 2
+    fi
 
     if [ $EUID -ne 0 ]; then
         info "Not running as root, re-execing under sudo"
         exec sudo -- "$0" "$@"
     fi
 
-    info "Waiting for SD card... "
-    dev=$(wait_for_sd)
-    echo "Found $dev" >&2
+    if [ $# -eq 0 ]; then
+        info "Waiting for SD card... "
+        DEVICE=$(wait_for_sd)
+        echo "Found $DEVICE" >&2
+    else
+        archive="$1"
+        IMAGE=$(mktemp -t XXXXXXXX.img)
+        trap cleanup EXIT
+        info "Unpacking $archive"
+        unpack "$archive" > "$IMAGE"
+        DEVICE=$(losetup --read-only --partscan --find --show "$IMAGE")
+        echo "Looped onto $DEVICE" >&2
+    fi
     echo >&2
 
     info "Current partition layout"
-    fdisk -l "$dev"
+    fdisk -l "$DEVICE"
     echo >&2
 
-    boot_part="$(boot_partition "$dev")"
-    root_part="$(root_partition "$dev")"
+    boot_part="$(boot_partition "$DEVICE")"
+    root_part="$(root_partition "$DEVICE")"
 
     if [ -e "$boot_part" ]; then
         info "Mounting $boot_part on /mnt/boot"

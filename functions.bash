@@ -1,4 +1,28 @@
-#!/bin/bash
+unpack() {
+    local image
+
+    image=$1
+    case "$image" in
+        *.img)
+            cat "$image"
+            ;;
+        *.gz)
+            zcat "$image"
+            ;;
+        *.bz2)
+            bzcat "$image"
+            ;;
+        *.xz)
+            xzcat "$image"
+            ;;
+        *.zip)
+            filename="${image##*/}"
+            filename="${filename%.zip}.img"
+            unzip -p "$image" "$filename"
+            ;;
+    esac
+}
+
 
 boot_partition() {
     local dev
@@ -8,7 +32,7 @@ boot_partition() {
         /dev/sd*)
             echo "$dev"1
             ;;
-        /dev/mmcblk*)
+        /dev/mmcblk*|/dev/loop*)
             echo "$dev"p1
             ;;
         *)
@@ -27,7 +51,7 @@ root_partition() {
         /dev/sd*)
             echo "$dev"2
             ;;
-        /dev/mmcblk*)
+        /dev/mmcblk*|/dev/loop*)
             echo "$dev"p2
             ;;
         *)
