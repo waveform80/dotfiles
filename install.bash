@@ -329,7 +329,12 @@ EOF
             local vim_pack
 
             ln -sf "$HOME"/dotfiles/vimrc "$HOME"/.vimrc
-            vim-addons install align supertab python-jedi python-indent
+            vim_scripts_ver=$(dpkg-query -f '${Version}' -W vim-scripts)
+            if dpkg --compare-versions "$vim_scripts_ver" ge 20210101; then
+                vim-addons install python-jedi
+            else
+                vim-addons install align supertab python-jedi python-indent
+            fi
             vim_pack="$HOME"/.vim/pack/plugins/start
             mkdir -p "$vim_pack"
             [ -d "$vim_pack"/unimpaired ] || git clone https://tpope.io/vim/unimpaired.git "$vim_pack"/unimpaired
