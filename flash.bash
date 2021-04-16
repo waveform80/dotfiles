@@ -57,7 +57,7 @@ fix_config() {
         fi
         if [ -e /mnt/boot/network-config ]; then
             if confirm "Add wifi configuration? [y/n] "; then
-                echo doing it...
+                echo FIXME
             fi
         fi
         if [ -e /mnt/boot/config.txt ]; then
@@ -106,8 +106,6 @@ main() {
     if confirm "Flash $image to $dev [y/n] "; then
         unpack "$image" | dd of="$dev" bs=16M status=progress
         sync
-        boot_part="$(boot_partition "$dev")"
-        root_part="$(root_partition "$dev")"
         show_parts "$dev"
         show_release "$dev"
         fix_config "$dev"
