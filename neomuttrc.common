@@ -8,7 +8,6 @@ set forward_references
 set include
 set ispell = "aspell"
 set mail_check = 10
-set mail_check_stats
 set maildir_check_cur
 set menu_context = 4
 set menu_scroll

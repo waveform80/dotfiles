@@ -37,6 +37,12 @@ set history=500
 set printfont=courier:h9
 set printoptions=paper:a4,formfeed:y,number:y,left:36pt,right:36pt,top:36pt,bottom:36pt
 
+if has("packages")
+	packadd! AlignPlugin
+	packadd! python-indent
+	packadd! supertab
+endif
+
 " Use the tab completion menu and ignore certain files
 if has("wildmenu")
 	set wildmenu

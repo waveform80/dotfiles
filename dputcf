@@ -1,6 +1,12 @@
 [DEFAULT]
 default_host_main = waveform-ppa
 
+[raspberrypi]
+login = incoming
+incoming = incoming
+fqdn = build-master.raspberrypi.org
+method = scp
+
 [waveform-ppa]
 fqdn = ppa.launchpad.net
 method = sftp

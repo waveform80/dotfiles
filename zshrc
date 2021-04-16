@@ -34,6 +34,8 @@ setopt INC_APPEND_HISTORY_TIME
 # Act like sh/ksh with >> against non-existing file
 setopt APPEND_CREATE
 
+eval "$(dircolors)"
+
 alias ls="ls --color=auto"
 alias dir="dir --color=auto"
 alias vdir="vdir --color=auto"
@@ -44,6 +46,7 @@ alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 alias sbs="sbuild --no-arch-any --no-arch-all --source"
 alias sbb="sbuild --arch-any --arch-all --no-source"
+alias sba="sbuild --arch-any --arch-all --source"
 alias usbcon="screen -e ^Ta /dev/ttyUSB0 115200"
 alias sercon="screen -e ^Ta /dev/ttyAMA0 115200"
 
