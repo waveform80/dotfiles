@@ -11,7 +11,7 @@ show_parts() {
 
     info "Partition layout"
     dev="$1"
-    fdisk -l "$dev"
+    fdisk -l "$dev" || true
     echo >&2
 }
 
@@ -22,15 +22,18 @@ show_release() {
     dev="$1"
     root_part="$(root_partition "$dev")"
     if [ -e "$root_part" ]; then
-        mount "$root_part" /mnt/root
-        if [ -r /mnt/root/etc/os-release ]; then
-            info "Content of /etc/os-release"
-            cat /mnt/root/etc/os-release >&2
-            echo >&2
+        if mount "$root_part" /mnt/root; then
+            if [ -r /mnt/root/etc/os-release ]; then
+                info "Content of /etc/os-release"
+                cat /mnt/root/etc/os-release >&2
+                echo >&2
+            else
+                warning "Cannot find /etc/os-release"
+            fi
+            umount /mnt/root
         else
-            warning "Cannot find /etc/os-release"
+            warning "Cannot mount root partition; bad media?"
         fi
-        umount /mnt/root
     else
         warning "No root partition; blank media?"
     fi
