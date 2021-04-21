@@ -270,7 +270,7 @@ inoremap <Leader>m µ
 inoremap <Leader>inf ∞
 inoremap <Leader>(c) ©
 inoremap <Leader>(r) ®
-inoremap <Leader>tm ™
+inoremap <Leader>TM ™
 inoremap <Leader>est ℮
 inoremap <Leader>co ℅
 inoremap <Leader>-> →
