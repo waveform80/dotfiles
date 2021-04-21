@@ -1,5 +1,5 @@
 [DEFAULT]
-default_host_main = waveform-ppa
+default_host_main = ppa
 
 [raspberrypi]
 login = incoming
@@ -7,19 +7,17 @@ incoming = incoming
 fqdn = build-master.raspberrypi.org
 method = scp
 
-[waveform-ppa]
-fqdn = ppa.launchpad.net
+[ubuntu]
+fqdn = upload.ubuntu.com
 method = sftp
-incoming = ~waveform/ppa/ubuntu/
+incoming = /ubuntu
 login = waveform
-allow_unsigned_uploads = 0
 
-[waveform-pkg]
+[ppa]
 fqdn = ppa.launchpad.net
 method = sftp
-incoming = ~waveform/ubuntu/pkg/
+incoming = ~%(ppa)s
 login = waveform
-allow_unsigned_uploads = 0
 
 [mentors]
 fqdn = mentors.debian.net
