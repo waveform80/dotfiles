@@ -38,9 +38,15 @@ set printfont=courier:h9
 set printoptions=paper:a4,formfeed:y,number:y,left:36pt,right:36pt,top:36pt,bottom:36pt
 
 if has("packages")
-	packadd! AlignPlugin
-	packadd! python-indent
-	packadd! supertab
+	if isdirectory("/usr/share/vim-scripts/AlignPlugin")
+		packadd! AlignPlugin
+	endif
+	if isdirectory("/usr/share/vim-scripts/python-indent")
+		packadd! python-indent
+	endif
+	if isdirectory("/usr/share/vim-scripts/supertab")
+		packadd! supertab
+	endif
 endif
 
 " Use the tab completion menu and ignore certain files
