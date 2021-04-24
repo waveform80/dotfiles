@@ -49,6 +49,23 @@ task_dev() {
 }
 
 
+task_doc() {
+    case "$1" in
+        title)
+            echo "Install documentation tools (sphinx, graphviz, ...)"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo python3-sphinx python3-sphinx-rtd-theme inkscape xdot
+            echo fritzing mscgen texlive-latex-recommended texlive-latex-extra
+            echo texlive-xetex texlive-fonts-recommended latexmk xindy
+            ;;
+    esac
+}
+
+
 task_pack() {
     case "$1" in
         title)
@@ -102,19 +119,12 @@ task_py() {
             echo 1
             ;;
         packages)
-            cat << EOF
-ipython3
-python3-dev
-python3-pip
-python3-virtualenv
-python3-pygments
-virtualenvwrapper
-EOF
+            echo ipython3 python3-dev python3-pip python3-virtualenv
+            echo python3-pygments virtualenvwrapper tox pylint
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/pystartup "$HOME"/.pystartup
             ln -sf "$HOME"/dotfiles/pylintrc "$HOME"/.pylintrc
-            ln -sf "$HOME"/dotfiles/flake8 "$HOME"/.flake8
             ;;
     esac
 }
@@ -238,6 +248,21 @@ task_music() {
 }
 
 
+task_fonts() {
+    case "$1" in
+        title)
+            echo "Install fonts"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo fonts-powerline fonts-inconsolata fonts-ubuntu
+            ;;
+    esac
+}
+
+
 task_kmscon() {
     case "$1" in
         title)
@@ -247,7 +272,7 @@ task_kmscon() {
             echo 0
             ;;
         packages)
-            echo fonts-powerline fonts-inconsolata fonts-ubuntu kmscon
+            echo fonts-powerline fonts-ubuntu kmscon
             ;;
         preinst)
             if which add-apt-repository; then
@@ -314,16 +339,8 @@ task_vim() {
             else
                 vim="vim-nox"
             fi
-            cat << EOF
-aspell
-${vim}
-vim-addon-manager
-vim-scripts
-vim-airline
-vim-airline-themes
-vim-python-jedi
-vim-syntastic
-EOF
+            echo aspell ${vim} vim-addon-manager vim-scripts
+            echo vim-airline vim-airline-themes vim-python-jedi vim-syntastic
             ;;
         postinst)
             local vim_pack
