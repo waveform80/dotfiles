@@ -1,7 +1,7 @@
 unpack() {
     local image
 
-    image=$1
+    image="$1"
     case "$image" in
         *.img)
             cat "$image"
@@ -27,7 +27,7 @@ unpack() {
 boot_partition() {
     local dev
 
-    dev=$1
+    dev="$1"
     case "$dev" in
         /dev/sd*)
             echo "$dev"1
@@ -46,7 +46,7 @@ boot_partition() {
 root_partition() {
     local dev
 
-    dev=$1
+    dev="$1"
     case "$dev" in
         /dev/sd*)
             echo "$dev"2
@@ -56,6 +56,25 @@ root_partition() {
             ;;
         *)
             echo "Cannot determine root partition for $dev" >&2
+            return 1
+            ;;
+    esac
+}
+
+
+all_partitions() {
+    local dev
+
+    dev="$1"
+    case "$dev" in
+        /dev/sd*)
+            echo "${dev}[0-9][0-9]*"
+            ;;
+        /dev/mmcblk*|/dev/loop*)
+            echo "${dev}p[0-9][0-9]*"
+            ;;
+        *)
+            echo "Cannot generate partitions pattern for $dev" >&2
             return 1
             ;;
     esac

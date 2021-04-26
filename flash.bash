@@ -40,6 +40,24 @@ show_release() {
 }
 
 
+umount_parts() {
+    local dev
+
+    dev="$1"
+    pattern="$(all_partitions "$dev")"
+
+    info "Waiting for other mounts to show up"
+    sleep 3
+    while grep -q "$pattern" /proc/mounts; do
+        for part in $(grep -o "$pattern" /proc/mounts); do
+            info "Unmounting $part"
+            umount $part
+        done
+        sleep 3
+    done
+}
+
+
 fix_config() {
     local dev boot_part
 
@@ -107,6 +125,7 @@ main() {
     show_release "$dev"
 
     if confirm "Flash $image to $dev [y/n] "; then
+        umount_parts "$dev"
         unpack "$image" | dd of="$dev" bs=16M status=progress
         sync
         show_parts "$dev"
