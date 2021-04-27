@@ -5,13 +5,8 @@ export PATH=$PATH:$HOME/.local/bin:/snap/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
-export DEBFULLNAME="Dave Jones"
-export DEBEMAIL="dave@waveform.org.uk"
 export LESS=" -R"
 export LESSOPEN="| /usr/bin/pygmentize -f terminal256 -O style=perldoc %s"
-
-# GPG key
-export GPGKEY=A057F8D5
 
 # Use uneven column widths when listing completions to reduce the number of
 # rows printed
