@@ -1,5 +1,5 @@
 [DEFAULT]
-default_host_main = ppa
+default_host_main = unspecified
 
 [raspberrypi]
 login = incoming
