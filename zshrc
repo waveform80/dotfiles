@@ -5,8 +5,16 @@ export PATH=$PATH:$HOME/.local/bin:/snap/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
-export LESS=" -R"
-export LESSOPEN="| /usr/bin/pygmentize -f terminal256 -O style=perldoc %s"
+if [ -x /usr/bin/batcat ]; then
+    export LESSOPEN="| /usr/bin/batcat --color always --theme ansi-dark --plain %s"
+    export LESS=" -R"
+elif [ -x /usr/bin/highlight ]; then
+    export LESSOPEN="| /usr/bin/highlight --force --out-format=xterm256 %s"
+    export LESS=" -R"
+elif [ -x /usr/bin/pygmentize ]; then
+    export LESSOPEN="| /usr/bin/pygmentize -f terminal256 -O style=perldoc %s"
+    export LESS=" -R"
+fi
 
 # Use uneven column widths when listing completions to reduce the number of
 # rows printed
