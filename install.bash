@@ -122,6 +122,8 @@ task_py() {
         packages)
             echo ipython3 python3-dev python3-pip python3-virtualenv
             echo python3-pygments virtualenvwrapper tox pylint
+            # Blog bits
+            echo pelican python3-typogrify
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/pystartup "$HOME"/.pystartup
