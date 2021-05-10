@@ -15,6 +15,10 @@ set mime_type_query_command = "file -bi"
 set pager_context = 4
 set pager_index_lines = 10
 set pager_stop
+set reflow_text
+set reflow_wrap = -2
+set smart_wrap
+unset markers
 set reply_to
 set search_context = 4
 set send_charset = "us-ascii:utf-8"
