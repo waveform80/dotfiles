@@ -142,7 +142,7 @@ task_email() {
             echo 0
             ;;
         packages)
-            echo isync neomutt notmuch msmtp-mta
+            echo isync neomutt notmuch msmtp-mta abook
             ;;
         postinst)
             mkdir -p "$HOME"/.mail/{home,work}
