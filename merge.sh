@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+MY_PATH=$(dirname $(readlink -f $0))
 
 main() {
     case "$1" in
@@ -140,10 +141,13 @@ finish() {
         ${tmpdir}/changelog.old.ubuntu \
         ${tmpdir}/changelog.new.debian > debian/changelog
     git commit debian/changelog -m merge-changelog
-    debchange -i "Merge from Debian unstable. Remaining changes:"
-    # XXX How to inject messages here?
-    # git log new/debian.. --topo-order --reverse --format=\\%B
-    debchange -a
+    debchange -i "Merge from Debian unstable. Remaining changes:" --distribution $(distro-info --devel)
+    debchange -a "Removed obsolete patches/changes:"
+    debchange -a "Removed patches obsoleted/merged by upstream:"
+    git log new/debian.. --topo-order --reverse --format="%B%n### END ###" | \
+        $MY_PATH/mergedch.py > ${tmpdir}/changelog.insert
+    sed -i -e "3r ${tmpdir}/changelog.insert" debian/changelog
+    debchange -r
     git commit debian/changelog -m reconstruct-changelog
     echo "Updating maintainer"
     update-maintainer && git commit -m update-maintainer -- debian/control || true
