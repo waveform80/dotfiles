@@ -26,6 +26,7 @@ start() {
 
     local merge_base=$(git merge-base origin/debian/sid origin/ubuntu/devel)
     local old_ubuntu=$(get_version origin/ubuntu/devel)
+    local old_ubuntu_tag=$(version_to_tag ${old_ubuntu})
     local new_debian=$(get_version origin/debian/sid)
     local old_debian=$(get_version $merge_base)
 
@@ -45,7 +46,7 @@ start() {
     echo "  old/debian pointing at import/${old_debian}"
     git tag new/debian origin/debian/sid
     echo "  new/debian pointing at import/${new_debian}"
-    git tag reconstruct/${old_ubuntu} old/ubuntu
+    git tag reconstruct/${old_ubuntu_tag} old/ubuntu
     git checkout old/ubuntu
     echo "Create split and tag with:"
     echo "  git rebase -i old/debian"
@@ -61,9 +62,10 @@ split() {
     local old_debian=$(get_version old/debian)
     local new_debian=$(get_version new/debian)
     local old_ubuntu=$(get_version old/ubuntu)
+    local old_ubuntu_tag=$(version_to_tag ${old_ubuntu})
 
-    git tag split/${old_ubuntu}
-    echo "Created split/${old_ubuntu} pointing at HEAD"
+    git tag split/${old_ubuntu_tag}
+    echo "Created split/${old_ubuntu_tag} pointing at HEAD"
     echo "Clean up logical branch and tag with:"
     echo "  git rebase -i old/debian"
     echo "  merge logical"
@@ -96,11 +98,12 @@ logical() {
     local old_debian=$(get_version old/debian)
     local new_debian=$(get_version new/debian)
     local old_ubuntu=$(get_version old/ubuntu)
+    local old_ubuntu_tag=$(version_to_tag ${old_ubuntu})
 
-    git tag logical/${old_ubuntu}
-    echo "Created logical/${old_ubuntu} pointing at HEAD"
+    git tag logical/${old_ubuntu_tag}
+    echo "Created logical/${old_ubuntu_tag} pointing at HEAD"
     echo "Rebase onto new/debian and finish with:"
-    echo "  git rebase --onto new/debian old/debian logical/${old_ubuntu}"
+    echo "  git rebase --onto new/debian old/debian logical/${old_ubuntu_tag}"
     echo "  merge review"
 }
 
@@ -111,12 +114,14 @@ review() {
     local old_debian=$(get_version old/debian)
     local new_debian=$(get_version new/debian)
     local old_ubuntu=$(get_version old/ubuntu)
+    local old_ubuntu_tag=$(version_to_tag ${old_ubuntu})
     local new_ubuntu=${new_debian}ubuntu1
+    local new_ubuntu_tag=$(version_to_tag ${new_ubuntu})
 
-    git tag logical/${new_ubuntu}
-    echo "Created logical/${new_ubuntu} pointing at HEAD"
+    git tag logical/${new_ubuntu_tag}
+    echo "Created logical/${new_ubuntu_tag} pointing at HEAD"
     echo "Review changes and generate changelogs with:"
-    echo "  git range-diff old/debian..logical/${old_ubuntu} new/debian..logical/${new_ubuntu}"
+    echo "  git range-diff old/debian..logical/${old_ubuntu_tag} new/debian..logical/${new_ubuntu_tag}"
     echo "  merge finish"
 }
 
@@ -128,6 +133,8 @@ finish() {
     local new_debian=$(get_version new/debian)
     local old_ubuntu=$(get_version old/ubuntu)
     local new_ubuntu=${new_debian}ubuntu1
+    local new_ubuntu_tag=$(version_to_tag ${new_ubuntu})
+    local devel_name=$(distro-info --devel)
 
     tmpdir=$(mktemp -d /tmp/merge.XXXX)
     trap 'rm -fr -- "${tmpdir}"' EXIT
@@ -141,7 +148,7 @@ finish() {
         ${tmpdir}/changelog.old.ubuntu \
         ${tmpdir}/changelog.new.debian > debian/changelog
     git commit debian/changelog -m merge-changelog
-    debchange -i "Merge from Debian unstable. Remaining changes:" --distribution $(distro-info --devel)
+    debchange -i "Merge from Debian unstable. Remaining changes:" --distribution ${devel_name}
     debchange -a "Removed obsolete patches/changes:"
     debchange -a "Removed patches obsoleted/merged by upstream:"
     git log new/debian.. --topo-order --reverse --format="%B%n### END ###" | \
@@ -151,11 +158,11 @@ finish() {
     git commit debian/changelog -m reconstruct-changelog
     echo "Updating maintainer"
     update-maintainer && git commit -m update-maintainer -- debian/control || true
-    git tag merge/${new_ubuntu}
-    echo "Created merge/${new_ubuntu} pointing at HEAD"
+    git tag merge/${new_ubuntu_tag}
+    echo "Created merge/${new_ubuntu_tag} pointing at HEAD"
     echo "Now build source and test with:"
     echo "  sbuild --no-arch-any --no-arch-all --source --force-orig-source"
-    echo "  autopkgtest -- schroot $(ubuntu-distro-info --devel)-$(dpkg-architecture -q DEB_HOST_ARCH)"
+    echo "  autopkgtest -- schroot ${devel_name}-$(dpkg-architecture -q DEB_HOST_ARCH)"
 }
 
 die() {
@@ -168,25 +175,37 @@ work_dir_clean() {
 }
 
 descends_from() {
-    local commitish=$1
+    local commitish="$1"
 
     git merge-base --is-ancestor ${commitish} HEAD || \
         die "HEAD does not descend from ${commitish}!"
 }
 
 not_descends_from() {
-    local commitish=$1
+    local commitish="$1"
 
     git merge-base --is-ancestor ${commitish} HEAD && \
         die "HEAD descends from ${commitish}!" || true
 }
 
 get_version() {
-    local commitish=$1
+    local commitish="$1"
 
     git cat-file blob ${commitish}:debian/changelog | \
         head -n 1 | \
         sed -n -e 's/.*(//' -e 's/).*//p'
+}
+
+version_to_tag() {
+    local version="$1"
+
+    echo "$version" | perl -pe 'y/:~/%_/; s/\.(?=\.|$|lock$)/.#/g;'
+}
+
+tag_to_version() {
+    local tag=$1
+
+    echo "$version" | perl -pe 'y/%_/:~/; s/#//g;'
 }
 
 main "$@"
