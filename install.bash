@@ -150,7 +150,7 @@ task_email() {
             ln -sf "$HOME"/dotfiles/mbsyncrc "$HOME"/.mbsyncrc
             ln -sf "$HOME"/dotfiles/notmuch-home "$HOME"/.mail/home/.notmuch-config
             ln -sf "$HOME"/dotfiles/notmuch-work "$HOME"/.mail/work/.notmuch-config
-            ln -sf "$HOME"/dotfiles/msmtprc "$HOME"/.msmtprc
+            ln -sf "$HOME"/dotfiles/dot_msmtprc "$HOME"/.msmtprc
             chmod 600 "$HOME"/dotfiles/msmtprc
             ln -sf "$HOME"/dotfiles/mailcap "$HOME"/.mailcap
             mkdir -p "$XDG_CONFIG_HOME"/systemd/user/
