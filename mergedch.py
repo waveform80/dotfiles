@@ -19,7 +19,7 @@ def split_entries(source, delimiter='### END ###'):
         yield entry
 
 
-def filter_items(entry, tags=('*', '-')):
+def filter_items(entry, tags=('*', '+', '-')):
     tags = tuple(tags)
     for line in entry:
         if line.strip():
@@ -31,7 +31,7 @@ def filter_items(entry, tags=('*', '-')):
                 pass
 
 
-def split_items(entry, tags=('*', '-')):
+def split_items(entry, tags=('*', '+', '-')):
 
     def make_item():
         if lines:
