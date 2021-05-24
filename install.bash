@@ -76,7 +76,7 @@ task_pack() {
             echo 0
             ;;
         packages)
-            echo ubuntu-dev-tools packaging-dev sbuild
+            echo ubuntu-dev-tools packaging-dev sbuild shellcheck
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
@@ -84,7 +84,7 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/dputcf "$HOME"/.dput.cf
             ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
             ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
-            ln -sf "$HOME"/dotfiles/merge.sh "$HOME"/.local/bin/merge
+            ln -sf "$HOME"/dotfiles/merge.bash "$HOME"/.local/bin/merge
             ;;
     esac
 }
