@@ -62,6 +62,7 @@ task_doc() {
             echo python3-sphinx python3-sphinx-rtd-theme inkscape xdot
             echo fritzing mscgen texlive-latex-recommended texlive-latex-extra
             echo texlive-xetex texlive-fonts-recommended latexmk xindy
+            echo pdftk-java
             ;;
     esac
 }
