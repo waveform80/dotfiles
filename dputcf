@@ -1,11 +1,11 @@
 [DEFAULT]
 default_host_main = unspecified
 
-[raspberrypi]
-login = incoming
-incoming = incoming
+[rpi]
 fqdn = build-master.raspberrypi.org
-method = scp
+method = sftp
+incoming = %(rpi)s
+login = waveform
 
 [ubuntu]
 fqdn = upload.ubuntu.com
