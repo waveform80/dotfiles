@@ -172,7 +172,7 @@ task_fs() {
             echo 1
             ;;
         packages)
-            echo atool ncdu entr inotify-tools ranger shed
+            echo atool ncdu entr inotify-tools ranger shed mc
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/ranger
