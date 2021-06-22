@@ -78,14 +78,18 @@ function w3up() { w3m packages.ubuntu.com/search\?searchon=names\&suite=all\&sec
 function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
 function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
 function bug() { w3m launchpad.net/bugs/$1; }
+
 function sync() {
     mbsync $1 && NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config notmuch new
 }
+
 function mutt() {
     NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config \
         neomutt -F $HOME/dotfiles/neomuttrc.$1;
 }
+
 function abook() { /usr/bin/abook --datafile $HOME/.mail/$1/address }
+
 function rm-sbuild() {
     if [ -d /var/lib/schroot/chroots/$1 ]; then
         sudo rm -fr /var/lib/schroot/chroots/$1
@@ -94,6 +98,7 @@ function rm-sbuild() {
         echo "No such chroot: $1" 2>/dev/null
     fi
 }
+
 function gcal() {
     while true; do
         clear
@@ -102,6 +107,10 @@ function gcal() {
         gcalcli calw --monday
         sleep 600
     done
+}
+
+function vimrecover() {
+    find . -type f -name '.*.sw?' -exec vim -r "{}" -c DiffSwap \; -exec rm -iv "{}" \;
 }
 
 
