@@ -358,7 +358,7 @@ review() {
 
 
 finish() {
-    local new_debian new_ubuntu new_ubuntu_tag merge_bug
+    local new_debian new_ubuntu new_ubuntu_tag merge_bug devel_name
 
     work_dir_clean
     descends_from new/debian
@@ -367,16 +367,13 @@ finish() {
     new_debian=$(get_version new/debian)
     new_ubuntu="$new_debian"ubuntu1
     new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+    devel_name=$(distro-info --devel)
 
     [ -z "${merge_bug}" ] && die "Missing merge bug!"
 
     tmpdir=$(mktemp -d /tmp/merge.XXXX)
     trap 'rm -fr -- "${tmpdir}"' EXIT
 
-    echo "Updating maintainer"
-    if update-maintainer; then
-        git commit -m update-maintainer -- debian/control
-    fi
     echo "Merging changelogs"
     git cat-file blob old/debian:debian/changelog > "$tmpdir"/changelog.old.debian
     git cat-file blob old/ubuntu:debian/changelog > "$tmpdir"/changelog.old.ubuntu
@@ -386,13 +383,17 @@ finish() {
         "$tmpdir"/changelog.old.ubuntu \
         "$tmpdir"/changelog.new.debian > debian/changelog
     git commit debian/changelog -m merge-changelog
-    debchange -i "Merge from Debian unstable (LP: ${merge_bug}#). Remaining changes:" --distribution "$devel_name"
+    debchange -i "Merge from Debian unstable (LP: #${merge_bug}). Remaining changes:" --distribution "$devel_name"
     debchange -a "Removed obsolete patches/changes:"
     debchange -a "Removed patches obsoleted/merged by upstream:"
     git log new/debian.. --topo-order --reverse --format="%B%n### END ###" | \
         "$MY_PATH"/mergedch.py > "$tmpdir"/changelog.insert
     sed -i -e "3r ${tmpdir}/changelog.insert" debian/changelog
     debchange -r
+    echo "Updating maintainer"
+    if update-maintainer; then
+        git commit -m update-maintainer -- debian/control
+    fi
     git commit -m reconstruct-changelog -- debian/changelog
     git tag merge/"$new_ubuntu_tag"
     echo "Created merge/$new_ubuntu_tag pointing at HEAD"
