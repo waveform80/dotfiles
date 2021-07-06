@@ -46,7 +46,7 @@ main() {
 
 whatnow() {
     echo -n $MSG
-    if ! git rev-parse --git-dir 2>/dev/null; then
+    if ! git rev-parse --git-dir >/dev/null; then
         local project
 
         project="$1"
