@@ -59,7 +59,7 @@ umount_parts() {
 
 
 fix_config() {
-    local dev boot_part
+    local dev boot_part ap password
 
     dev="$1"
     boot_part="$(boot_partition "$dev")"
@@ -78,7 +78,16 @@ fix_config() {
         fi
         if [ -e /mnt/boot/network-config ]; then
             if confirm "Add wifi configuration? [y/n] "; then
-                echo FIXME
+                read -r -p "Access point name: " ap
+                read -r -p "Access point password: " password
+                sed -i -r \
+                    -e '/^#wifis:/,+6 s/^#//' \
+                    -e "s/myhomewifi:/${ap}:/" \
+                    -e "s/\"S3kr1t\"/\"${password}\"/" /mnt/boot/network-config
+            fi
+            if confirm "Remove ethernet configuration? [y/n] "; then
+                sed -i -r \
+                    -e '/^ethernets:/,+3 s/^/#/' /mnt/boot/network-config
             fi
         fi
         if [ -e /mnt/boot/config.txt ]; then
