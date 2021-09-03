@@ -1,7 +1,34 @@
 SCHROOT_CONF_SUFFIX="source-root-users=root,sbuild,admin
 source-root-groups=root,sbuild,admin
 preserve-environment=true"
-if [ $(distro-info --series=$RELEASE --days=release) -gt 0 ]; then
+case "$RELEASE" in
+    old|oldstable)
+        distro=debian
+        release=$(debian-distro-info --old)
+        ;;
+    stable)
+        distro=debian
+        release=$(debian-distro-info --stable)
+        ;;
+    testing)
+        distro=debian
+        release=$(debian-distro-info --testing)
+        ;;
+    unstable)
+        distro=debian
+        release=sid
+        ;;
+    *)
+        if debian-distro-info --series=$RELEASE >/dev/null 2>&1; then
+            distro=debian
+            release=$RELEASE
+        else
+            distro=ubuntu
+            release=$RELEASE
+        fi
+        ;;
+esac
+if [ $(${distro}-distro-info --series=${release} --days=release) -gt 60 ]; then
     # during development these pockets aren't used, so don't bother including
     # them in chroots; after release however they'll contain important updates
     SKIP_UPDATES="1"
