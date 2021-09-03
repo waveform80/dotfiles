@@ -14,9 +14,9 @@ $log_dir = $ENV{'HOME'} . '/logs';
 
 # schroot setup
 $chroot_mode = 'schroot';
-$purge_build_directory = 'successful';
-$purge_session = 'successful';
-$purge_build_deps = 'successful';
+$purge_build_directory = 'never';
+$purge_session = 'never';
+$purge_build_deps = 'never';
 
 ## lxd setup
 #$chroot_mode = 'autopkgtest';
