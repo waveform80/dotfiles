@@ -22,3 +22,5 @@
 	insteadof = lp:
 [url "git@github.com:"]
 	insteadof = gh:
+[url "git@salsa.debian.org:"]
+	insteadof = deb:

@@ -1,15 +1,16 @@
 # Name to use as override in .changes files for the Maintainer: field
 # (mandatory, no default!).
-$maintainer_name='Dave Jones <dave.jones@canonical.com>';
-$key_id='dave.jones@canonical.com';
+$maintainer_name = $ENV{'DEBFULLNAME'} . ' <' . $ENV{'DEBEMAIL'} . '>';
+$key_id = $ENV{'DEBEMAIL'};
 
-# Default distribution
-$distribution = 'impish';
+# Use the development distribution as the default
+$distribution = `distro-info --devel`;
+$distribution =~ s/\s+$//;
 $build_arch_all = 1;
 $build_arch_any = 1;
 $build_source = 0;
 $run_autopkgtest = 0;
-$log_dir = $ENV{HOME}."/ubuntu/logs";
+$log_dir = $ENV{'HOME'} . '/logs';
 
 # schroot setup
 $chroot_mode = 'schroot';
