@@ -52,6 +52,7 @@ alias sbb="sbuild --arch-any --arch-all --no-source"
 alias sba="sbuild --arch-any --arch-all --source"
 alias usbcon="screen -e ^Ta /dev/ttyUSB0 115200"
 alias sercon="screen -e ^Ta /dev/ttyAMA0 115200"
+alias diff="diff -u --color=auto"
 
 [ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
 
