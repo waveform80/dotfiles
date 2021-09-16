@@ -305,10 +305,10 @@ inoremap <Leader>tl ┌
 inoremap <Leader>tr ┐
 inoremap <Leader>bl └
 inoremap <Leader>br ┘
-inoremap <Leader>lm ┤
-inoremap <Leader>rm ├
-inoremap <Leader>tm ┴
-inoremap <Leader>bm ┬
+inoremap <Leader>rm ┤
+inoremap <Leader>lm ├
+inoremap <Leader>bm ┴
+inoremap <Leader>tm ┬
 inoremap <Leader>mm ┼
 inoremap <Leader>df ╱
 inoremap <Leader>db ╲
