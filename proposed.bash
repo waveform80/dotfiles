@@ -14,7 +14,7 @@ main() {
     release="$(lsb_release -cs)"
     prop_prefs="/etc/apt/preferences.d/proposed-updates"
     prop_repo="/etc/apt/sources.list.d/ubuntu-$release-proposed.list"
-    if [ "$(dpkg-architecture -q DEB_HOST_ARCH)" = "amd64" ]; then
+    if [ "$(uname --machine)" = "x86_64" ]; then
         archive="http://archive.ubuntu.com/ubuntu"
     else
         archive="http://ports.ubuntu.com/ubuntu-ports"
