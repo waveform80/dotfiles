@@ -139,3 +139,5 @@ if [ -z $SSH_AUTH_SOCK -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
         ln -sf $SSH_AUTH_SOCK $ssh_agent
     fi
 fi
+
+[ -d $HOME/keys ] && source $HOME/keys/cryptfun
