@@ -82,7 +82,7 @@ all_partitions() {
 
 
 wait_for_sd() {
-    local dev
+    local dev filter
 
     dev=$(inotifywait -q \
         --event create \
@@ -90,6 +90,11 @@ wait_for_sd() {
         --format "%w%f" \
         /dev)
     case "$dev" in
+        /dev/sg[0-9])
+            sleep 1
+            filter="\$0 ~ \"${dev}[[:space:]]*\$\" { print \$2; }"
+            dev=$(lsscsi --brief --generic | awk "$filter")
+            ;;
         /dev/sd*[0-9])
             dev=${dev%[0-9]}
             ;;
