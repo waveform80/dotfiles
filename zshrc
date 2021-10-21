@@ -89,7 +89,11 @@ function mutt() {
         neomutt -F $HOME/dotfiles/neomuttrc.$1;
 }
 
-function abook() { /usr/bin/abook --datafile $HOME/.mail/$1/address }
+function abook() {
+    local book="$HOME"/.mail/"$1"/address
+    shift
+    /usr/bin/abook --datafile "$book" "$@"
+}
 
 function rm-sbuild() {
     if [ -d /var/lib/schroot/chroots/$1 ]; then
@@ -115,14 +119,14 @@ function vimrecover() {
 }
 
 
-my_prompt_virtualenv() {
+function my_prompt_virtualenv() {
     if [[ -n $VIRTUAL_ENV ]]; then
         color=blue
         prompt_segment $color $PRIMARY_FG
         print -Pn " $(basename $VIRTUAL_ENV) "
     fi
 }
-my_prompt_dir() {
+function my_prompt_dir() {
     prompt_segment cyan $PRIMARY_FG ' %~ '
 }
 AGNOSTER_PROMPT_SEGMENTS[3]=my_prompt_virtualenv
