@@ -156,6 +156,8 @@ if has("autocmd") && has("eval")
 	autocmd FileType rst set tw=79
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
 	autocmd BufNewFile,BufRead *.moin,*.wiki setlocal filetype=moin
+	autocmd FileType mail let g:SuperTabDefaultCompletionType="<c-x><c-u>"
+	autocmd FileType mail let g:notmuch_query_suffix="AND NOT from:*@bugs.launchpad.net AND NOT from:*@code.launchpad.net AND NOT from:rt@admin.canonical.com"
 
 	" Set line/relative numbers depending on mode
 	autocmd InsertEnter * :set nornu number
