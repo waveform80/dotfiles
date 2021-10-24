@@ -194,6 +194,14 @@ let g:jedi#show_call_signatures = 0
 let g:jedi#smart_auto_mappings = 0
 let g:jedi#popup_on_dot = 0
 
+" Configure tagbar
+let g:tagbar_autofocus = 1
+let g:tagbar_position = 'topleft vertical'
+let g:tagbar_show_visibility = 0
+let g:tagbar_show_tag_count = 1
+let g:tagbar_iconchars = ['▸', '▾']
+let g:tagbar_file_size_limit = 100000
+
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
 nnoremap q: :q
