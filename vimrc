@@ -204,6 +204,7 @@ nnoremap <Leader>pr :SyntasticReset<CR>:lclose<CR>
 nnoremap <Leader>ff :PickerEdit<CR>
 nnoremap <Leader>fg :PickerEdit<CR>
 nnoremap <Leader>fb :PickerBuffer<CR>
+nnoremap <Leader>tb :TagbarToggle<CR>
 
 nnoremap ]e :lnext<CR>
 nnoremap [e :lprevious<CR>

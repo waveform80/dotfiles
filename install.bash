@@ -362,6 +362,7 @@ task_vim() {
             [ -d "$vim_pack"/unimpaired ] || git clone https://tpope.io/vim/unimpaired.git "$vim_pack"/unimpaired
             vim -u NONE -c "helptags $vim_pack/unimpaired/doc" -c q
             [ -d "$vim_pack"/fugitive ] || git clone https://tpope.io/vim/fugitive.git "$vim_pack"/fugitive
+            [ -d "$vim_pack"/tagbar ] || git clone https://github.com/preservim/tagbar "$vim_pack"/tagbar
             [ -d "$vim_pack"/vim-picker ] || git clone https://github.com/srstevenson/vim-picker "$vim_pack"/vim-picker
             [ -d "$vim_pack"/vim-table-mode ] || git clone https://github.com/dhruvasagar/vim-table-mode "$vim_pack"/vim-table-mode
             [ -d "$vim_pack"/vim-bracketed-paste ] || git clone https://github.com/ConradIrwin/vim-bracketed-paste "$vim_pack"/vim-bracketed-paste
