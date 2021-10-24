@@ -52,10 +52,14 @@ main() {
         echo "Found $DEVICE" >&2
     else
         archive="$1"
-        IMAGE=$(mktemp -t XXXXXXXX.img)
-        trap cleanup EXIT
-        info "Unpacking $archive"
-        unpack "$archive" > "$IMAGE"
+        if [ "${archive##*.}" = "img" ]; then
+            IMAGE="$archive"
+        else
+            IMAGE=$(mktemp -t XXXXXXXX.img)
+            trap cleanup EXIT
+            info "Unpacking $archive"
+            unpack "$archive" > "$IMAGE"
+        fi
         DEVICE=$(losetup --read-only --partscan --find --show "$IMAGE")
         echo "Looped onto $DEVICE" >&2
     fi
