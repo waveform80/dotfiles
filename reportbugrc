@@ -1,0 +1,29 @@
+# reportbug preferences file
+# character encoding: UTF-8
+#
+# Version of reportbug this preferences file was written by
+reportbug_version "7.6.0ubuntu1"
+
+# Report against Debian
+bts debian
+
+# default operating mode: one of: novice, standard, advanced, expert
+mode standard
+
+# default user interface
+ui text
+
+# offline setting - comment out to be online
+#offline
+
+# name and email setting (if non-default)
+realname "Dave Jones"
+email "dave@waveform.org.uk"
+
+# If nothing else works, remove the # at the beginning
+# of the following three lines:
+#no-cc
+#list-cc-me
+#smtphost reportbug.debian.org
+# You can add other settings after this line.  See
+# /etc/reportbug.conf for a full listing of options.

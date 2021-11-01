@@ -85,6 +85,7 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/dputcf "$HOME"/.dput.cf
             ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
             ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
+            ln -sf "$HOME"/dotfiles/reportbugrc "$HOME"/.reportbugrc
             ln -sf "$HOME"/dotfiles/merge.bash "$HOME"/.local/bin/merge
             ln -sf "$HOME"/dotfiles/proposed.bash "$HOME"/.local/bin/proposed-enable
             ;;
