@@ -329,6 +329,15 @@ task_tmux() {
 
 
 task_vim() {
+    local vim_pkg vim_path
+
+    if command -v X >/dev/null 2>&1; then
+        vim_pkg="vim-gtk3"
+        vim_path="/usr/bin/vim.gtk3"
+    else
+        vim_pkg="vim-nox"
+        vim_path="/usr/bin/vim.nox"
+    fi
 
     case "$1" in
         title)
@@ -338,14 +347,7 @@ task_vim() {
             echo 1
             ;;
         packages)
-            local vim
-
-            if which X >/dev/null 2>&1; then
-                vim="vim-gtk3"
-            else
-                vim="vim-nox"
-            fi
-            echo aspell ${vim} vim-addon-manager vim-scripts
+            echo aspell ${vim_pkg} vim-addon-manager vim-scripts
             echo vim-airline vim-airline-themes vim-python-jedi vim-syntastic
             ;;
         postinst)
@@ -370,6 +372,7 @@ task_vim() {
             [ -d "$vim_pack"/vim-notmuch-address ] || git clone https://github.com/waveform80/vim-notmuch-address "$vim_pack"/vim-notmuch-address
             #git clone https://github.com/Vimjas/vim-python-pep8-indent "$vim_pack"/vim-python-pep8-indent
             #git clone https://github.com/mg979/vim-visual-multi "$vim_pack"/vim-visual-multi
+            sudo update-alternatives --set editor "${vim_path}"
             ;;
     esac
 }
