@@ -281,7 +281,7 @@ task_kmscon() {
             echo fonts-powerline fonts-ubuntu kmscon
             ;;
         preinst)
-            if which add-apt-repository; then
+            if command -v add-apt-repository >/dev/null; then
                 # Add kmscon PPA but don't install it implicitly (still
                 # experimental, etc.)
                 sudo add-apt-repository -y ppa:waveform/kmscon
