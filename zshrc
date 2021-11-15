@@ -83,9 +83,9 @@ function _sb() {
     sbuild --maintainer "$maintainer" --keyid "$keyid" "$@"
 }
 
-function sbs() { _sb --no-arch-any --no-arch-all --source }
-function sbb() { _sb --arch-any --arch-all --no-source }
-function sba() { _sb --arch-any --arch-all --source }
+function sbs() { _sb --no-arch-any --no-arch-all --source "$@" }
+function sbb() { _sb --arch-any --arch-all --no-source "$@" }
+function sba() { _sb --arch-any --arch-all --source "$@" }
 
 function sync() {
     mbsync $1 && NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config notmuch new
