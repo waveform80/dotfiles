@@ -56,6 +56,10 @@ alias diff="diff -u --color=auto"
 
 [ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
 
+# Enable bash-compatible completion functions
+autoload -U bashcompinit
+bashcompinit
+
 source /usr/share/zplug/init.zsh
 zplug "agnoster/agnoster-zsh-theme", as:theme, use:"*.zsh-theme"
 zplug "plugins/virtualenvwrapper", from:oh-my-zsh
