@@ -47,9 +47,6 @@ alias egrep="egrep --color=auto"
 alias fgrep="fgrep --color=auto"
 alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
-alias sbs="sbuild --no-arch-any --no-arch-all --source"
-alias sbb="sbuild --arch-any --arch-all --no-source"
-alias sba="sbuild --arch-any --arch-all --source"
 alias usbcon="screen -e ^Ta /dev/ttyUSB0 115200"
 alias sercon="screen -e ^Ta /dev/ttyAMA0 115200"
 alias diff="diff -u --color=auto"
@@ -83,6 +80,16 @@ function w3up() { w3m packages.ubuntu.com/search\?searchon=names\&suite=all\&sec
 function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
 function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
 function bug() { w3m launchpad.net/bugs/$1; }
+
+function _sb() {
+    local maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' debian/control)"
+    local keyid="$DEBEMAIL"
+    sbuild --maintainer "$maintainer" --keyid "$keyid" "$@"
+}
+
+function sbs() { _sb --no-arch-any --no-arch-all --source "$@" }
+function sbb() { _sb --arch-any --arch-all --no-source "$@" }
+function sba() { _sb --arch-any --arch-all --source "$@" }
 
 function sync() {
     mbsync $1 && NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config notmuch new
