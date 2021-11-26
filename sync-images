@@ -1,0 +1,297 @@
+#!/usr/bin/python3
+
+"""
+A script for refreshing a list of URLs representing images for download from
+cdimage.ubuntu.com. Given such a list (separated by newlines in a simple text
+file), this script checks any local copies of the images against the sizes and
+modification times listed on the server and refreshes any out of date copies.
+"""
+
+import os
+import sys
+import hashlib
+import argparse
+import textwrap
+import functools
+import datetime as dt
+from pathlib import Path
+from html.parser import HTMLParser
+from urllib.parse import urlsplit, urlunsplit
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
+from collections import namedtuple
+
+
+def main(args=None):
+    if sys.version_info < (3, 6):
+        raise SystemExit('This script requires Python 3.6 or later')
+
+    parser = argparse.ArgumentParser(
+        description=textwrap.dedent(__doc__))
+    parser.add_argument(
+        'images_list', type=argparse.FileType('r', encoding='utf-8'),
+        help="The text file listing all image URLs to refresh")
+    parser.add_argument(
+        '-f', '--force', action='store_true',
+        help="Force the utility to refresh all images even if the release "
+        "date and download size have not changed in the index")
+    args = parser.parse_args(args)
+
+    try:
+        urls = [url.rstrip() for url in args.images_list]
+        refresh_images(urls, args.force)
+    except Exception as e:
+        # If you want full stack traces just run me like this:
+        #
+        #     $ DEBUG=1 ./refresh-images list.txt
+        if int(os.environ.get('DEBUG', '0')):
+            raise
+        else:
+            print(str(e), file=sys.stderr)
+            sys.exit(1)
+
+
+def refresh_images(urls, force=False):
+    """
+    Given *urls*, a :class:`list` of :class:`str` representing the URLs of all
+    OS images to refresh, this function attempts to find the existing downloads
+    in the current working directory, calculates if they are out of date by
+    examining their size, last modification date, and SHA256 checksum (if a
+    file named SHA256SUMS is found in the same path), and downloads them again
+    if required (refreshing the local SHA256SUMS file).
+
+    If *force* is :data:`True` then the list of URLs will be downloaded again
+    regardless of whether they have changed or not.
+
+    Progress information is printed to stderr while the routine is running.
+    """
+    cksums = {}
+    try:
+        with Path('SHA256SUMS').open('r', encoding='utf-8') as cache:
+            for line in cache:
+                cksum, filename = line.strip().split()
+                if filename.startswith('*'):
+                    filename = filename[1:]
+                cksums[filename] = cksum
+    except FileNotFoundError:
+        pass
+    for url in urls:
+        source = get_image(url)
+        local = Path(source.name)
+        update = (
+            force
+            or not local.exists()
+            or local.stat().st_size != source.size
+            or dt.datetime.fromtimestamp(local.stat().st_mtime) < source.modified
+            # The source may not exist in SHA256SUMS, hence the odd default
+            or cksums.get(source.name, source.cksum) != source.cksum
+        )
+        if update:
+            print(f'Updating {source.name}', file=sys.stderr)
+            refresh_image(source)
+        else:
+            print(f'Copy of {source.name} is up to date', file=sys.stderr)
+        if update or source.name not in cksums:
+            print('Refreshing entry in SHA256SUMS', file=sys.stderr)
+            cksums[source.name] = source.cksum
+            with Path('SHA256SUMS').open('w', encoding='utf-8') as cache:
+                cache.write(''.join(
+                    f'{cksum} *{filename}\n'
+                    for filename, cksum in cksums.items()
+                ))
+
+
+def refresh_image(image, buf_size=65536):
+    """
+    Given *image*, an :class:`Image` detailing the source URL (including
+    size, checksum, and last modification date), download the source to a
+    local file with an equivalent name in the current directory. If a prior
+    download terminated prematurely, it is continued, and a local SHA256SUMS
+    file is either created or updated.
+    """
+    local_path = Path(image.name)
+    temp_path = local_path.with_name(local_path.name + '.part')
+    cksum = hashlib.sha256()
+    size = 0
+    try:
+        with temp_path.open('a+b') as target:
+            # Calculate checksum of existing target (assume we're continuing a
+            # failed download)
+            target.seek(0)
+            while True:
+                buf = target.read(buf_size)
+                if buf:
+                    size += len(buf)
+                    cksum.update(buf)
+                else:
+                    break
+            if size:
+                headers = {'Range': f'bytes={size}-{image.size - 1}'}
+            else:
+                headers = {}
+            if (
+                size > image.size or
+                (size == image.size and cksum.hexdigest().lower() != image.cksum)
+            ):
+                print('Ignoring corrupt partial download', file=sys.stderr)
+                target.seek(0)
+                size = 0
+                cksum = hashlib.sha256()
+            if size < image.size:
+                if size:
+                    print('Restarting partial download', file=sys.stderr)
+                request = Request(image.url, headers=headers)
+                with urlopen(request) as source:
+                    while True:
+                        print('\rDownloading & verifying image:'
+                              f'{size * 100 / image.size:5.1f}%',
+                            end='', file=sys.stderr)
+                        buf = source.read(buf_size)
+                        if buf:
+                            size += len(buf)
+                            cksum.update(buf)
+                            target.write(buf)
+                        else:
+                            break
+                target.truncate()  # in case we restarted a corrupt partial
+    finally:
+        # Erase the progress message
+        print('[1K\r', end='', file=sys.stderr)
+    if size == image.size and cksum.hexdigest().lower() == image.cksum:
+        temp_path.rename(local_path)
+    else:
+        print('Checksum failed to match; removing partial download')
+        temp_path.unlink()
+        raise ValueError('Checksum does not match')
+
+
+class TableParser(HTMLParser):
+    """
+    A sub-class of :class:`html.parser.HTMLParser` that finds all ``<table>``
+    tags (indirectly) under the ``<html>`` tag.
+
+    It stores the content of all ``<th>`` and ``<td>`` tags under each ``<tr>``
+    tag in the :attr:`table` attribute as a list of lists (the outer list of
+    rows, the inner lists of cells within those rows). All data is represented
+    as strings, or as ``None`` for entirely empty entries. For example::
+
+        >>> html = '''
+        ... <html><body><table>
+        ... <p>A table:
+        ... <tr><th>#</th><th>Name</th></tr>
+        ... <tr><td>1</td><td>foo</td></tr>
+        ... <tr><td>2</td><td>bar</td></tr>
+        ... <tr><td></td><td>quux</td></tr>
+        ... </table></body></html>
+        ... '''
+        >>> parser = TableParser()
+        >>> parser.feed(html)
+        >>> parser.table
+        [['#', 'Name'], ['1', 'foo'], ['2', 'bar'], [None, 'quux']]
+
+    .. note::
+
+        As this is a subclass of an HTML parser (as opposed to an XML parser)
+        there is no requirement that the input is strictly valid XML, hence the
+        lack of a closing ``<p>`` tag above is acceptable.
+    """
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.state = 'html'
+        self.table = []
+
+    def handle_starttag(self, tag, attrs):
+        if self.state == 'html' and tag == 'table':
+            self.state = 'table'
+        elif self.state == 'table' and tag == 'tr':
+            self.state = 'tr'
+            self.table.append([])
+        elif self.state == 'tr' and tag in ('th', 'td'):
+            self.state = 'td'
+            self.table[-1].append(None)
+
+    def handle_data(self, data):
+        if self.state == 'td':
+            self.table[-1][-1] = data
+
+    def handle_endtag(self, tag):
+        if self.state == 'table' and tag == 'table':
+            self.state = 'html'
+        elif self.state == 'tr' and tag == 'tr':
+            self.state = 'table'
+        elif self.state == 'td' and tag in ('th', 'td'):
+            self.state = 'tr'
+
+
+Image = namedtuple('Image', ('url', 'name', 'modified', 'cksum', 'size'))
+
+
+def get_image(url):
+    """
+    Given the *url* of an image, returns an :class:`Image` named tuple
+    containing the url, name, generated date, SHA-256 check-sum, and file size.
+    """
+    split = urlsplit(url)
+    path, name = split.path.rsplit('/', 1)
+    index = urlunsplit(split._replace(path=path + '/'))
+    try:
+        image = get_index(index)[name]
+    except KeyError:
+        raise ValueError(
+            f'unable to find {url}; are you sure the filename is correct?')
+    if image.size is None or image.cksum is None:
+        raise ValueError(f'unable to retrieve file-size or checksum for {url}')
+    return image
+
+
+@functools.lru_cache
+def get_index(url):
+    """
+    Given the *url* of a cdimage directory containing images, returns a dict
+    mapping filenames to :class:`Image` named tuples.
+    """
+    # NOTE: This code relies on the current layout of pages on
+    # cdimage.ubuntu.com; if extra tables or columns are introduced or
+    # re-ordered this will need revisiting...
+    parser = TableParser()
+    try:
+        with urlopen(url) as page:
+            parser.feed(page.read().decode('utf-8'))
+    except HTTPError:
+        raise ValueError(
+            f'unable to get {url}; are you sure the path is correct?')
+    entries = {}
+    for row in parser.table:
+        try:
+            icon, name, modified, size, description = row
+        except ValueError:
+            # Evidently not a file row
+            continue
+        name = name.strip()
+        try:
+            modified = dt.datetime.strptime(modified.strip(), '%Y-%m-%d %H:%M')
+        except ValueError:
+            # Evidently not a file row
+            continue
+        cksum = None
+        request = Request(url + name, method='HEAD')
+        with urlopen(request) as head:
+            size = int(head.getheader('Content-Length', '0'))
+        entries[name] = Image(url + name, name, modified, cksum, size)
+    if 'SHA256SUMS' in entries:
+        with urlopen(url + 'SHA256SUMS') as hashes:
+            for line in hashes:
+                cksum, name = line.decode('utf-8').strip().split(None, 1)
+                cksum = cksum.strip().lower()
+                if name.startswith('*'):
+                    name = name[1:]
+                try:
+                    entries[name] = entries[name]._replace(cksum=cksum)
+                except KeyError:
+                    pass
+        del entries['SHA256SUMS']
+    return entries
+
+
+if __name__ == '__main__':
+    main()

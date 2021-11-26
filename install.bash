@@ -88,6 +88,7 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/reportbugrc "$HOME"/.reportbugrc
             ln -sf "$HOME"/dotfiles/merge.bash "$HOME"/.local/bin/merge
             ln -sf "$HOME"/dotfiles/proposed.bash "$HOME"/.local/bin/proposed-enable
+            ln -sf "$HOME"/dotfiles/sync-images "$HOME"/.local/bin/sync-images
             ;;
     esac
 }
