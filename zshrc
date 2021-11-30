@@ -3,6 +3,7 @@ export DEFAULT_USER=dave
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 [ -d $HOME/keys ] && export PATH=$PATH:$HOME/keys
 # export MANPATH="/usr/local/man:$MANPATH"
+export EDITOR=vim
 export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
 if [ -x /usr/bin/batcat ]; then
