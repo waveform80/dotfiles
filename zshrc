@@ -98,7 +98,7 @@ function sync() {
 
 function mutt() {
     NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config \
-        neomutt -F $HOME/dotfiles/neomuttrc.$1;
+        neomutt -F $HOME/dotfiles/neomuttrc.$1 "$@";
 }
 
 function abook() {
