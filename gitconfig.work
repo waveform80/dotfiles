@@ -1,0 +1,12 @@
+[user]
+	email = dave.jones@canonical.com
+[ubuntu]
+	lpuser = waveform
+[gitubuntu]
+	lpuser = waveform
+[url "git+ssh://waveform@git.launchpad.net/"]
+	insteadof = lp:
+[url "git@github.com:"]
+	insteadof = gh:
+[url "git@salsa.debian.org:"]
+	insteadof = deb:

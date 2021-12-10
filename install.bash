@@ -45,6 +45,7 @@ task_dev() {
             ln -sf "$HOME"/dotfiles/gitconfig "$XDG_CONFIG_HOME"/git/config
             ln -sf "$HOME"/dotfiles/gitignore "$XDG_CONFIG_HOME"/git/ignore
             ln -sf "$HOME"/dotfiles/tigrc "$HOME"/.tigrc
+            mkdir -p "$HOME"/projects/work "$HOME"/projects/home
             ;;
     esac
 }

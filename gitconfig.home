@@ -1,0 +1,6 @@
+[user]
+	email = dave@waveform.org.uk
+[url "git@github.com:"]
+	insteadof = gh:
+[url "git@salsa.debian.org:"]
+	insteadof = deb:
