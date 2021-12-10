@@ -93,12 +93,16 @@ function sbb() { _sb --arch-any --arch-all --no-source "$@" }
 function sba() { _sb --arch-any --arch-all --source "$@" }
 
 function sync() {
-    mbsync $1 && NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config notmuch new
+    local profile="$1"
+    mbsync "$profile" && \
+        NOTMUCH_CONFIG="$HOME"/.mail/"$profile"/.notmuch-config notmuch new
 }
 
 function mutt() {
-    NOTMUCH_CONFIG=$HOME/.mail/$1/.notmuch-config \
-        neomutt -F $HOME/dotfiles/neomuttrc.$1 "$@";
+    local profile="$1"
+    shift
+    NOTMUCH_CONFIG=$HOME/.mail/"$profile"/.notmuch-config \
+        neomutt -F $HOME/dotfiles/neomuttrc."$profile" "$@"
 }
 
 function abook() {
