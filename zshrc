@@ -82,6 +82,7 @@ function bug() { w3m launchpad.net/bugs/$1; }
 
 function sercon() {
     local uart
+    local baud=115200
 
     if [ $# -gt 0 ]; then
         uart="$1"
@@ -95,7 +96,8 @@ function sercon() {
         done
     fi
     if [ -n "$uart" ]; then
-        screen -e ^Ta "$@" "$port" 115200
+        echo "Connecting to $uart at ${baud}bps" >&2
+        screen -e ^Ta "$uart" "$baud"
     else
         echo "Cannot determine serial port; please specify one" >&2
         return 1
