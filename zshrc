@@ -48,8 +48,6 @@ alias egrep="egrep --color=auto"
 alias fgrep="fgrep --color=auto"
 alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
-alias usbcon="screen -e ^Ta /dev/ttyUSB0 115200"
-alias sercon="screen -e ^Ta /dev/ttyAMA0 115200"
 alias diff="diff -u --color=auto"
 
 [ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
@@ -81,6 +79,28 @@ function w3up() { w3m packages.ubuntu.com/search\?searchon=names\&suite=all\&sec
 function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
 function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
 function bug() { w3m launchpad.net/bugs/$1; }
+
+function sercon() {
+    local uart
+
+    if [ $# -gt 0 ]; then
+        uart="$1"
+        shift
+    else
+        for dev in /dev/ttyUSB0 /dev/ttyACM0 /dev/ttyAMA0; do
+            if [ -e "$dev" ]; then
+                uart="$dev"
+                break
+            fi
+        done
+    fi
+    if [ -n "$uart" ]; then
+        screen -e ^Ta "$@" "$port" 115200
+    else
+        echo "Cannot determine serial port; please specify one" >&2
+        return 1
+    fi
+}
 
 function _sb() {
     local maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' debian/control)"
