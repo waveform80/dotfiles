@@ -15,7 +15,7 @@ main() {
             clone "$@"
             ;;
         start)
-            start
+            start_
             ;;
         split)
             split
@@ -30,6 +30,12 @@ main() {
         finish)
             shift
             finish "$@"
+            ;;
+        test)
+            test_
+            ;;
+        build)
+            build
             ;;
         whatnow)
             shift
@@ -46,7 +52,7 @@ main() {
 
 whatnow() {
     echo -n $MSG
-    if ! git rev-parse --git-dir >/dev/null; then
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
         local project
 
         project="$1"
@@ -72,12 +78,16 @@ $RESET
 \$ merge start
 EOF
     else
+        local top_level parent
         local old_debian new_debian debian_sid
         local old_ubuntu ubuntu_devel old_ubuntu_tag
         local new_ubuntu new_ubuntu_tag
-        local merge_bug
+        local autopkgtest_log source_changes debdiff
+        local merge_bug lpuser
 
-        merge_bug="$1"
+        lpuser=$(git config --get ubuntu.lpuser)
+        top_level=$(git rev-parse --show-toplevel)
+        parent=$(dirname "${top_level}")
         project=$(get_project new/debian)
         old_debian=$(get_version old/debian)
         new_debian=$(get_version new/debian)
@@ -87,10 +97,12 @@ EOF
         old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
         new_ubuntu=${new_debian}ubuntu1
         new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
-
-        if [ -z "$merge_bug" ]; then
-            merge_bug="MERGE_BUG"
-        fi
+        autopkgtest_log="${parent}/${project}_${new_ubuntu}.autopkgtest"
+        source_changes="${parent}/${project}_${new_ubuntu}_source.changes"
+        merge_bug=$(get_merge_bug merge/"$new_ubuntu_tag")
+        [ -z "$merge_bug" ] && merge_bug="$1"
+        [ -z "$merge_bug" ] && merge_bug="MERGE_BUG"
+        debdiff="${parent}/1-${merge_bug}.debdiff"
 
         if [ "$new_debian" != "$debian_sid" ] || [ "$old_ubuntu" != "$ubuntu_devel" ]; then
             cat << EOF
@@ -165,41 +177,26 @@ Please merge $project $new_debian from Debian unstable.
 
 Updated changelog and diff against Debian unstable to be attached below.
 EOF
-        else
-            local lpuser
-
-            lpuser=$(git config --get ubuntu.lpuser)
-
+        elif ! [ -e "$autopkgtest_log" ]; then
             if [ -e debian/tests/control ]; then
-                local devel_name devel_arch
-
-                devel_name=$(distro-info --devel)
-                devel_arch=$(dpkg-architecture -q DEB_HOST_ARCH)
-
                 cat << EOF
 Run autopkgtest on your merged package:
 $RESET
-\$ mk-sbuild $devel_name  # if you haven't already
-\$ autopkgtest -- schroot $devel_name-$devel_arch
-$MSG
+\$ merge test
 EOF
+            else
+                echo "No tests available" > "${autopkgtest_log}"
             fi
+        elif ! [ -e "$debdiff" -a -e "$source_changes" ]; then
             cat << EOF
-Finally, build a source package and generate debdiff for it with:
+Push all tags, build a source package and generate a debdiff for it:
 $RESET
-\$ sbuild --no-arch-any --no-arch-all --source --force-orig-source
-\$ debdiff > ../1-$merge_bug.debdiff
-$MSG
-Push relevant branches to your Launchpad git clone with:
-$RESET
-\$ git push $lpuser tag old/debian
-\$ git push $lpuser tag new/debian
-\$ git push $lpuser tag logical/$old_ubuntu_tag
-\$ git push $lpuser tag logical/$new_ubuntu_tag
-\$ git push $lpuser tag merge/$new_ubuntu_tag
-$MSG
-Attach ../1-$merge_bug.debdiff to ${LINK}LP: #$merge_bug${MSG} with something like the
-following message:
+\$ merge build
+EOF
+        else
+cat << EOF
+Attach ${debdiff}
+to ${LINK}LP: #$merge_bug${MSG} with something like the following message:
 $TEMPLATE
 Attaching patch against Debian unstable. For ease of review, relevant commits
 and tags have been pushed to the following repository:
@@ -238,7 +235,7 @@ clone() {
 }
 
 
-start() {
+start_() {
     local merge_base old_ubuntu old_ubuntu_tag new_debian old_debian
 
     work_dir_clean
@@ -402,6 +399,79 @@ finish() {
 }
 
 
+test_() {
+    local project new_debian new_ubuntu new_ubuntu_tag devel_name devel_arch
+    local chroot_name top_level parent logfile rc
+
+    top_level=$(git rev-parse --show-toplevel)
+    parent=$(dirname "${top_level}")
+    project=$(get_project new/debian)
+    new_debian=$(get_version new/debian)
+    new_ubuntu=${new_debian}ubuntu1
+    new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+    devel_name=$(distro-info --devel)
+    devel_arch=$(dpkg-architecture -q DEB_HOST_ARCH)
+    chroot_name="$devel_name-$devel_arch"
+    logfile="${parent}/${project}_${new_ubuntu}.autopkgtest"
+
+    work_dir_clean
+    descends_from "merge/$new_ubuntu_tag"
+
+    if ! schroot -l | grep "chroot:${chroot_name}" >/dev/null; then
+        echo "Building the required schroot"
+        mk-sbuild "$devel_name" >/dev/null
+    fi
+    echo "Testing in schroot $chroot_name"
+    if autopkgtest -- schroot "$chroot_name" > "$logfile" 2>&1; then
+        echo "Test passed"
+        whatnow
+    elif [ $? -eq 2 ]; then
+        echo "Some tests skipped, but otherwise passed"
+        whatnow
+    else
+        cat "$logfile"
+        mv "$logfile" "${logfile}.fail"
+        echo "Test(s) failed; log output above and stored in ${logfile}.fail"
+        echo "Fix the package then re-run: merge test"
+    fi
+}
+
+
+build() {
+    local lpuser new_debian old_ubuntu old_ubuntu_tag new_ubuntu new_ubuntu_tag
+    local project devel_name top_level parent debdiff merge_bug logfile
+
+    top_level=$(git rev-parse --show-toplevel)
+    parent=$(dirname "${top_level}")
+    project=$(get_project new/debian)
+    devel_name=$(distro-info --devel)
+    lpuser=$(git config --get ubuntu.lpuser)
+    new_debian=$(get_version new/debian)
+    old_ubuntu=$(get_version old/ubuntu)
+    old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
+    new_ubuntu=${new_debian}ubuntu1
+    new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+    merge_bug=$(get_merge_bug merge/"$new_ubuntu_tag")
+    debdiff="${parent}/1-${merge_bug}.debdiff"
+    logfile="${parent}/${project}_${new_ubuntu}.sbuild"
+
+    echo "Building source package for $devel_name"
+    sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$logfile"
+    echo "Pushing tags"
+    git push $lpuser --delete old/debian --delete new/debian
+    git push $lpuser \
+        tag old/debian \
+        tag new/debian \
+        tag logical/$old_ubuntu_tag \
+        tag logical/$new_ubuntu_tag \
+        tag merge/$new_ubuntu_tag
+    echo "Generating debdiff"
+    git diff new/debian merge/$new_ubuntu_tag > "$debdiff"
+
+    whatnow
+}
+
+
 die() {
     echo "$@" >&2
     exit 1
@@ -445,6 +515,15 @@ get_version() {
     git cat-file blob "$commitish":debian/changelog | \
         head -n 1 | \
         sed -n -e 's/.*(//' -e 's/).*//p'
+}
+
+
+get_merge_bug() {
+    local commitish="$1"
+
+    git cat-file blob "$commitish":debian/changelog | \
+        head -n 3 | \
+        sed -n -e '/LP: #/ s,.*(LP: #\([0-9]\+\)).*,\1, p'
 }
 
 
