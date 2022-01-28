@@ -28,11 +28,7 @@ case "$RELEASE" in
         fi
         ;;
 esac
-if [ $(${distro}-distro-info --series=${release} --days=release) -gt 60 ]; then
-    # during development these pockets aren't used, so don't bother including
-    # them in chroots; after release however they'll contain important updates
-    SKIP_UPDATES="1"
-    SKIP_PROPOSED="1"
-fi
+SKIP_UPDATES="0"
+SKIP_PROPOSED="0"
 # if you have e.g. apt-cacher-ng around
 DEBOOTSTRAP_PROXY=http://acng:3142/
