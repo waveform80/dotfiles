@@ -27,9 +27,9 @@ main() {
         review)
             review
             ;;
-        finish)
+        rebased)
             shift
-            finish "$@"
+            rebased "$@"
             ;;
         test)
             test_
@@ -37,12 +37,15 @@ main() {
         build)
             build
             ;;
+        push)
+            push
+            ;;
         whatnow)
             shift
             whatnow "$@"
             ;;
         *)
-            echo "Usage:" "$(basename "$0")" "clone/start/split/logical/review/finish"
+            echo "Usage:" "$(basename "$0")" "whatnow"
             exit 1
             ;;
     esac
@@ -166,11 +169,11 @@ EOF
         elif ! tag_exists merge/"$new_ubuntu_tag"; then
             cat << EOF
 Review the changes, open a merge bug on Launchpad, then reconstruct changelogs
-and finish the merge with:
+and complete the rebase with:
 $RESET
 \$ git range-diff old/debian..logical/$old_ubuntu_tag new/debian..logical/$new_ubuntu_tag
 \$ www-browser ${LINK}http://pad.lv/fb/u/$project${RESET}
-\$ merge finish \$merge_bug
+\$ merge rebased \$merge_bug
 $MSG
 Bug template:
 $TEMPLATE
@@ -179,7 +182,7 @@ Please merge $project $new_debian from Debian unstable.
 Updated changelog and diff against Debian unstable to be attached below.
 EOF
         elif ! [ -e "$autopkgtest_log" ]; then
-            if [ -e debian/tests/control ]; then
+            if [ -e debian/tests ]; then
                 cat << EOF
 Run autopkgtest on your merged package:
 $RESET
@@ -187,17 +190,25 @@ $RESET
 EOF
             else
                 echo "No tests available" > "${autopkgtest_log}"
+                whatnow
             fi
         elif ! [ -e "$deb_diff" -a -e "$source_changes" ]; then
             cat << EOF
-Push all tags, build a source package and generate a debdiff for it:
+Build a source package and generate a debdiff for it:
 $RESET
 \$ merge build
+EOF
+        elif ! [ -n "$(git ls-remote --tags $lpuser merge/$new_ubuntu_tag)" ]; then
+cat << EOF
+Publish the changes to your clone of the repo on Launchpad:
+$RESET
+\$ merge push
 EOF
         else
 cat << EOF
 Attach ${deb_diff}
-to ${LINK}LP: #$merge_bug${MSG} with something like the following message:
+to ${LINK}LP: #$merge_bug${MSG} with something like the following message,
+and subscribe ubuntu-sponsors:
 $TEMPLATE
 Attaching patch against Debian unstable. For ease of review, relevant commits
 and tags have been pushed to the following repository:
@@ -281,7 +292,7 @@ start_() {
 
 
 split() {
-    local old_debian new_debian old_ubuntu old_ubuntu_tag
+    local old_debian old_ubuntu old_ubuntu_tag
 
     work_dir_clean
     descends_from old/debian
@@ -289,7 +300,6 @@ split() {
     [ -z "$(git diff old/ubuntu)" ] || die "Split does not match old/ubuntu!"
 
     old_debian=$(get_version old/debian)
-    new_debian=$(get_version new/debian)
     old_ubuntu=$(get_version old/ubuntu)
     old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
 
@@ -362,8 +372,8 @@ review() {
 }
 
 
-finish() {
-    local new_debian new_ubuntu new_ubuntu_tag merge_bug devel_name
+rebased() {
+    local new_debian new_ubuntu new_ubuntu_tag merge_bug
 
     work_dir_clean
     descends_from new/debian
@@ -372,7 +382,6 @@ finish() {
     new_debian=$(get_version new/debian)
     new_ubuntu="$new_debian"ubuntu1
     new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
-    devel_name=$(distro-info --devel)
 
     [ -z "${merge_bug}" ] && die "Missing merge bug!"
 
@@ -403,7 +412,7 @@ finish() {
     git tag merge/"$new_ubuntu_tag"
     echo "Created merge/$new_ubuntu_tag pointing at HEAD"
 
-    whatnow "$merge_bug"
+    whatnow
 }
 
 
@@ -446,45 +455,65 @@ test_() {
 
 
 build() {
-    local lpuser new_debian old_ubuntu old_ubuntu_tag new_ubuntu new_ubuntu_tag
-    local project devel_name top_level parent deb_diff merge_bug log_file
-    local upstream orig_tar
+    local new_debian new_ubuntu new_ubuntu_tag project devel_name top_level
+    local parent log_file upstream orig_tar deb_format merge_bug deb_diff
 
     top_level=$(git rev-parse --show-toplevel)
+    deb_format=$(git cat-file blob HEAD:debian/source/format)
     parent=$(dirname "${top_level}")
     project=$(get_project new/debian)
     devel_name=$(distro-info --devel)
-    lpuser=$(git config --get ubuntu.lpuser)
     new_debian=$(get_version new/debian)
     upstream=$(strip_debian_version "$new_debian")
-    old_ubuntu=$(get_version old/ubuntu)
-    old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
     new_ubuntu=${new_debian}ubuntu1
     new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+    log_file="${parent}/${project}_${new_ubuntu}.sbuild"
     merge_bug=$(get_merge_bug merge/"$new_ubuntu_tag")
     deb_diff="${parent}/1-${merge_bug}.debdiff"
-    log_file="${parent}/${project}_${new_ubuntu}.sbuild"
 
-    if ! git for-each-ref --format='%(refname:short)' refs/heads/ | grep pristine-tar >/dev/null; then
-        git branch --track pristine-tar origin/importer/debian/pristine-tar
-    fi
-    orig_tar="${parent}/$(pristine-tar list | grep -F "${project}_${upstream}")"
-    if ! [ -e "$orig_tar" ]; then
-        pristine-tar checkout "$orig_tar"
+    if [ "$deb_format" = "3.0 (quilt)" ]; then
+        if ! git for-each-ref --format='%(refname:short)' refs/heads/ | grep pristine-tar >/dev/null; then
+            git branch --track pristine-tar origin/importer/debian/pristine-tar
+        fi
+        orig_tar="${parent}/$(pristine-tar list | grep -F "${project}_${upstream}")"
+        if ! [ -e "$orig_tar" ]; then
+            pristine-tar checkout "$orig_tar"
+        fi
     fi
 
     echo "Building source package for $devel_name"
     sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$log_file"
+    echo "Generating debdiff"
+    git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
+
+    whatnow
+}
+
+
+push() {
+    local lpuser new_debian old_ubuntu old_ubuntu_tag new_ubuntu new_ubuntu_tag
+    local project
+
+    project=$(get_project new/debian)
+    lpuser=$(git config --get ubuntu.lpuser)
+    new_debian=$(get_version new/debian)
+    old_ubuntu=$(get_version old/ubuntu)
+    old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
+    new_ubuntu=${new_debian}ubuntu1
+    new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+
     echo "Pushing tags"
-    git push $lpuser --delete old/debian --delete new/debian >/dev/null || true
+    git push $lpuser \
+        --delete old/debian \
+        --delete new/debian \
+        >/dev/null 2>&1 || true
     git push $lpuser \
         tag old/debian \
         tag new/debian \
+        tag split/$old_ubuntu_tag \
         tag logical/$old_ubuntu_tag \
         tag logical/$new_ubuntu_tag \
         tag merge/$new_ubuntu_tag
-    echo "Generating debdiff"
-    git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
 
     whatnow
 }
