@@ -1,3 +1,9 @@
+# Global defaults
+Create Slave
+Remove Slave
+Expunge Both
+SyncState *
+
 IMAPAccount gmail-home-account
 Host imap.gmail.com
 User dave@waveform.org.uk
@@ -29,12 +35,6 @@ Flatten .
 SubFolders Verbatim
 Path ~/.mail/work/
 Inbox ~/.mail/work/INBOX
-
-# Global defaults
-Create Slave
-Remove Slave
-Expunge Both
-SyncState *
 
 Channel home
 Master :gmail-home:
