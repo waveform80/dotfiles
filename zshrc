@@ -7,7 +7,7 @@ export EDITOR=vim
 export WORKON_HOME=~/envs
 export PYTHONSTARTUP=~/.pystartup
 if [ -x /usr/bin/batcat ]; then
-    export LESSOPEN="| /usr/bin/batcat --color always --theme ansi-dark --plain %s"
+    export LESSOPEN="| /usr/bin/batcat --color always --theme ansi --plain %s"
     export LESS=" -R"
 elif [ -x /usr/bin/highlight ]; then
     export LESSOPEN="| /usr/bin/highlight --force --out-format=xterm256 %s"
