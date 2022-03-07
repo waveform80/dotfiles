@@ -3,7 +3,7 @@ set auto_tag
 set collapse_all
 set delete
 set edit_headers
-set editor = "vim"
+set editor = "~/dotfiles/compose.bash"
 set forward_references
 set include
 set ispell = "aspell"

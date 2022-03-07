@@ -123,8 +123,9 @@ function sync() {
 function mutt() {
     local profile="$1"
     shift
-    NOTMUCH_CONFIG=$HOME/.mail/"$profile"/.notmuch-config \
-        neomutt -F $HOME/dotfiles/neomuttrc."$profile" "$@"
+    NEOMUTT_PROFILE="$profile" \
+    NOTMUCH_CONFIG="$HOME"/.mail/"$profile"/.notmuch-config \
+        neomutt -F "$HOME"/dotfiles/neomuttrc."$profile" "$@"
 }
 
 function abook() {
