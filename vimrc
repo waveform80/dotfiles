@@ -158,6 +158,7 @@ if has("autocmd") && has("eval")
 	autocmd BufNewFile,BufRead *.moin,*.wiki setlocal filetype=moin
 	autocmd FileType mail let g:SuperTabDefaultCompletionType="<c-x><c-u>"
 	autocmd FileType mail let g:notmuch_query_suffix="
+		\ AND NOT from:*noreply*@*
 		\ AND NOT from:*@bugs.launchpad.net
 		\ AND NOT from:*@code.launchpad.net
 		\ AND NOT from:rt@admin.canonical.com
