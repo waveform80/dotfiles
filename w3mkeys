@@ -109,9 +109,10 @@ keymap	R	RELOAD
 keymap	T	TAB_MENU
 keymap	W	PREV_WORD
 keymap	\^	LINE_BEGIN
-keymap	b	BACK
+keymap	b	PREV
 keymap	c	PEEK
 keymap	d	SAVE_LINK
+keymap	f	NEXT
 keymap	gg	BEGIN
 keymap	h	MOVE_LEFT
 keymap	j	MOVE_DOWN
