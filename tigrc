@@ -69,18 +69,18 @@
 
 set blame-view	= id:yes,color file-name:auto author:full date:default line-number:yes,interval=1 text
 set grep-view	= file-name:no line-number:yes,interval=1 text
-set main-view	= line-number:no,interval=5 id:no date:default author:full commit-title:yes,graph,refs,overflow=no
+set main-view	= line-number:no id:yes date:relative author:full commit-title:yes,graph,refs,overflow=no
 set refs-view	= line-number:no id:no date:default author:full ref commit-title
-set stash-view	= line-number:no,interval=5 id:no date:default author:full commit-title
-set status-view	= line-number:no,interval=5 status:short file-name
-set tree-view	= line-number:no,interval=5 mode author:full file-size date:default id:no file-name
+set stash-view	= line-number:no id:no date:default author:full commit-title
+set status-view	= line-number:no status:short file-name
+set tree-view	= line-number:no mode author:full file-size date:default id:no file-name
 
 # Pager based views
-set pager-view	= line-number:no,interval=5 text
-set stage-view	= line-number:no,interval=5 text
-set log-view	= line-number:no,interval=5 text
-set blob-view	= line-number:no,interval=5 text
-set diff-view	= line-number:no,interval=5 text:yes,commit-title-overflow=no
+set pager-view	= line-number:no text
+set stage-view	= line-number:no text
+set log-view	= line-number:no text
+set blob-view	= line-number:no text
+set diff-view	= line-number:no text:yes,commit-title-overflow=no
 
 # UI display settings
 set show-changes		= yes		# Show changes commits in the main view?
