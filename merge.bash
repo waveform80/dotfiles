@@ -38,6 +38,9 @@ main() {
 		build)
 			build
 			;;
+		finish)
+			finish
+			;;
 		push)
 			push
 			;;
@@ -204,7 +207,7 @@ EOF
 				echo "No tests available" > "${autopkgtest_log}"
 				whatnow
 			fi
-		elif ! [ -e "$build_log" ]; then
+		elif ! [ -e "$build_log" ] || ! [ -e "$deb_diff" ] || ! [ -e "$source_changes" ]; then
 			if [ -e "${build_log}.fail" ]; then
 				cat <<- EOF
 				Build failed; log output stored in ${build_log}.fail
@@ -219,7 +222,13 @@ EOF
 			$RESET
 			\$ merge build
 			EOF
-		elif ! [ -n "$(git ls-remote --tags $lpuser merge/$new_ubuntu_tag)" ]; then
+		elif ! tag_exists merge/"$new_ubuntu_tag"; then
+			cat <<- EOF
+			Finalize the merge:
+			$RESET
+			\$ merge finish
+			EOF
+		elif ! [ -n "$(git ls-remote --tags $lpuser merge/"$new_ubuntu_tag")" ]; then
 			cat <<- EOF
 			Publish the changes to your clone of the repo on Launchpad:
 			$RESET
@@ -227,7 +236,7 @@ EOF
 			EOF
 		else
 			cat <<- EOF
-			Attach ${deb_diff}
+			Attach $deb_diff
 			to ${LINK}LP: #$merge_bug${MSG} with something like the following message,
 			and subscribe ubuntu-sponsors:
 			$TEMPLATE
@@ -536,8 +545,6 @@ build() {
 	echo "Building source package for $devel_name"
 	if sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$log_file"; then
 		rm -f "${log_fail}.fail"
-		git tag merge/"$new_ubuntu_tag"
-		echo "Created merge/$new_ubuntu_tag pointing at HEAD"
 		echo "Generating debdiff"
 		git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
 
@@ -547,6 +554,21 @@ build() {
 		mv "$log_file" "${log_file}.fail"
 		whatnow
 	fi
+}
+
+finish() {
+	local new_debian new_ubuntu new_ubuntu_tag
+
+	new_debian=$(get_version new/debian)
+	new_ubuntu=${new_debian}ubuntu1
+	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+
+	work_dir_clean
+	descends_from "candidate/$new_ubuntu_tag"
+
+	git tag merge/"$new_ubuntu_tag"
+	echo "Created merge/$new_ubuntu_tag pointing at HEAD"
+	whatnow
 }
 
 
