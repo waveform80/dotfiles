@@ -101,8 +101,10 @@ EOF
         new_ubuntu=${new_debian}ubuntu1
         new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
         autopkgtest_log="${parent}/${project}_${new_ubuntu}.autopkgtest"
+        build_log="${parent}/${project}_${new_ubuntu}.sbuild"
         source_changes="${parent}/${project}_${new_ubuntu}_source.changes"
         merge_bug=$(get_merge_bug merge/"$new_ubuntu_tag")
+        [ -z "$merge_bug" ] && merge_bug=$(get_merge_bug candidate/"$new_ubuntu_tag")
         [ -z "$merge_bug" ] && merge_bug="$1"
         [ -z "$merge_bug" ] && merge_bug="MERGE_BUG"
         deb_diff="${parent}/1-${merge_bug}.debdiff"
@@ -183,21 +185,39 @@ Updated changelog and diff against Debian unstable to be attached below.
 EOF
         elif ! [ -e "$autopkgtest_log" ]; then
             if [ -e debian/tests ]; then
-                cat << EOF
+                if [ -e "${autopkgtest_log}.fail" ]; then
+cat << EOF
+Test(s) failed; log output stored in ${autopkgtest_log}.fail
+Fix the package then re-run:
+$RESET
+\$ merge test
+EOF
+                else
+cat << EOF
 Run autopkgtest on your merged package:
 $RESET
 \$ merge test
 EOF
+                fi
             else
                 echo "No tests available" > "${autopkgtest_log}"
                 whatnow
             fi
-        elif ! [ -e "$deb_diff" -a -e "$source_changes" ]; then
-            cat << EOF
-Build a source package and generate a debdiff for it:
-$RESET
-\$ merge build
+        elif ! [ -e "$build_log" ]; then
+            if [ -e "${build_log}.fail" ]; then
+cat << EOF
+Build failed; log output stored in ${build_log}.fail
+Fix the package then re-run:
 EOF
+            else
+cat << EOF
+Build a source package and generate a debdiff for it:
+EOF
+            fi
+            cat <<- EOF
+            $RESET
+            \$ merge build
+            EOF
         elif ! [ -n "$(git ls-remote --tags $lpuser merge/$new_ubuntu_tag)" ]; then
 cat << EOF
 Publish the changes to your clone of the repo on Launchpad:
@@ -410,8 +430,8 @@ rebased() {
         git commit -m update-maintainer -- debian/control
     fi
     git commit -m reconstruct-changelog -- debian/changelog
-    git tag merge/"$new_ubuntu_tag"
-    echo "Created merge/$new_ubuntu_tag pointing at HEAD"
+    git tag candidate/"$new_ubuntu_tag"
+    echo "Created candidate/$new_ubuntu_tag pointing at HEAD"
 
     whatnow
 }
@@ -433,7 +453,8 @@ test_() {
     log_file="${parent}/${project}_${new_ubuntu}.autopkgtest"
 
     work_dir_clean
-    descends_from "merge/$new_ubuntu_tag"
+    fix_tag "candidate/$new_ubuntu_tag"
+    descends_from "candidate/$new_ubuntu_tag"
 
     if ! schroot -l | grep "chroot:${chroot_name}" >/dev/null; then
         echo "Building the required schroot"
@@ -441,16 +462,17 @@ test_() {
     fi
     echo "Testing in schroot $chroot_name"
     if autopkgtest -- schroot "$chroot_name" > "$log_file" 2>&1; then
+        rm -f "${log_fail}.fail"
         echo "Test passed"
         whatnow
     elif [ $? -eq 2 ]; then
+        rm -f "${log_fail}.fail"
         echo "Some tests skipped, but otherwise passed"
         whatnow
     else
         cat "$log_file"
         mv "$log_file" "${log_file}.fail"
-        echo "Test(s) failed; log output above and stored in ${log_file}.fail"
-        echo "Fix the package then re-run: merge test"
+        whatnow
     fi
 }
 
@@ -470,8 +492,12 @@ build() {
     new_ubuntu=${new_debian}ubuntu1
     new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
     log_file="${parent}/${project}_${new_ubuntu}.sbuild"
-    merge_bug=$(get_merge_bug merge/"$new_ubuntu_tag")
+    merge_bug=$(get_merge_bug candidate/"$new_ubuntu_tag")
     deb_diff="${parent}/1-${merge_bug}.debdiff"
+
+    work_dir_clean
+    fix_tag "candidate/$new_ubuntu_tag"
+    descends_from "candidate/$new_ubuntu_tag"
 
     if [ "$deb_format" = "3.0 (quilt)" ]; then
         echo "Extracting orig tar-ball for ${project} ${upstream}"
@@ -507,11 +533,19 @@ build() {
     fi
 
     echo "Building source package for $devel_name"
-    sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$log_file"
-    echo "Generating debdiff"
-    git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
+    if sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$log_file"; then
+        rm -f "${log_fail}.fail"
+        git tag merge/"$new_ubuntu_tag"
+        echo "Created merge/$new_ubuntu_tag pointing at HEAD"
+        echo "Generating debdiff"
+        git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
 
-    whatnow
+        whatnow
+    else
+        cat "$log_file"
+        mv "$log_file" "${log_file}.fail"
+        whatnow
+    fi
 }
 
 
@@ -570,6 +604,28 @@ not_descends_from() {
     if git merge-base --is-ancestor "$commitish" HEAD; then
         die "HEAD descends from $commitish!"
     fi
+}
+
+
+fix_tag() {
+    local tag="$1"
+
+    if ! git merge-base --is-ancestor "$tag" HEAD; then
+        echo "HEAD does not descend from $tag"
+        if confirm "Move the tag to HEAD? [y/N] "; then
+            git tag -d "$tag"
+            git tag "$tag"
+        fi
+    fi
+
+}
+
+
+confirm() {
+    local result
+
+    read -p "$@" result
+    [ "${result,,}" = "y" ]
 }
 
 
