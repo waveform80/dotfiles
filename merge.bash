@@ -373,7 +373,7 @@ review() {
 
 
 rebased() {
-    local new_debian new_ubuntu new_ubuntu_tag merge_bug
+    local new_debian new_ubuntu new_ubuntu_tag merge_bug devel_name
 
     work_dir_clean
     descends_from new/debian
@@ -382,6 +382,7 @@ rebased() {
     new_debian=$(get_version new/debian)
     new_ubuntu="$new_debian"ubuntu1
     new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+    devel_name=$(distro-info --devel)
 
     [ -z "${merge_bug}" ] && die "Missing merge bug!"
 
@@ -457,6 +458,7 @@ test_() {
 build() {
     local new_debian new_ubuntu new_ubuntu_tag project devel_name top_level
     local parent log_file upstream orig_tar deb_format merge_bug deb_diff
+    local tarball
 
     top_level=$(git rev-parse --show-toplevel)
     deb_format=$(git cat-file blob HEAD:debian/source/format)
@@ -472,12 +474,35 @@ build() {
     deb_diff="${parent}/1-${merge_bug}.debdiff"
 
     if [ "$deb_format" = "3.0 (quilt)" ]; then
-        if ! git for-each-ref --format='%(refname:short)' refs/heads/ | grep pristine-tar >/dev/null; then
+        echo "Extracting orig tar-ball for ${project} ${upstream}"
+        if ! git for-each-ref --format='%(refname:short)' refs/heads/ \
+            | grep pristine-tar >/dev/null
+        then
             git branch --track pristine-tar origin/importer/debian/pristine-tar
         fi
-        orig_tar="${parent}/$(pristine-tar list | grep -F "${project}_${upstream}")"
-        if ! [ -e "$orig_tar" ]; then
-            pristine-tar checkout "$orig_tar"
+        orig_tar="$(pristine-tar list | grep -F "${project}_${upstream}" || true)"
+        if [ -z "$orig_tar" ]; then
+            echo "No ${project}_${upstream} tar-ball found in pristine-tar!"
+            echo "Attempting Debian source download..."
+            orig_tar="$( \
+                pull-debian-source --pull=list "$project" "$new_debian" \
+                | grep "\.orig\.tar")"
+            for tarball in $orig_tar; do
+                if [ -e "$parent"/"$tarball" ]; then
+                    continue
+                else
+                    pushd "$parent"
+                    pull-debian-source --download-only "$project" "$new_debian"
+                    popd
+                    break
+                fi
+            done
+        else
+            for tarball in $orig_tar; do
+                if ! [ -e "$parent"/"$tarball" ]; then
+                    pristine-tar checkout "$parent"/"$tarball"
+                fi
+            done
         fi
     fi
 
