@@ -207,7 +207,7 @@ EOF
 				echo "No tests available" > "${autopkgtest_log}"
 				whatnow
 			fi
-		elif ! [ -e "$build_log" ] || ! [ -e "$deb_diff" ] || ! [ -e "$source_changes" ]; then
+		elif ! [ -e "$build_log" ] || ! [ -e "$source_changes" ]; then
 			if [ -e "${build_log}.fail" ]; then
 				cat <<- EOF
 				Build failed; log output stored in ${build_log}.fail
@@ -222,9 +222,9 @@ EOF
 			$RESET
 			\$ merge build
 			EOF
-		elif ! tag_exists merge/"$new_ubuntu_tag"; then
+		elif ! tag_exists merge/"$new_ubuntu_tag" || ! [ -e "$deb_diff" ]; then
 			cat <<- EOF
-			Finalize the merge:
+			Finalize the merge and generate the debdiff:
 			$RESET
 			\$ merge finish
 			EOF
@@ -463,6 +463,7 @@ test_() {
 	log_file="${parent}/${project}_${new_ubuntu}.autopkgtest"
 
 	work_dir_clean
+	descends_from new/debian
 	fix_tag "candidate/$new_ubuntu_tag"
 	descends_from "candidate/$new_ubuntu_tag"
 
@@ -506,6 +507,7 @@ build() {
 	deb_diff="${parent}/1-${merge_bug}.debdiff"
 
 	work_dir_clean
+	descends_from new/debian
 	fix_tag "candidate/$new_ubuntu_tag"
 	descends_from "candidate/$new_ubuntu_tag"
 
@@ -545,9 +547,6 @@ build() {
 	echo "Building source package for $devel_name"
 	if sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$log_file"; then
 		rm -f "${log_fail}.fail"
-		echo "Generating debdiff"
-		git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
-
 		whatnow
 	else
 		cat "$log_file"
@@ -568,6 +567,10 @@ finish() {
 
 	git tag merge/"$new_ubuntu_tag"
 	echo "Created merge/$new_ubuntu_tag pointing at HEAD"
+
+	echo "Generating debdiff"
+	git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
+
 	whatnow
 }
 
@@ -630,17 +633,30 @@ not_descends_from() {
 }
 
 
+is_exactly() {
+	local commitish="$1"
+
+	git merge-base --is-ancestor "$commitish" HEAD && \
+		git merge-base --is-ancestor HEAD "$commitish"
+}
+
+
 fix_tag() {
 	local tag="$1"
 
 	if ! git merge-base --is-ancestor "$tag" HEAD; then
 		echo "HEAD does not descend from $tag"
-		if confirm "Move the tag to HEAD? [y/N] "; then
-			git tag -d "$tag"
-			git tag "$tag"
-		fi
+	elif ! git merge-base --is-ancestor HEAD "$tag"; then
+		echo "HEAD descends from $tag but has more commits"
+	else
+		return 0
 	fi
-
+	if confirm "Move $tag to HEAD? [y/N] "; then
+		git tag -d "$tag"
+		git tag "$tag"
+	else
+		return 1
+	fi
 }
 
 
