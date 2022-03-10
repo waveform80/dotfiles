@@ -523,7 +523,7 @@ build() {
 			echo "No ${project}_${upstream} tar-ball found in pristine-tar!"
 			echo "Attempting Debian source download..."
 			orig_tar="$( \
-				pull-debian-source --pull=list "$project" "$new_debian" \
+				pull-debian-source --pull=list "$project" "$new_debian" 2>&1 \
 				| grep "\.orig\.tar")"
 			for tarball in $orig_tar; do
 				if [ -e "$parent"/"$tarball" ]; then
