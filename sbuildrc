@@ -18,6 +18,9 @@ $purge_build_directory = 'never';
 $purge_session = 'never';
 $purge_build_deps = 'never';
 
+# Make lintian even more bloody verbose
+push @{$lintian_opts}, '-I';
+
 ## lxd setup
 #$chroot_mode = 'autopkgtest';
 #$autopkgtest_virt_server = 'autopkgtest-virt-lxd';
