@@ -207,6 +207,24 @@ let g:tagbar_show_tag_count = 1
 let g:tagbar_iconchars = ['▸', '▾']
 let g:tagbar_file_size_limit = 100000
 
+" Convert bug numbers into LP: # markdown links
+function! BugLink() abort
+	" Are we at the start of a WORD?
+	let pos = getpos('.')
+	normal! bw
+	if pos != getpos('.')
+		" We weren't at the start of a WORD, so move back to it
+		normal! b
+	endif
+	" If there's a leading # then strip it off
+	if getpos('.')[2] > 1 && getline('.')[getpos('.')[2] - 2] == "#"
+		normal! hx
+	endif
+	let bug = expand('<cword>')
+	execute 'normal! ce[LP: #' . bug . '](https://launchpad.net/bugs/' . bug . ')'
+endfunction
+nnoremap <Leader>lp :exe ":call BugLink()"<CR>
+
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
 nnoremap q: :q
