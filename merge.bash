@@ -490,8 +490,7 @@ test_() {
 
 build() {
 	local new_debian new_ubuntu new_ubuntu_tag project devel_name top_level
-	local parent log_file upstream orig_tar deb_format merge_bug deb_diff
-	local tarball
+	local parent log_file upstream orig_tar deb_format tarball
 
 	top_level=$(git rev-parse --show-toplevel)
 	deb_format=$(git cat-file blob HEAD:debian/source/format)
@@ -503,8 +502,6 @@ build() {
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
 	log_file="${parent}/${project}_${new_ubuntu}.sbuild"
-	merge_bug=$(get_merge_bug candidate/"$new_ubuntu_tag")
-	deb_diff="${parent}/1-${merge_bug}.debdiff"
 
 	work_dir_clean
 	descends_from new/debian
@@ -556,11 +553,16 @@ build() {
 }
 
 finish() {
-	local new_debian new_ubuntu new_ubuntu_tag
+	local top_level parent new_debian new_ubuntu new_ubuntu_tag merge_bug
+	local deb_diff
 
+	top_level=$(git rev-parse --show-toplevel)
+	parent=$(dirname "${top_level}")
 	new_debian=$(get_version new/debian)
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+	merge_bug=$(get_merge_bug candidate/"$new_ubuntu_tag")
+	deb_diff="${parent}/1-${merge_bug}.debdiff"
 
 	work_dir_clean
 	descends_from "candidate/$new_ubuntu_tag"
@@ -569,7 +571,7 @@ finish() {
 	echo "Created merge/$new_ubuntu_tag pointing at HEAD"
 
 	echo "Generating debdiff"
-	git diff new/debian merge/$new_ubuntu_tag > "$deb_diff"
+	git diff new/debian merge/"$new_ubuntu_tag" > "$deb_diff"
 
 	whatnow
 }
@@ -696,8 +698,9 @@ get_merge_bug() {
 	local commitish="$1"
 
 	git cat-file blob "$commitish":debian/changelog 2>/dev/null | \
-		head -n 3 | \
-		sed -n -e '/LP: #/ s,.*(LP: #\([0-9]\+\)).*,\1, p'
+		head -n 10 | \
+		sed -n -e '/LP: #/ s,.*(LP: #\([0-9]\+\)).*,\1, p' | \
+		head -n 1
 }
 
 
