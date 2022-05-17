@@ -244,7 +244,7 @@ def get_image(url):
     return image
 
 
-@functools.lru_cache
+@functools.lru_cache()
 def get_index(url):
     """
     Given the *url* of a cdimage directory containing images, returns a dict
