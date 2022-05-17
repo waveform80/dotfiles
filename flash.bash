@@ -67,13 +67,24 @@ fix_config() {
         mount "$boot_part" /mnt/boot
         if [ -e /mnt/boot/user-data ]; then
             if confirm "Customize cloud-init configuration? [y/n] "; then
-                sed -i \
-                    -e 's/expire: true/expire: false/' \
-                    -e 's/ubuntu:ubuntu/ubuntu:raspberry/' \
-                    -e 's/^ssh_pwauth: true/ssh_pwauth: false/' \
-                    -e 's/^#ssh_import_id/ssh_import_id/' \
-                    -e 's/^#- lp:my_launchpad_username/- lp:waveform/' \
-                    /mnt/boot/user-data
+                cat << EOF > /mnt/boot/user-data
+#cloud-config
+
+hostname: miss-piggy
+
+chpasswd:
+  expire: false
+  list:
+  - ubuntu:raspberry
+
+keyboard:
+  model: pc105
+  layout: gb
+  options: ctrl:nocaps
+
+ssh_import_id:
+- lp:waveform
+EOF
             fi
         fi
         if [ -e /mnt/boot/network-config ]; then
