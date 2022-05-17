@@ -27,6 +27,7 @@ set virtualedit=block   " enable virtual editing (partial tabs) in vblock
 set modelines=10        " read 10 lines for modes
 set colorcolumn=+1,80   " display a bar just after "textwidth" and at 80
 set completeopt=menu    " don't display preview window with completions
+set maxmempattern=4000  " allow 4MB for pattern matching
 let mapleader=","       " leader key is a comma
 
 " Permit a huge viminfo and command history
