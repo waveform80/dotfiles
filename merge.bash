@@ -1,7 +1,7 @@
 #!/bin/bash
 # vim: set noet sw=4 sts=4:
 
-set -e
+set -eu
 MY_PATH=$(dirname "$(readlink -f "$0")")
 MSG="[0;33m"
 TEMPLATE="[0;32m"
@@ -472,19 +472,22 @@ test_() {
 		mk-sbuild "$devel_name" >/dev/null
 	fi
 	echo "Testing in schroot $chroot_name"
-	if autopkgtest -- schroot "$chroot_name" > "$log_file" 2>&1; then
-		rm -f "${log_fail}.fail"
+	rc=0
+	autopkgtest -- schroot "$chroot_name" > "$log_file" 2>&1 || rc=$?
+	if [ $rc -eq 0 ]; then
+		rm -f "${log_file}.fail"
 		echo "Test passed"
-		whatnow
-	elif [ $? -eq 2 ]; then
-		rm -f "${log_fail}.fail"
+	elif [ $rc -eq 2 ]; then
+		rm -f "${log_file}.fail"
 		echo "Some tests skipped, but otherwise passed"
-		whatnow
+	elif [ $rc -eq 8 ]; then
+		rm -f "${log_file}.fail"
+		echo "All tests skipped; check this is valid in $log_file"
 	else
 		cat "$log_file"
 		mv "$log_file" "${log_file}.fail"
-		whatnow
 	fi
+	whatnow
 }
 
 
@@ -543,7 +546,7 @@ build() {
 
 	echo "Building source package for $devel_name"
 	if sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$log_file"; then
-		rm -f "${log_fail}.fail"
+		rm -f "${log_file}.fail"
 		whatnow
 	else
 		cat "$log_file"
