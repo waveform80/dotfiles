@@ -109,7 +109,7 @@ EOF
 		source_changes="${parent}/${project}_${new_ubuntu}_source.changes"
 		merge_bug=$(get_merge_bug merge/"$new_ubuntu_tag")
 		[ -z "$merge_bug" ] && merge_bug=$(get_merge_bug candidate/"$new_ubuntu_tag")
-		[ -z "$merge_bug" ] && merge_bug="$1"
+		[ -z "$merge_bug" ] && merge_bug="${1:-}"
 		[ -z "$merge_bug" ] && merge_bug="MERGE_BUG"
 		deb_diff="${parent}/1-${merge_bug}.debdiff"
 
@@ -207,7 +207,7 @@ EOF
 				echo "No tests available" > "${autopkgtest_log}"
 				whatnow
 			fi
-		elif ! [ -e "$build_log" ] || ! [ -e "$source_changes" ]; then
+		elif ! [ -e "$build_log" -a -e "$source_changes" ]; then
 			if [ -e "${build_log}.fail" ]; then
 				cat <<- EOF
 				Build failed; log output stored in ${build_log}.fail
@@ -228,7 +228,7 @@ EOF
 			$RESET
 			\$ merge finish
 			EOF
-		elif ! [ -n "$(git ls-remote --tags $lpuser merge/"$new_ubuntu_tag")" ]; then
+		elif ! [ -n "$(git ls-remote --tags $lpuser merge/"$new_ubuntu_tag" 2>/dev/null)" ]; then
 			cat <<- EOF
 			Publish the changes to your clone of the repo on Launchpad:
 			$RESET
@@ -545,7 +545,7 @@ build() {
 	fi
 
 	echo "Building source package for $devel_name"
-	if sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source > "$log_file"; then
+	if sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source 2>&1 > "$log_file"; then
 		rm -f "${log_file}.fail"
 		whatnow
 	else
