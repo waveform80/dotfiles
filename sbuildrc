@@ -1,7 +1,9 @@
-# Name to use as override in .changes files for the Maintainer: field
-# (mandatory, no default!).
-$maintainer_name = $ENV{'DEBFULLNAME'} . ' <' . $ENV{'DEBEMAIL'} . '>';
-$key_id = $ENV{'DEBEMAIL'};
+if (defined $ENV{'DEBEMAIL'}) {
+    # Name to use as override in .changes files for the Maintainer: field
+    # (mandatory, no default!).
+    $maintainer_name = $ENV{'DEBFULLNAME'} . ' <' . $ENV{'DEBEMAIL'} . '>';
+    $key_id = $ENV{'DEBEMAIL'};
+}
 
 # Use the development distribution as the default
 $distribution = `distro-info --devel`;
