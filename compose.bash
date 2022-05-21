@@ -7,10 +7,10 @@ height=$(tput lines)
 editor_width=84
 editor_height=24
 
-if [ $width -ge $((editor_width * 2)) ]; then
+if [ "$width" -ge $((editor_width * 2)) ]; then
     orientation="-h"
     size=$((width - editor_width))
-elif [ $height -ge $((editor_height * 2)) ]; then
+elif [ "$height" -ge $((editor_height * 2)) ]; then
     orientation="-v"
     size=$((height - editor_height))
 else

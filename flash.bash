@@ -49,9 +49,9 @@ umount_parts() {
     info "Waiting for other mounts to show up"
     sleep 3
     while grep -q "$pattern" /proc/mounts; do
-        for part in $(grep -o "$pattern" /proc/mounts); do
+        grep -o "$pattern" /proc/mounts | while read -r part; do
             info "Unmounting $part"
-            umount $part
+            umount "$part"
         done
         sleep 3
     done

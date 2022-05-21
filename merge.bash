@@ -747,7 +747,7 @@ fix_tag() {
 confirm() {
 	local result
 
-	read -p "$@" result
+	read -r -p "$@" result
 	[ "${result,,}" = "y" ]
 }
 
@@ -772,6 +772,8 @@ get_version() {
 strip_debian_version() {
 	local version="$1"
 
+	# No, I can't replace it with ${var/search/replace}
+	# shellcheck disable=SC2001
 	echo "$version" | sed -e 's/-[^-]*$//'
 }
 
