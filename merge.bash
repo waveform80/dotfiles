@@ -63,7 +63,7 @@ main() {
 
 
 whatnow() {
-	echo -n $MSG
+	echo -n "$MSG"
 	if ! git rev-parse --git-dir >/dev/null 2>&1; then
 		local project
 
@@ -94,7 +94,7 @@ EOF
 		local old_debian new_debian debian_sid
 		local old_ubuntu ubuntu_devel old_ubuntu_tag
 		local new_ubuntu new_ubuntu_tag
-		local autopkgtest_log autopkgtest_run source_changes deb_diff
+		local autopkgtest_dir autopkgtest_run source_changes deb_diff
 		local merge_bug lpuser
 
 		lpuser=$(git config --get ubuntu.lpuser)
@@ -215,7 +215,7 @@ EOF
 				mkdir -p "$autopkgtest_dir"
 				whatnow
 			fi
-		elif ! [ -e "$build_log" -a -e "$source_changes" ]; then
+		elif ! [ -e "$build_log" ] && ! [ -e "$source_changes" ]; then
 			if [ -e "${build_log}.fail" ]; then
 				cat <<- EOF
 				Build failed; log output stored in ${build_log}.fail
@@ -236,7 +236,7 @@ EOF
 			$RESET
 			\$ merge finish
 			EOF
-		elif ! [ -n "$(git ls-remote --tags $lpuser merge/"$new_ubuntu_tag" 2>/dev/null)" ]; then
+		elif [ -z "$(git ls-remote --tags "$lpuser" merge/"$new_ubuntu_tag" 2>/dev/null)" ]; then
 			cat <<- EOF
 			Publish the changes to your clone of the repo on Launchpad:
 			$RESET
@@ -265,7 +265,7 @@ EOF
 			EOF
 		fi
 	fi
-	echo -n $RESET
+	echo -n "$RESET"
 }
 
 
@@ -519,8 +519,8 @@ test_qemu() {
 	if ! [ -e "$image_name" ]; then
 		echo "Building image $image_name"
 		autopkgtest-buildvm-ubuntu-cloud \
-			--release=$devel_name \
-			--arch=$devel_arch \
+			--release="$devel_name" \
+			--arch="$devel_arch" \
 			--output-dir="$log_dir" >/dev/null 2>&1
 	fi
 	echo "Testing with image $image_name"
@@ -621,7 +621,10 @@ build() {
 	fi
 
 	echo "Building source package for $devel_name"
-	if sbuild --dist "$devel_name" --no-arch-any --no-arch-all --source --force-orig-source 2>&1 > "$log_file"; then
+	if sbuild --dist "$devel_name" \
+		--no-arch-any --no-arch-all --source \
+		--force-orig-source > "$log_file" 2>&1
+	then
 		rm -f "${log_file}.fail"
 		whatnow
 	else
@@ -669,17 +672,17 @@ push() {
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
 
 	echo "Pushing tags"
-	git push $lpuser \
+	git push "$lpuser" \
 		--delete old/debian \
 		--delete new/debian \
 		>/dev/null 2>&1 || true
-	git push $lpuser \
+	git push "$lpuser" \
 		tag old/debian \
 		tag new/debian \
-		tag split/$old_ubuntu_tag \
-		tag logical/$old_ubuntu_tag \
-		tag logical/$new_ubuntu_tag \
-		tag merge/$new_ubuntu_tag
+		tag split/"$old_ubuntu_tag" \
+		tag logical/"$old_ubuntu_tag" \
+		tag logical/"$new_ubuntu_tag" \
+		tag merge/"$new_ubuntu_tag"
 
 	whatnow
 }
