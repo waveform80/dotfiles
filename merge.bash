@@ -489,23 +489,7 @@ test_schroot() {
 	rc=0
 	autopkgtest . -o "$log_dir/run-$log_num" -- \
 		schroot "$chroot_name" >/dev/null 2>&1 || rc=$?
-	if [ $rc -eq 0 ]; then
-		rm -f "$log_dir/fail"
-		echo "Test passed"
-	elif [ $rc -eq 2 ]; then
-		rm -f "$log_dir/fail"
-		echo "Some tests skipped, but otherwise passed"
-		cat "$log_dir/run-$log_num/summary"
-	elif [ $rc -eq 8 ]; then
-		rm -f "$log_dir/fail"
-		echo "All tests skipped; check output in $log_dir/run-$log_num/"
-		cat "$log_dir/run-$log_num/summary"
-	else
-		echo "Tests failed; see output in $log_dir/run-$log_num"
-		echo "run-$log_num" > "$log_dir/fail"
-		cat "$log_dir/run-$log_num/summary"
-	fi
-	whatnow
+	test_post "$log_dir" "$log_num" "$rc"
 }
 
 
@@ -547,19 +531,35 @@ test_qemu() {
 	rc=0
 	autopkgtest . -o "$log_dir/run-$log_num" -- \
 		qemu "$image_name" >/dev/null 2>&1 || rc=$?
-	if [ $rc -eq 0 ]; then
+	test_post "$log_dir" "$log_num" "$rc"
+}
+
+
+test_post() {
+	local log_dir log_num rc
+
+	log_dir="$1"
+	log_num="$2"
+	rc="$3"
+
+	if [ "$rc" -eq 0 ]; then
 		rm -f "$log_dir/fail"
 		echo "Test passed"
-	elif [ $rc -eq 2 ]; then
+	elif [ "$rc" -eq 2 ]; then
 		rm -f "$log_dir/fail"
 		echo "Some tests skipped, but otherwise passed"
+		echo
 		cat "$log_dir/run-$log_num/summary"
-	elif [ $rc -eq 8 ]; then
+	elif [ "$rc" -eq 8 ]; then
 		rm -f "$log_dir/fail"
-		echo "All tests skipped; check output in $log_dir/run-$log_num/"
+		echo "All tests skipped; check output in:"
+		echo "$log_dir/run-$log_num/"
+		echo
 		cat "$log_dir/run-$log_num/summary"
 	else
-		echo "Tests failed; see output in $log_dir/run-$log_num"
+		echo "Tests failed; see output in:"
+		echo "$log_dir/run-$log_num"
+		echo
 		echo "run-$log_num" > "$log_dir/fail"
 		cat "$log_dir/run-$log_num/summary"
 	fi
