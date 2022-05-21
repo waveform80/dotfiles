@@ -33,7 +33,12 @@ main() {
 			rebased "$@"
 			;;
 		test)
-			test_
+			shift
+			if [ "${1:-}" = "--vm" ]; then
+				test_qemu
+			else
+				test_schroot
+			fi
 			;;
 		build)
 			build
@@ -89,7 +94,7 @@ EOF
 		local old_debian new_debian debian_sid
 		local old_ubuntu ubuntu_devel old_ubuntu_tag
 		local new_ubuntu new_ubuntu_tag
-		local autopkgtest_log source_changes deb_diff
+		local autopkgtest_log autopkgtest_run source_changes deb_diff
 		local merge_bug lpuser
 
 		lpuser=$(git config --get ubuntu.lpuser)
@@ -104,7 +109,7 @@ EOF
 		old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
 		new_ubuntu=${new_debian}ubuntu1
 		new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
-		autopkgtest_log="${parent}/${project}_${new_ubuntu}.autopkgtest"
+		autopkgtest_dir="${parent}/${project}_${new_ubuntu}.autopkgtest"
 		build_log="${parent}/${project}_${new_ubuntu}.sbuild"
 		source_changes="${parent}/${project}_${new_ubuntu}_source.changes"
 		merge_bug=$(get_merge_bug merge/"$new_ubuntu_tag")
@@ -187,24 +192,27 @@ EOF
 
 			Updated changelog and diff against Debian unstable to be attached below.
 			EOF
-		elif ! [ -e "$autopkgtest_log" ]; then
+		elif ! [ -d "$autopkgtest_dir" ] || [ -e "${autopkgtest_dir}/fail" ]; then
 			if [ -e debian/tests ]; then
-				if [ -e "${autopkgtest_log}.fail" ]; then
+				if [ -e "${autopkgtest_dir}/fail" ]; then
+					autopkgtest_run=$(cat "${autopkgtest_dir}/fail")
 					cat <<- EOF
-					Test(s) failed; log output stored in ${autopkgtest_log}.fail
+					Test(s) failed; log output stored in:
+					${autopkgtest_dir}/${autopkgtest_run}
 					Fix the package then re-run:
 					$RESET
-					\$ merge test
+					\$ merge test [--vm]
 					EOF
 				else
 					cat <<- EOF
 					Run autopkgtest on your merged package:
 					$RESET
-					\$ merge test
+					\$ merge test [--vm]
 					EOF
 				fi
 			else
-				echo "No tests available" > "${autopkgtest_log}"
+				echo "No tests available"
+				mkdir -p "$autopkgtest_dir"
 				whatnow
 			fi
 		elif ! [ -e "$build_log" -a -e "$source_changes" ]; then
@@ -215,7 +223,7 @@ EOF
 				EOF
 			else
 				cat <<- EOF
-				Build a source package and generate a debdiff for it:
+				Build a source package:
 				EOF
 			fi
 			cat <<- EOF
@@ -447,9 +455,9 @@ rebased() {
 }
 
 
-test_() {
+test_schroot() {
 	local project new_debian new_ubuntu new_ubuntu_tag devel_name devel_arch
-	local chroot_name top_level parent log_file rc
+	local chroot_name top_level parent log_dir log_num rc
 
 	top_level=$(git rev-parse --show-toplevel)
 	parent=$(dirname "${top_level}")
@@ -460,7 +468,8 @@ test_() {
 	devel_name=$(distro-info --devel)
 	devel_arch=$(dpkg-architecture -q DEB_HOST_ARCH)
 	chroot_name="$devel_name-$devel_arch"
-	log_file="${parent}/${project}_${new_ubuntu}.autopkgtest"
+	log_dir="${parent}/${project}_${new_ubuntu}.autopkgtest"
+	log_num=1
 
 	work_dir_clean
 	descends_from new/debian
@@ -472,20 +481,87 @@ test_() {
 		mk-sbuild "$devel_name" >/dev/null
 	fi
 	echo "Testing in schroot $chroot_name"
+
+	mkdir -p "$log_dir"
+	while [ -d "$log_dir/run-$log_num" ]; do
+		log_num=$((log_num + 1))
+	done
 	rc=0
-	autopkgtest -- schroot "$chroot_name" > "$log_file" 2>&1 || rc=$?
+	autopkgtest . -o "$log_dir/run-$log_num" -- \
+		schroot "$chroot_name" >/dev/null 2>&1 || rc=$?
 	if [ $rc -eq 0 ]; then
-		rm -f "${log_file}.fail"
+		rm -f "$log_dir/fail"
 		echo "Test passed"
 	elif [ $rc -eq 2 ]; then
-		rm -f "${log_file}.fail"
+		rm -f "$log_dir/fail"
 		echo "Some tests skipped, but otherwise passed"
+		cat "$log_dir/run-$log_num/summary"
 	elif [ $rc -eq 8 ]; then
-		rm -f "${log_file}.fail"
-		echo "All tests skipped; check this is valid in $log_file"
+		rm -f "$log_dir/fail"
+		echo "All tests skipped; check output in $log_dir/run-$log_num/"
+		cat "$log_dir/run-$log_num/summary"
 	else
-		cat "$log_file"
-		mv "$log_file" "${log_file}.fail"
+		echo "Tests failed; see output in $log_dir/run-$log_num"
+		echo "run-$log_num" > "$log_dir/fail"
+		cat "$log_dir/run-$log_num/summary"
+	fi
+	whatnow
+}
+
+
+test_qemu() {
+	local project new_debian new_ubuntu new_ubuntu_tag devel_name devel_arch
+	local image_name top_level parent log_dir log_num rc
+
+	top_level=$(git rev-parse --show-toplevel)
+	parent=$(dirname "${top_level}")
+	project=$(get_project new/debian)
+	new_debian=$(get_version new/debian)
+	new_ubuntu=${new_debian}ubuntu1
+	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+	devel_name=$(distro-info --devel)
+	devel_arch=$(dpkg-architecture -q DEB_HOST_ARCH)
+	chroot_name="$devel_name-$devel_arch"
+	log_dir="${parent}/${project}_${new_ubuntu}.autopkgtest"
+	log_num=1
+	image_name="${log_dir}/autopkgtest-${devel_name}-${devel_arch}.img"
+
+	work_dir_clean
+	descends_from new/debian
+	fix_tag "candidate/$new_ubuntu_tag"
+	descends_from "candidate/$new_ubuntu_tag"
+
+	mkdir -p "$log_dir"
+	if ! [ -e "$image_name" ]; then
+		echo "Building image $image_name"
+		autopkgtest-buildvm-ubuntu-cloud \
+			--release=$devel_name \
+			--arch=$devel_arch \
+			--output-dir="$log_dir" >/dev/null 2>&1
+	fi
+	echo "Testing with image $image_name"
+
+	while [ -d "$log_dir/run-$log_num" ]; do
+		log_num=$((log_num + 1))
+	done
+	rc=0
+	autopkgtest . -o "$log_dir/run-$log_num" -- \
+		qemu "$image_name" >/dev/null 2>&1 || rc=$?
+	if [ $rc -eq 0 ]; then
+		rm -f "$log_dir/fail"
+		echo "Test passed"
+	elif [ $rc -eq 2 ]; then
+		rm -f "$log_dir/fail"
+		echo "Some tests skipped, but otherwise passed"
+		cat "$log_dir/run-$log_num/summary"
+	elif [ $rc -eq 8 ]; then
+		rm -f "$log_dir/fail"
+		echo "All tests skipped; check output in $log_dir/run-$log_num/"
+		cat "$log_dir/run-$log_num/summary"
+	else
+		echo "Tests failed; see output in $log_dir/run-$log_num"
+		echo "run-$log_num" > "$log_dir/fail"
+		cat "$log_dir/run-$log_num/summary"
 	fi
 	whatnow
 }
