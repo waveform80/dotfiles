@@ -21,4 +21,4 @@ source "~/dotfiles/neomuttrc.common"
 
 bind editor <Tab> complete-query
 macro index gt "<change-folder>+[Gmail].Trash<enter>" "Go to Trash"
-macro index,pager a "<pipe-message>abook --datafile ~/.mail/work/address --add-email-quiet<return>" "Add sender to abook"
+macro index,pager A "<pipe-message>abook --datafile ~/.mail/work/address --add-email-quiet<return>" "Add sender to abook"
