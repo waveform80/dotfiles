@@ -76,10 +76,14 @@ task_doc() {
             echo 1
             ;;
         packages)
-            echo python3-sphinx python3-sphinx-rtd-theme inkscape xdot
-            echo fritzing mscgen texlive-latex-recommended texlive-latex-extra
+            echo python3-sphinx python3-sphinx-rtd-theme
+            echo texlive-latex-recommended texlive-latex-extra
             echo texlive-xetex texlive-fonts-recommended latexmk xindy
-            echo pdftk-java groff
+            echo pdftk-java groff texlive
+            # Graphical generation
+            echo inkscape xdot fritzing mscgen
+            # Blog bits
+            echo pelican python3-typogrify
             ;;
     esac
 }
