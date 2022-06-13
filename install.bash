@@ -51,6 +51,22 @@ task_dev() {
 }
 
 
+task_pico() {
+    case "$1" in
+        title)
+            echo "Install mcu dev tools (avr-libc, dfu-programmer, ...)"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo dfu-util dfu-programmer avrdude avr-libc device-tree-compiler
+            echo gcc-arm-none-eabi gdbserver hexdiff hexcurse lrzsz
+            ;;
+    esac
+}
+
+
 task_doc() {
     case "$1" in
         title)
