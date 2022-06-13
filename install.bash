@@ -204,7 +204,8 @@ task_fs() {
             echo 1
             ;;
         packages)
-            echo atool ncdu entr inotify-tools ranger shed mc
+            echo atool ncdu entr inotify-tools ranger shed mc lz4 zstd
+            echo p7zip-full
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/ranger
@@ -229,7 +230,8 @@ task_net() {
             echo 1
             ;;
         packages)
-            echo curl w3m elinks pastebinit zsync
+            echo curl w3m elinks pastebinit zsync nmap sshuttle sshfs
+            echo nfs-common
             ;;
         postinst)
             mkdir -p "$HOME"/.elinks
