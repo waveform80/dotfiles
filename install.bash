@@ -38,7 +38,7 @@ task_dev() {
                 highlight=highlight
             fi
             echo build-essential git git-email tig exuberant-ctags ${highlight}
-            echo screen
+            echo screen bison flex fossil lcov mercurial
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/git
