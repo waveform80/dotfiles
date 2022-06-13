@@ -149,6 +149,13 @@ task_py() {
             echo python3-pygments virtualenvwrapper tox pylint
             # Blog bits
             echo pelican python3-typogrify
+            # Libraries
+            echo python3-html5lib python3-lxml python3-numpy
+            echo python3-pil python3-argcomplete python3-ruamel.yaml
+            echo python3-zmq
+            if apt-cache show python3-cbor2 >/dev/null 2>&1; then
+                echo python3-cbor2
+            fi
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/pystartup "$HOME"/.pystartup
