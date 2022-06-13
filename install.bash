@@ -409,6 +409,24 @@ task_vim() {
 }
 
 
+task_x11() {
+    case "$1" in
+        title)
+            echo "Install X11 applications"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo keepassxc remmina quassel-client rhythmbox vlc
+            echo gimp inkscape fritzing calibre ghex jupyter-notebook wxmaxima
+            echo simple-scan openscad librecad imagemagick meld git-gui gitk
+            echo gobby veusz wireshark xdot usb-creator-gtk gnome-games
+            ;;
+    esac
+}
+
+
 task_zsh() {
     case "$1" in
         title)
