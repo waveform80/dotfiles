@@ -38,7 +38,7 @@ task_dev() {
                 highlight=highlight
             fi
             echo build-essential git git-email tig exuberant-ctags ${highlight}
-            echo screen
+            echo screen bison flex fossil lcov mercurial
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/git
@@ -46,6 +46,22 @@ task_dev() {
             ln -sf "$HOME"/dotfiles/gitignore "$XDG_CONFIG_HOME"/git/ignore
             ln -sf "$HOME"/dotfiles/tigrc "$HOME"/.tigrc
             mkdir -p "$HOME"/projects/work "$HOME"/projects/home
+            ;;
+    esac
+}
+
+
+task_pico() {
+    case "$1" in
+        title)
+            echo "Install mcu dev tools (avr-libc, dfu-programmer, ...)"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo dfu-util dfu-programmer avrdude avr-libc device-tree-compiler
+            echo gcc-arm-none-eabi gdbserver hexdiff hexcurse lrzsz
             ;;
     esac
 }
@@ -60,10 +76,14 @@ task_doc() {
             echo 1
             ;;
         packages)
-            echo python3-sphinx python3-sphinx-rtd-theme inkscape xdot
-            echo fritzing mscgen texlive-latex-recommended texlive-latex-extra
+            echo python3-sphinx python3-sphinx-rtd-theme
+            echo texlive-latex-recommended texlive-latex-extra
             echo texlive-xetex texlive-fonts-recommended latexmk xindy
-            echo pdftk-java groff
+            echo pdftk-java groff texlive
+            # Graphical generation
+            echo inkscape xdot fritzing mscgen
+            # Blog bits
+            echo pelican python3-typogrify
             ;;
     esac
 }
@@ -129,6 +149,13 @@ task_py() {
             echo python3-pygments virtualenvwrapper tox pylint
             # Blog bits
             echo pelican python3-typogrify
+            # Libraries
+            echo python3-html5lib python3-lxml python3-numpy
+            echo python3-pil python3-argcomplete python3-ruamel.yaml
+            echo python3-zmq
+            if apt-cache show python3-cbor2 >/dev/null 2>&1; then
+                echo python3-cbor2
+            fi
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/pystartup "$HOME"/.pystartup
@@ -177,7 +204,8 @@ task_fs() {
             echo 1
             ;;
         packages)
-            echo atool ncdu entr inotify-tools ranger shed mc
+            echo atool ncdu entr inotify-tools ranger shed mc lz4 zstd
+            echo p7zip-full
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/ranger
@@ -202,7 +230,8 @@ task_net() {
             echo 1
             ;;
         packages)
-            echo curl w3m elinks pastebinit zsync
+            echo curl w3m elinks pastebinit zsync nmap sshuttle sshfs
+            echo nfs-common
             ;;
         postinst)
             mkdir -p "$HOME"/.elinks
@@ -375,6 +404,24 @@ task_vim() {
             #git clone https://github.com/Vimjas/vim-python-pep8-indent "$vim_pack"/vim-python-pep8-indent
             #git clone https://github.com/mg979/vim-visual-multi "$vim_pack"/vim-visual-multi
             sudo update-alternatives --set editor "${vim_path}"
+            ;;
+    esac
+}
+
+
+task_x11() {
+    case "$1" in
+        title)
+            echo "Install X11 applications"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            echo keepassxc remmina quassel-client rhythmbox vlc
+            echo gimp inkscape fritzing calibre ghex jupyter-notebook wxmaxima
+            echo simple-scan openscad librecad imagemagick meld git-gui gitk
+            echo gobby veusz wireshark xdot usb-creator-gtk gnome-games
             ;;
     esac
 }
