@@ -128,6 +128,7 @@ bind attach | pipe-entry
 bind generic,index,pager c mail
 bind generic,index,pager r reply
 bind generic,index,pager R group-reply
+bind generic,index,pager L list-reply
 bind generic,index,pager f forward-message
 bind generic,index,pager s flag-message
 bind generic,index,pager U mark-as-new
