@@ -460,11 +460,19 @@ task_uk() {
         default)
             echo 1
             ;;
+        packages)
+            echo iw
+            ;;
         after)
             echo task_kmscon
             ;;
         postinst)
             sudo iw reg set GB
+            if [ -e /boot/firmware/cmdline.txt ]; then
+                sudo sed -i \
+                    -e 's/$/ cfg80211.ieee80211_regdom=GB' \
+                    /boot/firmware/cmdline.txt
+            fi
             sudo sed -i \
                 -e '/^XKBLAYOUT=/ s/=.*$/="gb"/' \
                 -e '/^XKBOPTIONS=/ s/=.*$/="ctrl: nocaps"/' \
