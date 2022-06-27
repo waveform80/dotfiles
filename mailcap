@@ -3,3 +3,7 @@
 # something like Latin-1 encoding is ... depressing
 text/html; elinks -no-connect -dump -dump-charset UTF-8 -dump-width 80 -default-mime-type text/html %s; nametemplate=%s.html; copiousoutput;
 #text/html; w3m -dump -o document_charset=%{charset} '%s'; nametemplate=%s.html; copiousoutput
+
+application/vnd.openxmlformats-officedocument.wordprocessingml.document; pandoc --from docx --to markdown %s; copiousoutput;
+application/vnd.oasis.opendocument.text; pandoc --from odt --to markdown %s; copiousoutput
+application/pdf; pdftotext -layout %s -; copiousoutput;
