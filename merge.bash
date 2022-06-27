@@ -567,7 +567,7 @@ test_post() {
 
 build() {
 	local new_debian new_ubuntu new_ubuntu_tag project devel_name top_level
-	local parent log_file upstream orig_tar deb_format tarball
+	local parent log_file upstream orig_tar deb_format tarball rev_count
 
 	top_level=$(git rev-parse --show-toplevel)
 	deb_format=$(git cat-file blob HEAD:debian/source/format)
@@ -587,9 +587,15 @@ build() {
 
 	if [ "$deb_format" = "3.0 (quilt)" ]; then
 		echo "Extracting orig tar-ball for ${project} ${upstream}"
-		if ! git for-each-ref --format='%(refname:short)' refs/heads/ \
-			| grep pristine-tar >/dev/null
-		then
+		if git show-ref --heads pristine-tar >/dev/null; then
+			rev_count="$( \
+				git rev-list --left-right --count \
+				pristine-tar..origin/importer/debian/pristine-tar)"
+			if [ "$rev_count" != $'0\t0' ]; then
+				git branch -D pristine-tar
+			fi
+		fi
+		if ! git show-ref --heads pristine-tar >/dev/null; then
 			git branch --track pristine-tar origin/importer/debian/pristine-tar
 		fi
 		orig_tar="$(pristine-tar list | grep -F "${project}_${upstream}" || true)"
