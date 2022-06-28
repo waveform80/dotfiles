@@ -188,7 +188,7 @@ EOF
 			Updated changelog and diff against Debian unstable to be attached below.
 			EOF
 		elif ! [ -d "$autopkgtest_dir" ] || [ -e "${autopkgtest_dir}/fail" ]; then
-			if [ -e debian/tests ]; then
+			if [ -d "$top_level"/debian/tests ]; then
 				if [ -e "${autopkgtest_dir}/fail" ]; then
 					autopkgtest_run=$(cat "${autopkgtest_dir}/fail")
 					cat <<- EOF
