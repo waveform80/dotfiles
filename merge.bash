@@ -357,7 +357,7 @@ logical() {
 	local old_ubuntu old_ubuntu_tag force
 
 	force=0
-	case "$1" in
+	case "${1:-}" in
 		--force|-f)
 			force=1
 			;;
