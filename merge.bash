@@ -455,7 +455,7 @@ rebased() {
 	debchange -r
 	echo "Updating maintainer"
 	if update-maintainer; then
-		git commit -m update-maintainer -- debian/control
+		git commit -m metadata -- debian/control
 	fi
 	git commit -m reconstruct-changelog -- debian/changelog
 	git tag candidate/"$new_ubuntu_tag"
