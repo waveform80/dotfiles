@@ -406,6 +406,7 @@ review() {
 
 	work_dir_clean
 	descends_from new/debian
+	patches_apply
 
 	new_debian=$(get_version new/debian)
 	new_ubuntu=${new_debian}ubuntu1
@@ -423,6 +424,7 @@ rebased() {
 
 	work_dir_clean
 	descends_from new/debian
+	patches_apply
 
 	merge_bug="$1"
 	new_debian=$(get_version new/debian)
@@ -742,6 +744,32 @@ is_exactly() {
 
 	git merge-base --is-ancestor "$commitish" HEAD && \
 		git merge-base --is-ancestor HEAD "$commitish"
+}
+
+
+patches_apply() {
+	local top_level deb_format result
+
+	top_level=$(git rev-parse --show-toplevel)
+	deb_format="$(cat "$top_level"/debian/source/format)"
+	result=0
+
+	if [ "$deb_format" = "3.0 (quilt)" ] && [ -s "$top_level"/debian/patches/series ]; then
+		echo "Checking patches apply cleanly"
+		pushd "$top_level" >/dev/null
+		if ! QUILT_PATCHES="debian/patches" quilt push -a --fuzz=0 >/dev/null 2>&1; then
+			if QUILT_PATCHES="debian/patches" quilt push -a --fuzz=2 >/dev/null 2>&1; then
+				echo "Patches have fuzz; refresh required"
+			else
+				echo "Patches have conflicts; refresh required"
+			fi
+			result=1
+		fi
+		QUILT_PATCHES="debian/patches" quilt pop -a >/dev/null 2>&1
+		rm -rf .pc/
+		popd >/dev/null
+	fi
+	return $result
 }
 
 
