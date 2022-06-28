@@ -17,6 +17,7 @@ main() {
 			clone "$@"
 			;;
 		start)
+			shift
 			start_ "$@"
 			;;
 		split)
