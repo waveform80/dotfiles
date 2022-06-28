@@ -4,6 +4,7 @@
 set -eu
 MY_PATH=$(dirname "$(readlink -f "$0")")
 MSG="[0;33m"
+COMMENT="[0;32m"
 TEMPLATE="[0;32m"
 LINK="[1;36m"
 RESET="[0m"
@@ -16,7 +17,7 @@ main() {
 			clone "$@"
 			;;
 		start)
-			start_
+			start_ "$@"
 			;;
 		split)
 			split
@@ -91,7 +92,7 @@ $RESET
 EOF
 	else
 		local top_level parent
-		local old_debian new_debian debian_sid
+		local old_debian new_debian
 		local old_ubuntu ubuntu_devel old_ubuntu_tag
 		local new_ubuntu new_ubuntu_tag
 		local autopkgtest_dir autopkgtest_run source_changes deb_diff
@@ -103,7 +104,6 @@ EOF
 		project=$(get_project new/debian)
 		old_debian=$(get_version old/debian)
 		new_debian=$(get_version new/debian)
-		debian_sid=$(get_version origin/debian/sid)
 		old_ubuntu=$(get_version old/ubuntu)
 		ubuntu_devel=$(get_version origin/ubuntu/devel)
 		old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
@@ -118,17 +118,11 @@ EOF
 		[ -z "$merge_bug" ] && merge_bug="MERGE_BUG"
 		deb_diff="${parent}/1-${merge_bug}.debdiff"
 
-		if [ "$new_debian" != "$debian_sid" ] || [ "$old_ubuntu" != "$ubuntu_devel" ]; then
+		if [ "$old_ubuntu" != "$ubuntu_devel" ] || ! tag_exists reconstruct/"$old_ubuntu_tag"; then
 			cat <<- EOF
 			Start the merge with:
 			$RESET
-			\$ merge start
-			EOF
-		elif ! tag_exists reconstruct/"$old_ubuntu_tag"; then
-			cat <<- EOF
-			Start the merge with:
-			$RESET
-			\$ merge start
+			\$ merge start [branch-name] $COMMENT# defaults to debian/sid
 			EOF
 		elif ! tag_exists split/"$old_ubuntu_tag"; then
 			cat <<- EOF
@@ -293,34 +287,38 @@ clone() {
 
 
 start_() {
-	local merge_base old_ubuntu old_ubuntu_tag new_debian old_debian
+	local merge_base merge_target old_ubuntu old_ubuntu_tag new_debian old_debian
 
 	work_dir_clean
 
 	echo "Fetching origin"
 	git fetch origin
 
-	merge_base=$(git merge-base origin/debian/sid origin/ubuntu/devel)
+	merge_target="${1:-origin/debian/sid}"
+	merge_base=$(git merge-base "$merge_target" origin/ubuntu/devel)
 	old_ubuntu=$(get_version origin/ubuntu/devel)
 	old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
-	new_debian=$(get_version origin/debian/sid)
+	new_debian=$(get_version "$merge_target")
 	old_debian=$(get_version "$merge_base")
 
 	[ "${old_debian}" = "${new_debian}" ] && \
 		die "Current version is based on Debian unstable!"
 
-	git checkout origin/debian/sid 2>/dev/null
+	git checkout "$merge_target" 2>/dev/null
 	echo "Removing old tags"
 	git tag -d old/ubuntu old/debian new/debian 2>/dev/null || true
 	echo "Refreshing stale branches"
-	git branch -D debian/sid ubuntu/devel 2>/dev/null || true
+	git branch -D ubuntu/devel 2>/dev/null || true
+	if git show-ref --heads "${merge_target#origin/}" >/dev/null; then
+		git branch -D "${merge_target#origin/}" 2>/dev/null || true
+	fi
 
 	echo "Creating new tags:"
 	git tag old/ubuntu origin/ubuntu/devel
 	echo "	old/ubuntu pointing at import/${old_ubuntu}"
 	git tag old/debian "$merge_base"
 	echo "	old/debian pointing at import/${old_debian}"
-	git tag new/debian origin/debian/sid
+	git tag new/debian "$merge_target"
 	echo "	new/debian pointing at import/${new_debian}"
 	git tag reconstruct/"$old_ubuntu_tag" old/ubuntu
 	git checkout old/ubuntu
@@ -569,7 +567,7 @@ test_post() {
 
 build() {
 	local new_debian new_ubuntu new_ubuntu_tag project devel_name top_level
-	local parent log_file upstream orig_tar deb_format tarball
+	local parent log_file upstream orig_tar deb_format tarball rev_count
 
 	top_level=$(git rev-parse --show-toplevel)
 	deb_format=$(git cat-file blob HEAD:debian/source/format)
@@ -589,9 +587,15 @@ build() {
 
 	if [ "$deb_format" = "3.0 (quilt)" ]; then
 		echo "Extracting orig tar-ball for ${project} ${upstream}"
-		if ! git for-each-ref --format='%(refname:short)' refs/heads/ \
-			| grep pristine-tar >/dev/null
-		then
+		if git show-ref --heads pristine-tar >/dev/null; then
+			rev_count="$( \
+				git rev-list --left-right --count \
+				pristine-tar..origin/importer/debian/pristine-tar)"
+			if [ "$rev_count" != $'0\t0' ]; then
+				git branch -D pristine-tar
+			fi
+		fi
+		if ! git show-ref --heads pristine-tar >/dev/null; then
 			git branch --track pristine-tar origin/importer/debian/pristine-tar
 		fi
 		orig_tar="$(pristine-tar list | grep -F "${project}_${upstream}" || true)"
