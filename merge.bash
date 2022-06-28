@@ -50,7 +50,7 @@ main() {
 		push)
 			push
 			;;
-		whatnow)
+		whatnow|help|--help|-h)
 			shift
 			whatnow "$@"
 			;;
@@ -245,7 +245,7 @@ EOF
 			Attaching patch against Debian unstable. For ease of review, relevant commits
 			and tags have been pushed to the following repository:
 
-			  https://code.launchpad.net/~$lpuser/ubuntu/+source/$project/+git/$project
+			https://code.launchpad.net/~$lpuser/ubuntu/+source/$project/+git/$project
 
 			Specifically:
 
@@ -255,7 +255,7 @@ EOF
 
 			Hence, the following command may produce output useful to the purposes of review:
 
-			  git range-diff old/debian..logical/$old_ubuntu_tag new/debian..logical/$new_ubuntu_tag
+			git range-diff old/debian..logical/$old_ubuntu_tag new/debian..logical/$new_ubuntu_tag
 			EOF
 		fi
 	fi
@@ -305,23 +305,26 @@ start_() {
 		die "Current version is based on Debian unstable!"
 
 	git checkout "$merge_target" 2>/dev/null
-	echo "Removing old tags"
+	echo "Removing old tags and branches"
 	git tag -d old/ubuntu old/debian new/debian 2>/dev/null || true
+	git branch -D split logical merge
 	echo "Refreshing stale branches"
 	git branch -D ubuntu/devel 2>/dev/null || true
 	if git show-ref --heads "${merge_target#origin/}" >/dev/null; then
 		git branch -D "${merge_target#origin/}" 2>/dev/null || true
 	fi
 
-	echo "Creating new tags:"
+	echo "Creating new tags and branches:"
 	git tag old/ubuntu origin/ubuntu/devel
-	echo "	old/ubuntu pointing at import/${old_ubuntu}"
+	echo "	old/ubuntu (tag) pointing at import/${old_ubuntu}"
 	git tag old/debian "$merge_base"
-	echo "	old/debian pointing at import/${old_debian}"
+	echo "	old/debian (tag) pointing at import/${old_debian}"
 	git tag new/debian "$merge_target"
-	echo "	new/debian pointing at import/${new_debian}"
+	echo "	new/debian (tag) pointing at import/${new_debian}"
 	git tag reconstruct/"$old_ubuntu_tag" old/ubuntu
-	git checkout old/ubuntu
+	echo "	split (branch) pointing at old/ubuntu"
+	git branch split old/ubuntu
+	git checkout split
 
 	whatnow
 }
@@ -339,8 +342,11 @@ split() {
 	old_ubuntu=$(get_version old/ubuntu)
 	old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
 
+	echo "Creating new tags and branches:"
 	git tag split/"$old_ubuntu_tag"
-	echo "Created split/$old_ubuntu_tag pointing at HEAD"
+	echo "	split/$old_ubuntu_tag (tag) pointing at HEAD"
+	git checkout -b logical
+	echo "	logical (branch) potining at HEAD"
 
 	whatnow
 }
@@ -384,8 +390,11 @@ logical() {
 	old_ubuntu=$(get_version old/ubuntu)
 	old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
 
+	echo "Creating new tags and branches:"
 	git tag logical/"$old_ubuntu_tag"
-	echo "Created logical/$old_ubuntu_tag pointing at HEAD"
+	echo "	logical/$old_ubuntu_tag (tag) pointing at HEAD"
+	git checkout -b merge
+	echo "	merge pointing at HEAD"
 
 	whatnow
 }
@@ -677,10 +686,16 @@ push() {
 
 	echo "Pushing tags"
 	git push "$lpuser" \
+		--delete split \
+		--delete logical \
+		--delete merge \
 		--delete old/debian \
 		--delete new/debian \
 		>/dev/null 2>&1 || true
 	git push "$lpuser" \
+		split \
+		logical \
+		merge \
 		tag old/debian \
 		tag new/debian \
 		tag split/"$old_ubuntu_tag" \
