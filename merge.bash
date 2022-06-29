@@ -687,14 +687,11 @@ push() {
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
 
+	echo "Removing obsolete tags and branches"
+	for name in split logical merge "tag old/debian" "tag new/debian"; do
+		git push "$lpuser" --delete $name >/dev/null 2>&1 || true
+	done
 	echo "Pushing tags"
-	git push "$lpuser" \
-		--delete split \
-		--delete logical \
-		--delete merge \
-		--delete old/debian \
-		--delete new/debian \
-		>/dev/null 2>&1 || true
 	git push "$lpuser" \
 		split \
 		logical \
