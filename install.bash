@@ -409,10 +409,10 @@ task_vim() {
 }
 
 
-task_x11() {
+task_gui() {
     case "$1" in
         title)
-            echo "Install X11 applications"
+            echo "Install GUI applications"
             ;;
         default)
             echo 0
@@ -422,6 +422,7 @@ task_x11() {
             echo gimp inkscape fritzing calibre ghex jupyter-notebook wxmaxima
             echo simple-scan openscad librecad imagemagick meld git-gui gitk
             echo gobby veusz wireshark xdot usb-creator-gtk gnome-games
+            echo wl-clipboard
             ;;
     esac
 }
