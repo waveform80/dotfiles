@@ -115,9 +115,9 @@ function _sb() {
     sbuild --maintainer "$maintainer" --keyid "$keyid" "$@"
 }
 
-function sbs() { _sb --no-arch-any --no-arch-all --source "$@" }
-function sbb() { _sb --arch-any --arch-all --no-source "$@" }
-function sba() { _sb --arch-any --arch-all --source "$@" }
+alias sbs="_sb --no-arch-any --no-arch-all --source"
+alias sbb="_sb --arch-any --arch-all --no-source"
+alias sba="_sb --arch-any --arch-all --source"
 
 function sync() {
     local profile="$1"
