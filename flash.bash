@@ -84,6 +84,10 @@ keyboard:
 
 ssh_import_id:
 - lp:waveform
+
+apt:
+  conf: |
+    Acquire::http { Proxy "http://acng.waveform.org.uk:3142"; }
 EOF
             fi
         fi
