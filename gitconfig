@@ -17,6 +17,12 @@
 	lpuser = waveform
 [gitubuntu]
 	lpuser = waveform
+[url "git+ssh://waveform@git.launchpad.net/"]
+	insteadof = lp:
+[url "git@github.com:"]
+	insteadof = gh:
+[url "git@salsa.debian.org:"]
+	insteadof = deb:
 [includeIf "gitdir:~/dotfiles/"]
 	path = ~/dotfiles/gitconfig.home
 [includeIf "gitdir:~/keys/"]
