@@ -165,7 +165,7 @@ task_py() {
 }
 
 
-task_email() {
+task_mutt() {
     case "$1" in
         title)
             echo "Install e-mail client (mutt, notmuch, isync)"
@@ -173,8 +173,11 @@ task_email() {
         default)
             echo 0
             ;;
+        after)
+            echo task_sendmail
+            ;;
         packages)
-            echo isync neomutt notmuch msmtp-mta abook
+            echo isync neomutt notmuch abook
             ;;
         postinst)
             mkdir -p "$HOME"/.mail/{home,work}
@@ -182,14 +185,31 @@ task_email() {
             ln -sf "$HOME"/dotfiles/mbsyncrc "$HOME"/.mbsyncrc
             ln -sf "$HOME"/dotfiles/notmuch-home "$HOME"/.mail/home/.notmuch-config
             ln -sf "$HOME"/dotfiles/notmuch-work "$HOME"/.mail/work/.notmuch-config
-            ln -sf "$HOME"/dotfiles/dot_msmtprc "$HOME"/.msmtprc
-            chmod 600 "$HOME"/dotfiles/msmtprc
             ln -sf "$HOME"/dotfiles/mailcap "$HOME"/.mailcap
             mkdir -p "$XDG_CONFIG_HOME"/systemd/user/
             ln -sf "$HOME"/dotfiles/mbsync@.service "$XDG_CONFIG_HOME"/systemd/user/
             ln -sf "$HOME"/dotfiles/mbsync@.timer "$XDG_CONFIG_HOME"/systemd/user/
             systemctl enable --user mbsync@home.timer
             systemctl enable --user mbsync@work.timer
+            ;;
+    esac
+}
+
+
+task_sendmail() {
+    case "$1" in
+        title)
+            echo "Install e-mail sender (msmtp)"
+            ;;
+        default)
+            echo 1
+            ;;
+        packages)
+            echo msmtp-mta
+            ;;
+        postinst)
+            ln -sf "$HOME"/dotfiles/dot_msmtprc "$HOME"/.msmtprc
+            chmod 600 "$HOME"/dotfiles/dot_msmtprc
             ;;
     esac
 }
