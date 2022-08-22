@@ -308,7 +308,7 @@ start_() {
 	git checkout "$merge_target" 2>/dev/null
 	echo "Removing old tags and branches"
 	git tag -d old/ubuntu old/debian new/debian 2>/dev/null || true
-	git branch -D split logical merge
+	git branch -D split logical merge 2>/dev/null || true
 	echo "Refreshing stale branches"
 	git branch -D ubuntu/devel 2>/dev/null || true
 	if git show-ref --heads "${merge_target#origin/}" >/dev/null; then
