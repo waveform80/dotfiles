@@ -117,7 +117,7 @@ EOF
 		[ -z "$merge_bug" ] && merge_bug=$(get_merge_bug candidate/"$new_ubuntu_tag")
 		[ -z "$merge_bug" ] && merge_bug="${1:-}"
 		[ -z "$merge_bug" ] && merge_bug="MERGE_BUG"
-		deb_diff="${parent}/1-${merge_bug}.debdiff"
+		deb_diff=$(get_deb_diff "$parent" "$merge_bug" 1)
 
 		if [ "$old_ubuntu" != "$ubuntu_devel" ] || ! tag_exists start/"$old_ubuntu_tag"; then
 			cat <<- EOF
@@ -660,7 +660,7 @@ finish() {
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
 	merge_bug=$(get_merge_bug candidate/"$new_ubuntu_tag")
-	deb_diff="${parent}/1-${merge_bug}.debdiff"
+	deb_diff=$(get_deb_diff "$parent" "$merge_bug")
 
 	work_dir_clean
 	descends_from "candidate/$new_ubuntu_tag"
@@ -811,6 +811,23 @@ get_version() {
 	git cat-file blob "$commitish":debian/changelog 2>/dev/null  | \
 		head -n 1 | \
 		sed -n -e 's/.*(//' -e 's/).*//p'
+}
+
+
+get_deb_diff() {
+	local parent="$1"
+	local merge_bug="$2"
+	local existing="${3:-0}"
+	local prefix name
+
+	prefix=1
+	while [ -e "${parent}/${prefix}-${merge_bug}.debdiff" ]; do
+		prefix=$((prefix + 1))
+	done
+	if [ "$existing" -eq 1 -a "$prefix" -gt 1 ]; then
+		prefix=$((prefix - 1))
+	fi
+	echo "${parent}/${prefix}-${merge_bug}.debdiff"
 }
 
 
