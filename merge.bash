@@ -323,9 +323,21 @@ start_() {
 	git tag new/debian "$merge_target"
 	echo "	new/debian (tag) pointing at import/${new_debian}"
 	tag_exists start/"$old_ubuntu_tag" || git tag start/"$old_ubuntu_tag" old/ubuntu
-	echo "	split (branch) pointing at old/ubuntu"
-	git branch split old/ubuntu
-	git checkout split
+	if tag_exists split/"$old_ubuntu_tag"; then
+		echo "	split (branch) pointing at split/$old_ubuntu_tag"
+		git branch split split/"$old_ubuntu_tag"
+		if tag_exists logical/"$old_ubuntu_tag"; then
+			echo "	logical (branch) pointing at logical/$old_ubuntu_tag"
+			git branch logical logical/"$old_ubuntu_tag"
+			git checkout logical
+		else
+			git checkout split
+		fi
+	else
+		echo "	split (branch) pointing at old/ubuntu"
+		git branch split old/ubuntu
+		git checkout split
+	fi
 
 	whatnow
 }
