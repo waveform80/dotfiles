@@ -119,7 +119,7 @@ EOF
 		[ -z "$merge_bug" ] && merge_bug="MERGE_BUG"
 		deb_diff="${parent}/1-${merge_bug}.debdiff"
 
-		if [ "$old_ubuntu" != "$ubuntu_devel" ] || ! tag_exists reconstruct/"$old_ubuntu_tag"; then
+		if [ "$old_ubuntu" != "$ubuntu_devel" ] || ! tag_exists start/"$old_ubuntu_tag"; then
 			cat <<- EOF
 			Start the merge with:
 			$RESET
@@ -322,7 +322,7 @@ start_() {
 	echo "	old/debian (tag) pointing at import/${old_debian}"
 	git tag new/debian "$merge_target"
 	echo "	new/debian (tag) pointing at import/${new_debian}"
-	tag_exists reconstruct/"$old_ubuntu_tag" || git tag reconstruct/"$old_ubuntu_tag" old/ubuntu
+	tag_exists start/"$old_ubuntu_tag" || git tag start/"$old_ubuntu_tag" old/ubuntu
 	echo "	split (branch) pointing at old/ubuntu"
 	git branch split old/ubuntu
 	git checkout split
