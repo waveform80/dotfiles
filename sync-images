@@ -38,7 +38,10 @@ def main(args=None):
     args = parser.parse_args(args)
 
     try:
-        urls = [url.rstrip() for url in args.images_list]
+        urls = [
+            line.rstrip() for line in args.images_list
+            if not line.lstrip().startswith('#')
+        ]
         refresh_images(urls, args.force)
     except Exception as e:
         # If you want full stack traces just run me like this:
