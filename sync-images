@@ -40,7 +40,7 @@ def main(args=None):
     try:
         urls = [
             line.rstrip() for line in args.images_list
-            if not line.lstrip().startswith('#')
+            if line.strip() and not line.lstrip().startswith('#')
         ]
         refresh_images(urls, args.force)
     except Exception as e:
