@@ -188,4 +188,6 @@ if [ -z $SSH_AUTH_SOCK -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
     fi
 fi
 
-[ -d $HOME/keys ] && source $HOME/keys/cryptfun
+if [ -d $HOME/keys ]; then
+    source $HOME/keys/cryptfun
+fi
