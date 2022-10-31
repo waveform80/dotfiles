@@ -186,4 +186,5 @@ fi
 
 if [ -d $HOME/keys ]; then
     source $HOME/keys/cryptfun
+    source $HOME/keys/vpnfun
 fi
