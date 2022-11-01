@@ -187,4 +187,5 @@ export GPG_TTY=$(tty)
 
 if [ -d $HOME/keys ]; then
     source $HOME/keys/cryptfun
+    source $HOME/keys/vpnfun
 fi
