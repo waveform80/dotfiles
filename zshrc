@@ -183,6 +183,7 @@ if [ -z $SSH_AUTH_SOCK -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
         ln -sf $SSH_AUTH_SOCK $ssh_agent
     fi
 fi
+export GPG_TTY=$(tty)
 
 if [ -d $HOME/keys ]; then
     source $HOME/keys/cryptfun
