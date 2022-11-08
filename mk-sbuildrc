@@ -31,5 +31,5 @@ esac
 SKIP_UPDATES="0"
 SKIP_PROPOSED="0"
 # if you have e.g. apt-cacher-ng around
-DEBOOTSTRAP_PROXY=http://acng:3142/
+DEBOOTSTRAP_PROXY=http://acng.waveform.org.uk:3142/
 #DEBOOTSTRAP_INCLUDE=lintian
