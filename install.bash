@@ -107,8 +107,8 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
             ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
             ln -sf "$HOME"/dotfiles/reportbugrc "$HOME"/.reportbugrc
-            ln -sf "$HOME"/dotfiles/merge.bash "$HOME"/.local/bin/merge
-            ln -sf "$HOME"/dotfiles/proposed.bash "$HOME"/.local/bin/proposed-enable
+            ln -sf "$HOME"/dotfiles/merge "$HOME"/.local/bin/merge
+            ln -sf "$HOME"/dotfiles/enable-proposed "$HOME"/.local/bin/enable-proposed
             ln -sf "$HOME"/dotfiles/sync-images "$HOME"/.local/bin/sync-images
             ;;
     esac
@@ -234,8 +234,8 @@ task_fs() {
                 ranger --copy-config=scope
                 sed -i -e 's/\bbat\b/batcat/' "$XDG_CONFIG_HOME"/ranger/scope.sh
             fi
-            ln -sf "$HOME"/dotfiles/flash.bash "$HOME"/.local/bin/flashcard
-            ln -sf "$HOME"/dotfiles/mount.bash "$HOME"/.local/bin/mountcard
+            ln -sf "$HOME"/dotfiles/flashcard "$HOME"/.local/bin/flashcard
+            ln -sf "$HOME"/dotfiles/mountcard "$HOME"/.local/bin/mountcard
             ;;
     esac
 }
