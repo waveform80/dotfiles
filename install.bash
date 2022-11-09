@@ -51,10 +51,10 @@ task_dev() {
 }
 
 
-task_pico() {
+task_mcu() {
     case "$1" in
         title)
-            echo "Install mcu dev tools (avr-libc, dfu-programmer, ...)"
+            echo "Install microcontroller tools (dtc, mpremote, ...)"
             ;;
         default)
             echo 0
@@ -62,6 +62,12 @@ task_pico() {
         packages)
             echo dfu-util dfu-programmer avrdude avr-libc device-tree-compiler
             echo gcc-arm-none-eabi gdbserver hexdiff hexcurse lrzsz
+            if apt-cache show pyboard-rshell >/dev/null 2>&1; then
+                echo pyboard-rshell
+            fi
+            if apt-cache show micropython-mpremote >/dev/null 2>&1; then
+                echo micropython-mpremote
+            fi
             ;;
     esac
 }
