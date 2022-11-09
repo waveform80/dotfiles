@@ -9,10 +9,10 @@
 	show = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
 	diff = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
 ;[diff "image"]
-;	command = /home/dave/dotfiles/gitimgdiff
+;	command = ~/dotfiles/gitimgdiff
 [core]
-	excludesfile = /home/dave/dotfiles/gitignore
-	attributesfile = /home/dave/dotfiles/gitattributes
+	excludesfile = ~/dotfiles/gitignore
+	attributesfile = ~/dotfiles/gitattributes
 [ubuntu]
 	lpuser = waveform
 [gitubuntu]
