@@ -116,6 +116,8 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/merge "$HOME"/.local/bin/merge
             ln -sf "$HOME"/dotfiles/enable-proposed "$HOME"/.local/bin/enable-proposed
             ln -sf "$HOME"/dotfiles/sync-images "$HOME"/.local/bin/sync-images
+            # Is this a packaging tool? Well...
+            ln -sf "$HOME"/dotfiles/setfor "$HOME"/.local/bin/setfor
             ;;
     esac
 }
