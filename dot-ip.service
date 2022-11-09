@@ -1,0 +1,9 @@
+[Unit]
+Description=Show IPs on Display-o-Tron HAT
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/dot-ip
+
+[Install]
+WantedBy=multi-user.target

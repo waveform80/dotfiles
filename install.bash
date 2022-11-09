@@ -116,8 +116,30 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/merge "$HOME"/.local/bin/merge
             ln -sf "$HOME"/dotfiles/enable-proposed "$HOME"/.local/bin/enable-proposed
             ln -sf "$HOME"/dotfiles/sync-images "$HOME"/.local/bin/sync-images
-            # Is this a packaging tool? Well...
+            ;;
+    esac
+}
+
+
+task_sprint() {
+    case "$1" in
+        title)
+            echo "Install sprint tools (dot-ip, setfor)"
+            ;;
+        default)
+            echo 0
+            ;;
+        packages)
+            ;;
+        postinst)
             ln -sf "$HOME"/dotfiles/setfor "$HOME"/.local/bin/setfor
+            if grep -q "Raspberry Pi" /proc/cpuinfo; then
+                ln -sf "$HOME"/dotfiles/dot-ip /usr/local/bin/dot-ip
+                ln -sf "$HOME"/dotfiles/dot-ip.service /etc/systemd/system/dot-ip.service
+                sudo systemctl daemon-reload
+                # NOTE: dot-ip service is not enabled automatically; setfor
+                # handles this when required
+            fi
             ;;
     esac
 }

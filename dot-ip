@@ -1,0 +1,208 @@
+#!/usr/bin/python3
+
+import os
+import sys
+import math
+import time
+import signal
+import selectors
+from itertools import tee, cycle
+from collections import deque
+
+import netifaces
+from dothat import lcd, backlight, touch as nav
+from colorzero import Color
+
+
+def pairwise(iterable):
+    """
+    Return successive overlapping pairs taken from the input *iterable*.
+
+    The number of 2-tuples in the output iterator will be one fewer than the
+    number of inputs. It will be empty if the input iterable has fewer than two
+    values.
+    """
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
+
+
+def next_key(item, items):
+    """
+    Return the subsequent entry in *items* after *item*. If *item* is the last
+    entry in *items*, return the first. If *item* does not occur in *items*,
+    return :data:`None`.
+    """
+    if item in items:
+        for a, b in pairwise(cycle(items)):
+            if item == a:
+                return b
+    elif items:
+        return next(iter(items))
+    else:
+        return None
+
+
+def prior_key(item, items):
+    """
+    Return the prior entry in *items* before *item*. If *item* is the first
+    entry in *items*, return the last. If *item* does not occur in *items*,
+    return :data:`None`.
+    """
+    if item in items:
+        for a, b in pairwise(cycle(items)):
+            if item == b:
+                return a
+    elif items:
+        return next(iter(items))
+    else:
+        return None
+
+
+class Application:
+    """
+    Class representing the application, keeping the state of the display and
+    providing methods linking the navigation buttons to their actions.
+
+    .. attribute:: iface
+
+        The name of the interface to display.
+
+    .. attribute:: family
+
+        The address family of :attr:`iface` to display; defaults to
+        ``netifaces.AF_INET``.
+    """
+    families = {
+        netifaces.AF_INET: 'IP4',
+        netifaces.AF_INET6: 'IP6',
+        netifaces.AF_LINK: 'MAC',
+    }
+
+    def __init__(self):
+        self.iface = next(iter(self.interfaces))
+        self.family = next(iter(self.families))
+        self.color = Color('black')
+        backlight.off()
+
+        @nav.on(nav.UP)
+        def handle_up(ch, evt):
+            self.iface = prior_key(self.iface, self.interfaces)
+            self.refresh()
+
+        @nav.on(nav.DOWN)
+        def handle_down(ch, evt):
+            self.iface = next_key(self.iface, self.interfaces)
+            self.refresh()
+
+        @nav.on(nav.LEFT)
+        def handle_left(ch, evt):
+            self.family = prior_key(self.family, self.families)
+            self.refresh()
+
+        @nav.on(nav.RIGHT)
+        def handle_right(ch, evt):
+            self.family = next_key(self.family, self.families)
+            self.refresh()
+
+        @nav.on(nav.BUTTON)
+        def handle_right(ch, evt):
+            self.refresh()
+
+    def close(self):
+        """
+        Called to close the application down.
+        """
+        self.sweep(Color('black'), duration=0.5)
+        lcd.clear()
+        backlight.off()
+
+    @property
+    def interfaces(self):
+        """
+        Returns a mapping of all interface names to a mapping of all interface
+        families to their addresses. For example, the most basic valid result
+        would be::
+
+            {'lo': {netifaces.AF_INET: '127.0.0.1'}}
+
+        A more common result might be::
+
+            {'lo': {netifaces.AF_INET: '127.0.0.1',
+                    netifaces.AF_INET6: '::1'},
+             'eth0': {netifaces.AF_INET: '192.168.0.1'}}
+        """
+        return {
+            name: {
+                family: iface_spec.get('addr')
+                for family in self.families
+                for iface_spec in netifaces.ifaddresses(name).get(family, [])
+            }
+            for name in sorted(netifaces.interfaces())
+        }
+
+    def sweep(self, new_color, *, duration=1):
+        """
+        Changes the background color of the display to *new_color* (an instance
+        of :class:`~colorzero.Color`) with a nice "sweeping" animation from
+        left to right taking *duration* seconds.
+        """
+        anim = (
+            [self.color] * 6 +
+            list(self.color.gradient(new_color, steps=math.ceil(duration * 30))) +
+            [new_color] * 6
+        )
+        queue = deque(maxlen=6)
+        for item in anim:
+            queue.append(item)
+            if len(queue) == 6:
+                for led, color in enumerate(queue):
+                    backlight.single_rgb(
+                        (5 - led), *color.rgb_bytes, auto_update=False)
+                backlight.update()
+            time.sleep(1 / 30)
+        self.color = new_color
+
+    def refresh(self):
+        """
+        Refresh the display to show the current :attr:`iface` and
+        :attr:`family`.
+        """
+        ifaces = self.interfaces
+        backlight.set_graph(0)
+        try:
+            address = ifaces[self.iface][self.family]
+            new_color = Color('#00c000')
+        except KeyError:
+            address = 'No address!'
+            new_color = Color('#c04000')
+        self._show_text(f'{self.iface}:{self.families[self.family]}\n{address}')
+        if self.color != new_color:
+            self.sweep(new_color, duration=0.5)
+
+    def _show_text(self, text):
+        lcd.clear()
+        for y, line in enumerate(text.splitlines()):
+            lcd.set_cursor_position(0, y)
+            lcd.write(line.rstrip())
+
+
+if __name__ == '__main__':
+    r, w = os.pipe()
+    app = Application()
+    def shutdown(signum, frame):
+        os.write(w, b'\0')
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
+    selector = selectors.DefaultSelector()
+    selector.register(r, selectors.EVENT_READ)
+    try:
+        while True:
+            app.refresh()
+            if selector.select(timeout=5):
+                break
+    finally:
+        app.close()
+        selector.unregister(r)
+        os.close(r)
+        os.close(w)

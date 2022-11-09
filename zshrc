@@ -189,33 +189,3 @@ if [ -d $HOME/keys ]; then
     source $HOME/keys/cryptfun
     source $HOME/keys/vpnfun
 fi
-
-setup_away() {
-    # Run before sprinting (?!)
-    sudo sed -i -e 's/^leela:/#leela:/' /etc/fstab
-    if [ -e /etc/apt/apt.conf.d/00proxy ]; then
-        sudo sed -i -e 's/^Acquire::http/#Acquire::http/' /etc/apt/apt.conf.d/00proxy
-    fi
-    if [ -e $HOME/.mk-sbuild.rc ]; then
-        sed -i -e 's/^DEBOOTSTRAP_PROXY/#DEBOOTSTRAP_PROXY/' $HOME/.mk-sbuild.rc
-        echo Remember you may need to remake chroots relying on acng
-    fi
-    if [ -e /boot/firmware/config.txt ]; then
-        sudo sed -i -e 's/^dtoverlay=gpio-fan/#dtoverlay=gpio-fan/' /boot/firmware/config.txt
-    fi
-}
-
-setup_home() {
-    # Run when home again
-    sudo sed -i -e 's/^#leela:/leela:/' /etc/fstab
-    if [ -e /etc/apt/apt.conf.d/00proxy ]; then
-        sudo sed -i -e 's/^#Acquire::http/Acquire::http/' /etc/apt/apt.conf.d/00proxy
-    fi
-    if [ -e $HOME/.mk-sbuild.rc ]; then
-        sed -i -e 's/^#DEBOOTSTRAP_PROXY/DEBOOTSTRAP_PROXY/' $HOME/.mk-sbuild.rc
-        echo Remember you may want to remake chroots to rely acng
-    fi
-    if [ -e /boot/firmware/config.txt ]; then
-        sudo sed -i -e 's/^#dtoverlay=gpio-fan/dtoverlay=gpio-fan/' /boot/firmware/config.txt
-    fi
-}
