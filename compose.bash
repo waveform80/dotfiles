@@ -19,7 +19,7 @@ else
 fi
 
 if [ -n "$orientation" ]; then
-    view_pane=$(tmux split-window -b -d $orientation -l $size -P -F "#D" \
+    view_pane=$(tmux split-window -b -d "$orientation" -l "$size" -P -F "#D" \
         neomutt -R -F "$HOME"/dotfiles/neomuttrc."$NEOMUTT_PROFILE")
 
     cleanup () { tmux kill-pane -t "${view_pane}" >/dev/null 2>&1; }
