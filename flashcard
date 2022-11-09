@@ -5,6 +5,9 @@ set -eu
 # shellcheck source=functions.bash
 . "$(dirname "$(realpath "$0")")"/functions.bash
 
+root_mount=$(mktemp -d)
+boot_mount=$(mktemp -d)
+trap 'rmdir $root_mount $boot_mount' EXIT ERR
 
 show_parts() {
     local dev
@@ -22,15 +25,15 @@ show_release() {
     dev="$1"
     root_part="$(root_partition "$dev")"
     if [ -e "$root_part" ]; then
-        if mount "$root_part" /mnt/root; then
-            if [ -r /mnt/root/etc/os-release ]; then
+        if mount "$root_part" "$root_mount"; then
+            if [ -r "$root_mount"/etc/os-release ]; then
                 info "Content of /etc/os-release"
-                cat /mnt/root/etc/os-release >&2
+                cat "$root_mount"/etc/os-release >&2
                 echo >&2
             else
                 warning "Cannot find /etc/os-release"
             fi
-            umount /mnt/root
+            umount "$root_mount"
         else
             warning "Cannot mount root partition; bad media?"
         fi
@@ -64,10 +67,10 @@ fix_config() {
     dev="$1"
     boot_part="$(boot_partition "$dev")"
     if [ -e "$boot_part" ]; then
-        mount "$boot_part" /mnt/boot
-        if [ -e /mnt/boot/user-data ]; then
+        mount "$boot_part" "$boot_mount"
+        if [ -e "$boot_mount"/user-data ]; then
             if confirm "Customize cloud-init configuration? [y/n] "; then
-                cat << EOF > /mnt/boot/user-data
+                cat << EOF > "$boot_mount"/user-data
 #cloud-config
 
 hostname: miss-piggy
@@ -91,11 +94,11 @@ apt:
 EOF
             fi
         fi
-        if [ -e /mnt/boot/network-config ]; then
+        if [ -e "$boot_mount"/network-config ]; then
             if confirm "Add wifi configuration? [y/n] "; then
                 read -r -p "Access point name: " ap
                 read -r -p "Access point password: " password
-                cat << EOF >> /mnt/boot/network-config
+                cat << EOF >> "$boot_mount"/network-config
 wifis:
   wlan0:
     dhcp4: true
@@ -106,23 +109,23 @@ wifis:
 EOF
                 # If this is the "netplan conformant" version of network-config
                 # we need to indent the additional lines
-                if grep -q "^network:" /mnt/boot/network-config; then
-                    sed -i -r -e '/^wifis:/,+6 s/^/  /' /mnt/boot/network-config
+                if grep -q "^network:" "$boot_mount"/network-config; then
+                    sed -i -r -e '/^wifis:/,+6 s/^/  /' "$boot_mount"/network-config
                 fi
             fi
             if confirm "Remove ethernet configuration? [y/n] "; then
                 sed -i -r \
-                    -e '/^ +ethernets:/,+3 s/^/#/' /mnt/boot/network-config
+                    -e '/^ +ethernets:/,+3 s/^/#/' "$boot_mount"/network-config
             fi
         fi
-        if [ -e /mnt/boot/config.txt ]; then
-            if ! grep "^disable_overscan=1" /mnt/boot/config.txt >/dev/null; then
+        if [ -e "$boot_mount"/config.txt ]; then
+            if ! grep "^disable_overscan=1" "$boot_mount"/config.txt >/dev/null; then
                 sed -i \
                     -e '/^#disable_overscan/ s/.*/disable_overscan=1/' \
-                    /mnt/boot/config.txt
+                    "$boot_mount"/config.txt
             fi
         fi
-        umount /mnt/boot
+        umount "$boot_mount"
     else
         warning "No boot partition exists after flash!"
         exit 1
