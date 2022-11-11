@@ -551,7 +551,7 @@ for conffile in Path('/etc/netplan').glob('*.yaml'):
     with conffile.open('r') as conf:
         old = yaml.load(conf)
     new = old.copy()
-    for intf in old.get('network', {}').get('wifis', {}):
+    for intf in old.get('network', {}).get('wifis', {}):
         new['network']['wifis'][intf]['regulatory-domain'] = 'GB'
     if old != new:
         with conffile.open('w') as conf:
