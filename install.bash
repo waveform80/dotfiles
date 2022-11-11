@@ -510,7 +510,7 @@ task_zsh() {
             sudo cp fonts/Terminus/PSF/*.psf.gz /usr/share/consolefonts/
             popd
             rm -fr "$OLDPWD"
-            sudo sh -c 'echo FONT="ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
+            sudo sh -c 'echo FONT="/usr/share/consolefonts/ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
             UPDATE_INITRAMFS=1
             REBOOT_REQUIRED=1
             ;;
