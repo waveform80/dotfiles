@@ -529,7 +529,7 @@ task_uk() {
         packages)
             echo iw
             if [ "$DISTRO" = "Ubuntu" ]; then
-                if [ "$RELEASE" -ge "22.10" ]; then
+                if [[ "$RELEASE" > "22.04" ]]; then
                     echo python3-yaml
                 fi
             else
@@ -542,7 +542,7 @@ task_uk() {
         postinst)
             sudo iw reg set GB
             if [ "$DISTRO" = "Ubuntu" ]; then
-                if [ "$RELEASE" -ge "22.10" ]; then
+                if [[ "$RELEASE" > "22.04" ]]; then
                     sudo python3 - << EOF
 import yaml
 from pathlib import Path
