@@ -374,10 +374,11 @@ task_kmscon() {
             echo fonts-powerline fonts-ubuntu kmscon
             ;;
         preinst)
-            if command -v add-apt-repository >/dev/null; then
-                # Add kmscon PPA but don't install it implicitly (still
-                # experimental, etc.)
-                sudo add-apt-repository -y ppa:waveform/kmscon
+            if [ "$DISTRO" = "Ubuntu" ]; then
+                # kmscon is already packaged in kinetic onwards
+                if [[ "$RELEASE" < "22.10" ]]; then
+                    sudo add-apt-repository -y ppa:waveform/kmscon
+                fi
             else
                 cat << EOF | sudo sh -c 'cat > /etc/apt/sources.list.d/kmscon.list'
 deb http://ppa.launchpad.net/waveform/kmscon/ubuntu hirsute main
@@ -386,7 +387,7 @@ EOF
             fi
             ;;
         postinst)
-            sudo sed -i \
+            [ -e /etc/kmscon/kmscon.conf ] && sudo sed -i \
                 -e '/#font-size=/ s/.*/font-size=14/' \
                 -e '/#font-name=/ s/.*/font-name=Ubuntu Mono/' \
                 /etc/kmscon/kmscon.conf
