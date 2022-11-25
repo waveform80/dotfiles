@@ -130,6 +130,9 @@ task_sprint() {
             echo 0
             ;;
         packages)
+            if grep -q "Raspberry Pi" /proc/cpuinfo; then
+                echo python3-colorzero python3-dot3k python3-netifaces
+            fi
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/setfor "$HOME"/.local/bin/setfor
