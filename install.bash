@@ -3,6 +3,18 @@
 set -eu
 
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-${HOME}/.config}
+DISTRO=$(lsb_release -is)
+RELEASE=$(lsb_release -rs)
+case "$DISTRO" in
+    (Ubuntu)
+        BOOT=/boot/firmware
+        ;;
+    (*)
+        BOOT=/boot
+        ;;
+esac
+UPDATE_INITRAMFS=0
+REBOOT_REQUIRED=0
 
 
 task_apt() {
@@ -365,10 +377,11 @@ task_kmscon() {
             echo fonts-powerline fonts-ubuntu kmscon
             ;;
         preinst)
-            if command -v add-apt-repository >/dev/null; then
-                # Add kmscon PPA but don't install it implicitly (still
-                # experimental, etc.)
-                sudo add-apt-repository -y ppa:waveform/kmscon
+            if [ "$DISTRO" = "Ubuntu" ]; then
+                # kmscon is already packaged in kinetic onwards
+                if [[ "$RELEASE" < "22.10" ]]; then
+                    sudo add-apt-repository -y ppa:waveform/kmscon
+                fi
             else
                 cat << EOF | sudo sh -c 'cat > /etc/apt/sources.list.d/kmscon.list'
 deb http://ppa.launchpad.net/waveform/kmscon/ubuntu hirsute main
@@ -377,7 +390,7 @@ EOF
             fi
             ;;
         postinst)
-            sudo sed -i \
+            [ -e /etc/kmscon/kmscon.conf ] && sudo sed -i \
                 -e '/#font-size=/ s/.*/font-size=14/' \
                 -e '/#font-name=/ s/.*/font-name=Ubuntu Mono/' \
                 /etc/kmscon/kmscon.conf
@@ -389,6 +402,7 @@ to kmscon like so:
 sudo systemctl disable getty@tty1
 sudo systemctl enable kmsconvt@tty1
 EOF
+            REBOOT_REQUIRED=1
             ;;
     esac
 }
@@ -495,12 +509,14 @@ task_zsh() {
         postinst)
             ln -sf "$HOME"/dotfiles/zshrc "$HOME"/.zshrc
             sudo chsh -s /usr/bin/zsh "$USER"
-            pushd "$HOME"
+            pushd "$(mktemp -d)"
             git clone https://github.com/powerline/fonts
             sudo cp fonts/Terminus/PSF/*.psf.gz /usr/share/consolefonts/
-            sudo sh -c 'echo FONT="ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
-            # XXX Run update-initramfs on ubuntu?
             popd
+            rm -fr "$OLDPWD"
+            sudo sh -c 'echo FONT="/usr/share/consolefonts/ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
+            UPDATE_INITRAMFS=1
+            REBOOT_REQUIRED=1
             ;;
     esac
 }
@@ -516,21 +532,53 @@ task_uk() {
             ;;
         packages)
             echo iw
+            if [ "$DISTRO" = "Ubuntu" ]; then
+                if [[ "$RELEASE" > "22.04" ]]; then
+                    echo python3-yaml
+                fi
+            else
+                echo raspi-config
+            fi
             ;;
         after)
             echo task_kmscon
             ;;
         postinst)
             sudo iw reg set GB
-            if [ -e /boot/firmware/cmdline.txt ]; then
-                sudo sed -i \
-                    -e 's/$/ cfg80211.ieee80211_regdom=GB' \
-                    /boot/firmware/cmdline.txt
+            if [ "$DISTRO" = "Ubuntu" ]; then
+                if [[ "$RELEASE" > "22.04" ]]; then
+                    sudo python3 - << EOF
+import yaml
+from pathlib import Path
+
+for conffile in Path('/etc/netplan').glob('*.yaml'):
+    with conffile.open('r') as conf:
+        old = yaml.load(conf)
+    new = old.copy()
+    for intf in old.get('network', {}).get('wifis', {}):
+        new['network']['wifis'][intf]['regulatory-domain'] = 'GB'
+    if old != new:
+        with conffile.open('w') as conf:
+            yaml.dump(conf, new)
+EOF
+                elif ! grep -s cfg80211.ieee80211_regdom "$BOOT"/cmdline.txt; then
+                    sudo sed -i \
+                        -e 's/$/ cfg80211.ieee80211_regdom=GB/' \
+                        "$BOOT"/cmdline.txt
+                fi
+            else
+                sudo raspi-config nonint do_wifi_country GB
             fi
-            sudo sed -i \
-                -e '/^XKBLAYOUT=/ s/=.*$/="gb"/' \
-                -e '/^XKBOPTIONS=/ s/=.*$/="ctrl: nocaps"/' \
-                /etc/default/keyboard
+            if [ "$DISTRO" = "Ubuntu" ]; then
+                sudo localectl set-locale en_GB.UTF-8
+                sudo localectl set-x11-keymap gb pc105 "" ctrl:nocaps
+                UPDATE_INITRAMFS=1
+            else
+                sudo sed -i \
+                    -e '/^XKBLAYOUT=/ s/=.*$/="gb"/' \
+                    -e '/^XKBOPTIONS=/ s/=.*$/="ctrl: nocaps"/' \
+                    /etc/default/keyboard
+            fi
             if [ -e /etc/kmscon/kmscon.conf ]; then
                 sudo sed -i \
                     -e '/#xkb-layout=/ s/.*/xkb-layout=gb/' \
@@ -539,6 +587,7 @@ task_uk() {
                     -e '/#xkb-repeat-rate=/ s/.*/xkb-repeat-rate=25/' \
                     -e '/#no-compose/ s/.*/compose/' \
                     /etc/kmscon/kmscon.conf
+                REBOOT_REQUIRED=1
             fi
             if [ -x /usr/bin/gsettings ]; then
                 gsettings set org.gnome.desktop.input-sources xkb-options "['caps:ctrl_modifier']"
@@ -683,6 +732,8 @@ main() {
         do_preinst "${ordered[@]}"
         do_install "${ordered[@]}"
         do_postinst "${ordered[@]}"
+        [ "$UPDATE_INITRAMFS" -ne 0 ] && sudo update-initramfs -u
+        [ "$REBOOT_REQUIRED" -ne 0 ] && echo "Reboot required" >&2
     else
         echo "Install cancelled" >&2
         exit 1
