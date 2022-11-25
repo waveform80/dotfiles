@@ -608,11 +608,10 @@ do_install() {
     local -a packages to_install
 
     to_install=(htop lsb-release)
-    while [ $# -gt 0 ]; do
+    for task in "$@"; do
         while read -r -a packages; do
             to_install+=("${packages[@]}")
-        done < <($1 packages)
-        shift
+        done < <($task packages)
     done
     echo "Installing ${to_install[*]}" >&2
     sudo apt update -y
