@@ -324,14 +324,31 @@ start_() {
 	git tag new/debian "$merge_target"
 	echo "	new/debian (tag) pointing at import/${new_debian}"
 	tag_exists start/"$old_ubuntu_tag" || git tag start/"$old_ubuntu_tag" old/ubuntu
-	if tag_exists split/"$old_ubuntu_tag"; then
-		echo "	split (branch) pointing at split/$old_ubuntu_tag"
-		git branch split split/"$old_ubuntu_tag"
-		if tag_exists logical/"$old_ubuntu_tag"; then
-			echo "	logical (branch) pointing at logical/$old_ubuntu_tag"
-			git branch logical logical/"$old_ubuntu_tag"
-			git checkout logical
+	if tag_exists merge/"$old_ubuntu_tag"; then
+		# Carry over split from old merge to new
+		echo "	split (branch) pointing at merge/$old_ubuntu_tag"
+		git branch split merge/"$old_ubuntu_tag"
+		if git diff --quiet old/ubuntu split/"$old_ubuntu_tag"; then
+			echo "	split/$old_ubuntu_tag (tag) pointing at merge/$old_ubuntu_tag"
+			git tag split/"$old_ubuntu_tag" merge/"$old_ubuntu_tag"
+			if tag_exists logical/"$old_ubuntu_tag"; then
+				echo "	logical (branch) pointing at logical/$old_ubuntu_tag"
+				git branch logical logical/"$old_ubuntu_tag"
+				git checkout logical
+			else
+				git checkout split
+			fi
 		else
+			echo -n "$MSG"
+			cat <<- EOF
+			Differences found between merge/$old_ubuntu_tag (the last merge)
+			and old/ubuntu (the current version), i.e. what was uploaded as the
+			merge is not exactly what was proposed.
+
+			Leaving split branch pointing at last merge, but differences must
+			be resolved before proceeding to the logical phase.
+			$RESET
+			EOF
 			git checkout split
 		fi
 	else
