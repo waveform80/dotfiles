@@ -511,9 +511,7 @@ test_schroot() {
 	log_dir="${parent}/${project}_${new_ubuntu}.autopkgtest"
 	log_num=1
 
-	work_dir_clean
 	descends_from new/debian
-	fix_tag "candidate/$new_ubuntu_tag"
 	descends_from "candidate/$new_ubuntu_tag"
 
 	if ! schroot -l | grep "chroot:${chroot_name}" >/dev/null; then
@@ -550,9 +548,7 @@ test_qemu() {
 	log_num=1
 	image_name="${log_dir}/autopkgtest-${devel_name}-${devel_arch}.img"
 
-	work_dir_clean
 	descends_from new/debian
-	fix_tag "candidate/$new_ubuntu_tag"
 	descends_from "candidate/$new_ubuntu_tag"
 
 	mkdir -p "$log_dir"
@@ -561,7 +557,8 @@ test_qemu() {
 		autopkgtest-buildvm-ubuntu-cloud \
 			--release="$devel_name" \
 			--arch="$devel_arch" \
-			--output-dir="$log_dir" >/dev/null 2>&1
+			--output-dir="$log_dir" \
+			--ram-size 4096 >/dev/null 2>&1
 	fi
 	echo "Testing with image $image_name"
 
@@ -570,7 +567,7 @@ test_qemu() {
 	done
 	rc=0
 	autopkgtest . -o "$log_dir/run-$log_num" -- \
-		qemu "$image_name" >/dev/null 2>&1 || rc=$?
+		qemu "$image_name" --ram-size 4096 >/dev/null 2>&1 || rc=$?
 	test_post "$log_dir" "$log_num" "$rc"
 }
 
@@ -585,6 +582,9 @@ test_post() {
 	if [ "$rc" -eq 0 ]; then
 		rm -f "$log_dir/fail"
 		echo "Test passed"
+		work_dir_clean
+		fix_tag "candidate/$new_ubuntu_tag"
+		descends_from "candidate/$new_ubuntu_tag"
 	elif [ "$rc" -eq 2 ]; then
 		rm -f "$log_dir/fail"
 		echo "Some tests skipped, but otherwise passed"
