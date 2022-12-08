@@ -36,11 +36,26 @@ main() {
 			;;
 		test)
 			shift
-			if [ "${1:-}" = "--vm" ]; then
-				test_qemu
-			else
-				test_schroot
-			fi
+			case "${1:-}" in
+				(--vm)
+					shift
+					test_qemu "$@"
+					;;
+				(--lxd)
+					shift
+					test_lxd "$@"
+					;;
+				(--schroot)
+					shift
+					test_schroot "$@"
+					;;
+				("")
+					test_schroot
+					;;
+				(*)
+					whatnow
+					;;
+			esac
 			;;
 		build)
 			build
@@ -196,13 +211,13 @@ EOF
 					${autopkgtest_dir}/${autopkgtest_run}
 					Fix the package then re-run:
 					$RESET
-					\$ merge test [--vm]
+					\$ merge test [{--vm|--lxd|--schroot} [arch]]
 					EOF
 				else
 					cat <<- EOF
 					Run autopkgtest on your merged package:
 					$RESET
-					\$ merge test [--vm]
+					\$ merge test [{--vm|--lxd|--schroot} [arch]]
 					EOF
 				fi
 			else
@@ -506,7 +521,7 @@ test_schroot() {
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
 	devel_name=$(distro-info --devel)
-	devel_arch=$(dpkg-architecture -q DEB_HOST_ARCH)
+	devel_arch=${1:-$(dpkg-architecture -q DEB_HOST_ARCH)}
 	chroot_name="$devel_name-$devel_arch"
 	log_dir="${parent}/${project}_${new_ubuntu}.autopkgtest"
 	log_num=1
@@ -516,7 +531,7 @@ test_schroot() {
 
 	if ! schroot -l | grep "chroot:${chroot_name}" >/dev/null; then
 		echo "Building the required schroot"
-		mk-sbuild "$devel_name" >/dev/null
+		mk-sbuild "$devel_name" --arch "$devel_arch" >/dev/null
 	fi
 	echo "Testing in schroot $chroot_name"
 
@@ -527,6 +542,44 @@ test_schroot() {
 	rc=0
 	autopkgtest . -o "$log_dir/run-$log_num" -- \
 		schroot "$chroot_name" >/dev/null 2>&1 || rc=$?
+	test_post "$log_dir" "$log_num" "$rc"
+}
+
+
+test_lxd() {
+	local project new_debian new_ubuntu new_ubuntu_tag devel_name devel_arch
+	local image_name top_level parent log_dir log_num rc
+
+	top_level=$(git rev-parse --show-toplevel)
+	parent=$(dirname "${top_level}")
+	project=$(get_project new/debian)
+	new_debian=$(get_version new/debian)
+	new_ubuntu=${new_debian}ubuntu1
+	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+	devel_name=$(distro-info --devel)
+	devel_arch=${1:-$(dpkg-architecture -q DEB_HOST_ARCH)}
+	chroot_name="$devel_name-$devel_arch"
+	log_dir="${parent}/${project}_${new_ubuntu}.autopkgtest"
+	log_num=1
+	image_name="autopkgtest/ubuntu/${devel_name}/${devel_arch}"
+
+	descends_from new/debian
+	descends_from "candidate/$new_ubuntu_tag" "merge/$new_ubuntu_tag"
+
+	mkdir -p "$log_dir"
+	if ! lxc image show "$image_name" >/dev/null 2>&1; then
+		echo "Building image $image_name"
+		autopkgtest-build-lxd \
+			"ubuntu-daily:${devel_name}/${devel_arch}" >/dev/null 2>&1
+	fi
+	echo "Testing with image $image_name"
+
+	while [ -d "$log_dir/run-$log_num" ]; do
+		log_num=$((log_num + 1))
+	done
+	rc=0
+	autopkgtest . -o "$log_dir/run-$log_num" -- \
+		lxd "$image_name" >/dev/null 2>&1 || rc=$?
 	test_post "$log_dir" "$log_num" "$rc"
 }
 
@@ -542,7 +595,7 @@ test_qemu() {
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
 	devel_name=$(distro-info --devel)
-	devel_arch=$(dpkg-architecture -q DEB_HOST_ARCH)
+	devel_arch=${1:-$(dpkg-architecture -q DEB_HOST_ARCH)}
 	chroot_name="$devel_name-$devel_arch"
 	log_dir="${parent}/${project}_${new_ubuntu}.autopkgtest"
 	log_num=1
