@@ -512,7 +512,7 @@ test_schroot() {
 	log_num=1
 
 	descends_from new/debian
-	descends_from "candidate/$new_ubuntu_tag"
+	descends_from "candidate/$new_ubuntu_tag" "merge/$new_ubuntu_tag"
 
 	if ! schroot -l | grep "chroot:${chroot_name}" >/dev/null; then
 		echo "Building the required schroot"
@@ -549,7 +549,7 @@ test_qemu() {
 	image_name="${log_dir}/autopkgtest-${devel_name}-${devel_arch}.img"
 
 	descends_from new/debian
-	descends_from "candidate/$new_ubuntu_tag"
+	descends_from "candidate/$new_ubuntu_tag" "merge/$new_ubuntu_tag"
 
 	mkdir -p "$log_dir"
 	if ! [ -e "$image_name" ]; then
@@ -745,20 +745,25 @@ work_dir_clean() {
 
 
 descends_from() {
-	local commitish="$1"
+	local commitish
 
-	if ! git merge-base --is-ancestor "$commitish" HEAD; then
-		die "HEAD does not descend from $commitish!"
-	fi
+	for commitish in "$@"; do
+		if git merge-base --is-ancestor "$commitish" HEAD; then
+			return 0
+		fi
+	done
+	die "HEAD does not descend from $@!"
 }
 
 
 not_descends_from() {
-	local commitish="$1"
+	local commitish
 
-	if git merge-base --is-ancestor "$commitish" HEAD; then
-		die "HEAD descends from $commitish!"
-	fi
+	for commitish in "$@"; do
+		if git merge-base --is-ancestor "$commitish" HEAD; then
+			die "HEAD descends from $commitish!"
+		fi
+	done
 }
 
 
