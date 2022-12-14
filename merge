@@ -531,7 +531,8 @@ test_schroot() {
 
 	if ! schroot -l | grep "chroot:${chroot_name}" >/dev/null; then
 		echo "Building the required schroot"
-		mk-sbuild "$devel_name" --arch "$devel_arch" >/dev/null
+		mk-sbuild "$devel_name" --arch "$devel_arch" \
+			> "$log_dir"/autopkgtest-build.log 2>&1
 	fi
 	echo "Testing in schroot $chroot_name"
 
@@ -570,7 +571,8 @@ test_lxd() {
 	if ! lxc image show "$image_name" >/dev/null 2>&1; then
 		echo "Building image $image_name"
 		autopkgtest-build-lxd \
-			"ubuntu-daily:${devel_name}/${devel_arch}" >/dev/null 2>&1
+			"ubuntu-daily:${devel_name}/${devel_arch}" \
+			> "$log_dir"/autopkgtest-build.log 2>&1
 	fi
 	echo "Testing with image $image_name"
 
@@ -611,7 +613,7 @@ test_qemu() {
 			--release="$devel_name" \
 			--arch="$devel_arch" \
 			--output-dir="$log_dir" \
-			--ram-size 4096 >/dev/null 2>&1
+			--ram-size 4096 > "$log_dir"/autopkgtest-build.log 2>&1
 	fi
 	echo "Testing with image $image_name"
 
