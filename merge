@@ -258,20 +258,24 @@ EOF
 			to ${LINK}LP: #$merge_bug${MSG} with something like the following message,
 			and subscribe ubuntu-sponsors:
 			$TEMPLATE
-			Attaching patch against Debian unstable. For ease of review, relevant commits
-			and tags have been pushed to the following repository:
+			Attaching patch against Debian unstable. For ease of review, relevant
+			commits and tags have been pushed to the following repository:
 
 			https://code.launchpad.net/~$lpuser/ubuntu/+source/$project/+git/$project
 
 			Specifically:
 
-			* logical/$old_ubuntu_tag represents our split-out delta on top of old/debian ($old_debian)
-			* logical/$new_ubuntu_tag represents our rebased delta on top of new/debian ($new_debian)
-			* merge/$new_ubuntu_tag just adds changelog and maintainer changes on top of logical/$new_ubuntu_tag
+			* logical/$old_ubuntu_tag represents our split-out delta on
+			  top of old/debian ($old_debian)
+			* logical/$new_ubuntu_tag represents our rebased delta on
+			  top of new/debian ($new_debian)
+			* merge/$new_ubuntu_tag adds changelog and maintainer
+			  changes on top of logical/$new_ubuntu_tag
 
-			Hence, the following command may produce output useful to the purposes of review:
+			Hence, the following command may produce output useful to the purposes
+			of review:
 
-			git range-diff old/debian..logical/$old_ubuntu_tag new/debian..logical/$new_ubuntu_tag
+			git range-diff --creation-factor=100 old/debian..logical/$old_ubuntu_tag new/debian..logical/$new_ubuntu_tag
 			EOF
 		fi
 	fi
