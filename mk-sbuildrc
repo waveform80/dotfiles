@@ -28,8 +28,8 @@ case "$RELEASE" in
         fi
         ;;
 esac
-SKIP_UPDATES="0"
-SKIP_PROPOSED="0"
+SKIP_UPDATES=
+SKIP_PROPOSED=
 # if you have e.g. apt-cacher-ng around
 DEBOOTSTRAP_PROXY=http://acng.waveform.org.uk:3142/
 #DEBOOTSTRAP_INCLUDE=lintian
