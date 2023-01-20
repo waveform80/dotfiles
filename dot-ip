@@ -106,7 +106,7 @@ class Application:
             self.refresh()
 
         @nav.on(nav.BUTTON)
-        def handle_right(ch, evt):
+        def handle_btn(ch, evt):
             self.refresh()
 
     def close(self):
