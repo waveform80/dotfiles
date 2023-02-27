@@ -52,6 +52,7 @@ EOF
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
             sudo systemctl enable dot-ip.service
             echo "Replace Fan-shim with Display-o-Tron"
+            sudo systemctl disable nut-monitor.service
         fi
         ;;
 
@@ -63,6 +64,7 @@ EOF
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
             sudo systemctl disable dot-ip.service
             echo "Replace Display-o-Tron with Fan-shim"
+            sudo systemctl enable nut-monitor.service
         fi
         ;;
 
