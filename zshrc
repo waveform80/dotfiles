@@ -109,6 +109,11 @@ function sercon() {
     fi
 }
 
+function bindiff() {
+    local dump() { hexdump -e '1/1 "%02x "' -e '"%_c\n"' "$1" }
+    diff --label "$1" <(dump "$1") --label "$2" <(dump "$2")
+}
+
 function _sb() {
     local maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' debian/control)"
     local keyid="$DEBEMAIL"

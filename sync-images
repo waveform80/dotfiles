@@ -19,7 +19,8 @@ from html.parser import HTMLParser
 from urllib.parse import urlsplit, urlunsplit
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
-from collections import namedtuple
+from collections import namedtuple, deque
+from time import monotonic, sleep
 
 
 def main(args=None):
@@ -40,6 +41,10 @@ def main(args=None):
         '-f', '--force', action='store_true',
         help="Force the utility to refresh all images even if the release "
         "date and download size have not changed in the index")
+    parser.add_argument(
+        '-r', '--rate-limit', default=None, type=int,
+        help="Optionally limit the rate of all downloads to the specified "
+        "number of megabytes per second")
     args = parser.parse_args(args)
 
     try:
@@ -47,7 +52,10 @@ def main(args=None):
             line.rstrip() for file in args.files for line in file
             if line.strip() and not line.lstrip().startswith('#')
         ]
-        refresh_images(urls, checksums=args.checksums, force=args.force)
+        refresh_images(
+            urls, checksums=args.checksums, force=args.force,
+            rate_limit=(None if args.rate_limit is None else
+                        args.rate_limit * 1024 * 1024))
     except Exception as e:
         # If you want full stack traces just run me like this:
         #
@@ -59,7 +67,7 @@ def main(args=None):
             sys.exit(1)
 
 
-def refresh_images(urls, *, checksums='SHA256SUMS', force=False):
+def refresh_images(urls, *, checksums='SHA256SUMS', force=False, rate_limit=None):
     """
     Given *urls*, a :class:`list` of :class:`str` representing the URLs of all
     OS images to refresh, this function attempts to find the existing downloads
@@ -69,7 +77,8 @@ def refresh_images(urls, *, checksums='SHA256SUMS', force=False):
     if required (refreshing the local SHA256SUMS file).
 
     If *force* is :data:`True` then the list of URLs will be downloaded again
-    regardless of whether they have changed or not.
+    regardless of whether they have changed or not. The *rate_limit* parameter
+    is passed verbatim to :func:`refresh_image`.
 
     Progress information is printed to stderr while the routine is running.
     """
@@ -96,7 +105,7 @@ def refresh_images(urls, *, checksums='SHA256SUMS', force=False):
         )
         if update:
             print(f'Updating {source.name}', file=sys.stderr)
-            refresh_image(source)
+            refresh_image(source, rate_limit=rate_limit)
         else:
             print(f'Copy of {source.name} is up to date', file=sys.stderr)
         if update or source.name not in cksums:
@@ -109,20 +118,28 @@ def refresh_images(urls, *, checksums='SHA256SUMS', force=False):
                 ))
 
 
-def refresh_image(image, buf_size=65536):
+def refresh_image(image, buf_size=65536, rate_limit=None):
     """
     Given *image*, an :class:`Image` detailing the source URL (including
     size, checksum, and last modification date), download the source to a
     local file with an equivalent name in the current directory. If a prior
     download terminated prematurely, it is continued, and a local SHA256SUMS
     file is either created or updated.
+
+    The optional *buf_size* and *rate_limit* parameters permit control of the
+    download buffer size (in bytes), and the maximum download rate (in bytes
+    per second) respectively.
     """
     local_path = Path(image.name)
     temp_path = local_path.with_name(local_path.name + '.part')
     cksum = hashlib.sha256()
     size = 0
+    secs_per_buf = 0 if rate_limit is None else buf_size / rate_limit
+    starts = deque(maxlen=10)
+    times = deque(maxlen=10)
     try:
         with temp_path.open('a+b') as target:
+            print('Calculating checksum of existing file', file=sys.stderr)
             # Calculate checksum of existing target (assume we're continuing a
             # failed download)
             target.seek(0)
@@ -151,14 +168,23 @@ def refresh_image(image, buf_size=65536):
                 request = Request(image.url, headers=headers)
                 with urlopen(request) as source:
                     while True:
-                        print('\rDownloading & verifying image:'
-                              f'{size * 100 / image.size:5.1f}%',
-                            end='', file=sys.stderr)
+                        starts.append(monotonic())
                         buf = source.read(buf_size)
                         if buf:
+                            times.append(monotonic() - starts[-1])
                             size += len(buf)
                             cksum.update(buf)
                             target.write(buf)
+                            rate = (
+                                buf_size * (len(starts) - 1) + len(buf)
+                            ) / (monotonic() - starts[0])
+                            delay = secs_per_buf - (sum(times) / len(times))
+                            delay *= 1.1 # add some damping
+                            print('\rDownloading & verifying image:'
+                                  f'{size * 100 / image.size:5.1f}% '
+                                  f'[{rate / 1024 / 1024:5.1f}MB/s]',
+                                  end='', file=sys.stderr)
+                            sleep(max(0, delay))
                         else:
                             break
                 target.truncate()  # in case we restarted a corrupt partial
