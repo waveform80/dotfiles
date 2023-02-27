@@ -133,21 +133,23 @@ task_pack() {
 }
 
 
-task_sprint() {
+task_travel() {
     case "$1" in
         title)
-            echo "Install sprint tools (dot-ip, setfor)"
+            echo "Install travel tools (bt-tether, dot-ip, setfor)"
             ;;
         default)
             echo 0
             ;;
         packages)
+            echo bluez dbus python3-netifaces
             if grep -q "Raspberry Pi" /proc/cpuinfo; then
-                echo python3-colorzero python3-dot3k python3-netifaces
+                echo python3-colorzero python3-dot3k
             fi
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/setfor "$HOME"/.local/bin/setfor
+            ln -sf "$HOME"/dotfiles/bt-tether "$HOME"/.local/bin/bt-tether
             if grep -q "Raspberry Pi" /proc/cpuinfo; then
                 ln -sf "$HOME"/dotfiles/dot-ip /usr/local/bin/dot-ip
                 ln -sf "$HOME"/dotfiles/dot-ip.service /etc/systemd/system/dot-ip.service

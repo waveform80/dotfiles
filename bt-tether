@@ -1,0 +1,100 @@
+#!/usr/bin/python3
+
+import re
+import os
+import sys
+import time
+import argparse
+import subprocess as sp
+
+import netifaces
+
+
+def wait_for(fn, timeout=1):
+    start = time.monotonic()
+    while not fn():
+        if time.monotonic() - start > timeout:
+            return False
+        time.sleep(0.1)
+    return True
+
+
+def start(config):
+    proc = sp.run([
+        'dbus-send', '--system', '--type=method_call', '--print-reply=literal',
+        '--dest=org.bluez',
+        f'/org/bluez/{config.device}/dev_{config.mac.upper().replace(":", "_")}',
+        'org.bluez.Network1.Connect', 'string:nap'],
+        check=True, capture_output=True, text=True)
+    intf = proc.stdout.strip()
+    if not wait_for(lambda: intf in netifaces.interfaces()):
+        raise RuntimeError(f'timed out waiting for intf {intf} to appear')
+    if not wait_for(lambda: netifaces.AF_INET in netifaces.ifaddresses(intf),
+                    timeout=10):
+        raise RuntimeError(f'timed out waiting for address on {intf}')
+    print(f'Tethered to {config.name or config.mac} on {intf}')
+
+
+def stop(config):
+    sp.run([
+        'dbus-send', '--system', '--type=method_call', '--print-reply=literal',
+        '--dest=org.bluez',
+        f'/org/bluez/{config.device}/dev_{config.mac.upper().replace(":", "_")}',
+        'org.bluez.Network1.Disconnect'],
+        check=True)
+
+
+
+def main(args=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'action', choices=('start', 'stop'),
+        help="Whether to start or stop tethering")
+    parser.add_argument(
+        'name', metavar='name-or-mac',
+        help="The name, or MAC address (in colon-separated hex-format), of "
+        "the device to start tethering to")
+    parser.add_argument(
+        '--device', default='hci0',
+        help="The bluetooth device to use (default: %(default)s)")
+    config = parser.parse_args(args)
+
+    if re.match(r'[0-9a-fA-F]{1,2}(:[0-9a-fA-F]{1,2}){5}', config.name):
+        config.mac = config.name
+        config.name = None
+    else:
+        proc = sp.run(
+            ['bluetoothctl', 'devices'],
+            check=True, capture_output=True, text=True)
+        for line in proc.stdout.splitlines():
+            _, mac, name = line.split(None, 2)
+            if name == config.name:
+                config.mac = mac
+                break
+        else:
+            raise ValueError(f'Unable to find device {name!r}')
+
+    {'start': start, 'stop': stop}[config.action](config)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        try:
+            debug = int(os.environ.get('DEBUG', '0'))
+        except ValueError:
+            debug = 1
+        if not debug:
+            if isinstance(e, sp.CalledProcessError):
+                if e.stdout:
+                    print(e.stdout.strip(), file=sys.stderr)
+                if e.stderr:
+                    print(e.stderr.strip(), file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            sys.exit(1)
+        elif debug > 1:
+            import pdb
+            pdb.post_mortem()
+        else:
+            raise
