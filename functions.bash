@@ -15,10 +15,17 @@ unpack() {
         *.xz)
             xzcat "$image"
             ;;
+        *.zst|*.zstd)
+            zstdcat "$image"
+            ;;
         *.zip)
             filename="${image##*/}"
             filename="${filename%.zip}.img"
             unzip -p "$image" "$filename"
+            ;;
+        *)
+            echo "Cannot determine image/compression format" >&2
+            return 1
             ;;
     esac
 }
