@@ -135,8 +135,8 @@ def refresh_image(image, buf_size=65536, rate_limit=None):
     cksum = hashlib.sha256()
     size = 0
     secs_per_buf = 0 if rate_limit is None else buf_size / rate_limit
-    starts = deque(maxlen=10)
-    times = deque(maxlen=10)
+    starts = deque(maxlen=100)
+    times = deque(maxlen=100)
     try:
         with temp_path.open('a+b') as target:
             print('Calculating checksum of existing file', file=sys.stderr)
