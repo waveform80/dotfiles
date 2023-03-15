@@ -58,6 +58,10 @@ task_dev() {
             ln -sf "$HOME"/dotfiles/gitignore "$XDG_CONFIG_HOME"/git/ignore
             ln -sf "$HOME"/dotfiles/tigrc "$HOME"/.tigrc
             mkdir -p "$HOME"/projects/work "$HOME"/projects/home
+            DIFF_HIGHLIGHT=/usr/share/doc/git/contrib/diff-highlight
+            if [ -d "$DIFF_HIGHLIGHT" ] && ! [ -e "$DIFF_HIGHLIGHT"/diff-highlight ]; then
+                sudo make -C "$DIFF_HIGHLIGHT"
+            fi
             ;;
     esac
 }
