@@ -23,7 +23,7 @@ task_apt() {
             echo "Do full apt upgrade"
             ;;
         default)
-            echo 0
+            echo 1
             ;;
         postinst)
             # No need for apt update; do_install always does that first
@@ -41,7 +41,7 @@ task_dev() {
             echo "Install dev tools (git, tig, ctags, ...)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             if apt-cache show bat >/dev/null 2>&1; then
@@ -91,7 +91,7 @@ task_doc() {
             echo "Install documentation tools (sphinx, graphviz, ...)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo python3-sphinx python3-sphinx-rtd-theme
@@ -168,7 +168,7 @@ task_db() {
             echo "Install db tools (sqlite3, pg-client)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo sqlite3 postgresql-client sc jq
@@ -189,7 +189,7 @@ task_py() {
             echo "Install Python stuff (ipython, jupyter, libs)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo ipython3 python3-dev python3-pip python3-virtualenv
