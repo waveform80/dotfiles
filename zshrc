@@ -1,11 +1,11 @@
-# User configuration
 export DEFAULT_USER=dave
-export PATH=$PATH:$HOME/.local/bin:/snap/bin
-[ -d $HOME/keys ] && export PATH=$PATH:$HOME/keys
+export PATH="$PATH":"$HOME"/.local/bin:/snap/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export EDITOR=vim
-export WORKON_HOME=~/envs
-export PYTHONSTARTUP=~/.pystartup
+export WORKON_HOME="$HOME"/envs
+if [ -e "$HOME"/.pystartup ]; then
+    export PYTHONSTARTUP="$HOME"/.pystartup
+fi
 if [ -x /usr/bin/batcat ]; then
     if /usr/bin/batcat --list-themes | grep -q ansi-dark; then
         THEME=ansi-dark
@@ -145,8 +145,8 @@ function abook() {
 }
 
 function rm-sbuild() {
-    sudo rm -fr /var/lib/schroot/chroots/$1
-    sudo rm -f /etc/schroot/chroot.d/sbuild-$1
+    sudo rm -fr /var/lib/schroot/chroots/"$1"
+    sudo rm -f /etc/schroot/chroot.d/sbuild-"$1"
 }
 
 function gcal() {
@@ -179,8 +179,8 @@ AGNOSTER_PROMPT_SEGMENTS[4]=my_prompt_dir
 
 eval "$(direnv hook zsh)"
 
-ssh_agent=$HOME/.ssh-agent
-if [ -z $SSH_AUTH_SOCK -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
+ssh_agent="$HOME"/.ssh-agent
+if [ -z "$SSH_AUTH_SOCK" -a ! -d "$XDG_RUNTIME_DIR"/keyring ]; then
     if [ -S $ssh_agent -a -O $ssh_agent -a -L $ssh_agent ]; then
         export SSH_AUTH_SOCK=$ssh_agent
     else
@@ -190,7 +190,8 @@ if [ -z $SSH_AUTH_SOCK -a ! -d $XDG_RUNTIME_DIR/keyring ]; then
 fi
 export GPG_TTY=$(tty)
 
-if [ -d $HOME/keys ]; then
-    source $HOME/keys/cryptfun
-    source $HOME/keys/vpnfun
+if [ -d "$HOME"/keys ]; then
+    export PATH="$PATH":"$HOME"/keys
+    source "$HOME"/keys/cryptfun
+    source "$HOME"/keys/vpnfun
 fi
