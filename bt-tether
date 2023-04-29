@@ -44,11 +44,18 @@ def stop(config):
         check=True)
 
 
+def scan(config):
+    pass
+
+
+def pair(config):
+    pass
+
 
 def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'action', choices=('start', 'stop'),
+        'action', choices=('start', 'stop', 'scan', 'pair'),
         help="Whether to start or stop tethering")
     parser.add_argument(
         'name', metavar='name-or-mac',
