@@ -347,7 +347,7 @@ start_() {
 		# Carry over split from old merge to new
 		echo "	split (branch) pointing at merge/$old_ubuntu_tag"
 		git branch split merge/"$old_ubuntu_tag"
-		if git diff --quiet old/ubuntu split/"$old_ubuntu_tag"; then
+		if git diff --quiet old/ubuntu merge/"$old_ubuntu_tag" --; then
 			echo "	split/$old_ubuntu_tag (tag) pointing at merge/$old_ubuntu_tag"
 			git tag split/"$old_ubuntu_tag" merge/"$old_ubuntu_tag"
 			if tag_exists logical/"$old_ubuntu_tag"; then
