@@ -226,6 +226,65 @@ function! BugLink() abort
 endfunction
 nnoremap <Leader>lp :exe ":call BugLink()"<CR>
 
+" Set up the abook completion function, with specific profile
+"function! CompleteAbookAddress(findstart, base)
+"	let curline = getline('.')
+"	let headerend = matchend(curline, '^\(To\|Cc\|Bcc\): ')
+"	if headerend > 0
+"		if a:findstart
+"			" XXX What about multi-line stuff?
+"			let lastcomma = strridx(curline, ",", col('.') - 1)
+"			return lastcomma == -1 ? headerend : lastcomma + 2
+"		else
+"			if a:base =~ ':'
+"				let cmd = "notmuch address -- " . shellescape(a:base)
+"			else
+"			endif
+"		endif
+"	endif
+"
+"  let curline = getline('.')
+"  if curline =~ '^From: ' || curline =~ '^To: ' || curline =~ '^Cc: ' || curline =~ '^Bcc: '
+"    if a:findstart
+"      " locate the start of the word
+"      let header_limit = stridx(curline, ": ") + 2 " Find end of the header
+"      let start = col('.') - 1
+"      while start > header_limit && curline[start - 2] != ","
+"        let start -= 1
+"      endwhile
+"      return start
+"    else
+"      if a:base =~ ':'
+"        " Assume this is a notmuch search query using notmuch-search-terms(7);
+"        " don't add any extras (tags or suffixes) to it
+"        let query=shellescape(a:base)
+"      else
+"        " Only search mailboxes from the From: line; add wildcard suffix for
+"        " partial match
+"        let query = "from:" . shellescape(a:base . '*')
+"
+"        if exists("g:notmuch_address_tag")
+"          let query = "tag:" . shellescape(g:notmuch_address_tag) . " " . query
+"        endif
+"
+"        if exists("g:notmuch_query_suffix")
+"          let query = query . " " . shellescape(g:notmuch_query_suffix)
+"        endif
+"      endif
+"
+"      let ncommand = "notmuch address -- " . query
+"      for m in systemlist(ncommand)
+"        if complete_check()
+"          break
+"        endif
+"
+"        call complete_add(m)
+"      endfor
+"      return []
+"    endif
+"  endif
+"endfunction
+
 " Remap some annoying defaults (Q formats paragraphs, q: quits)
 noremap Q gq
 nnoremap q: :q

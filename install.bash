@@ -23,7 +23,7 @@ task_apt() {
             echo "Do full apt upgrade"
             ;;
         default)
-            echo 0
+            echo 1
             ;;
         postinst)
             # No need for apt update; do_install always does that first
@@ -41,7 +41,7 @@ task_dev() {
             echo "Install dev tools (git, tig, ctags, ...)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             if apt-cache show bat >/dev/null 2>&1; then
@@ -58,6 +58,10 @@ task_dev() {
             ln -sf "$HOME"/dotfiles/gitignore "$XDG_CONFIG_HOME"/git/ignore
             ln -sf "$HOME"/dotfiles/tigrc "$HOME"/.tigrc
             mkdir -p "$HOME"/projects/work "$HOME"/projects/home
+            DIFF_HIGHLIGHT=/usr/share/doc/git/contrib/diff-highlight
+            if [ -d "$DIFF_HIGHLIGHT" ] && ! [ -e "$DIFF_HIGHLIGHT"/diff-highlight ]; then
+                sudo make -C "$DIFF_HIGHLIGHT"
+            fi
             ;;
     esac
 }
@@ -91,7 +95,7 @@ task_doc() {
             echo "Install documentation tools (sphinx, graphviz, ...)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo python3-sphinx python3-sphinx-rtd-theme
@@ -168,7 +172,7 @@ task_db() {
             echo "Install db tools (sqlite3, pg-client)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo sqlite3 postgresql-client sc jq
@@ -189,7 +193,7 @@ task_py() {
             echo "Install Python stuff (ipython, jupyter, libs)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo ipython3 python3-dev python3-pip python3-virtualenv
@@ -536,7 +540,7 @@ task_uk() {
             echo iw
             if [ "$DISTRO" = "Ubuntu" ]; then
                 if [[ "$RELEASE" > "22.04" ]]; then
-                    echo python3-yaml
+                    echo python3-ruamel.yaml
                 fi
             else
                 echo raspi-config
@@ -550,9 +554,10 @@ task_uk() {
             if [ "$DISTRO" = "Ubuntu" ]; then
                 if [[ "$RELEASE" > "22.04" ]]; then
                     sudo python3 - << EOF
-import yaml
+from ruamel.yaml import YAML
 from pathlib import Path
 
+yaml = YAML()
 for conffile in Path('/etc/netplan').glob('*.yaml'):
     with conffile.open('r') as conf:
         old = yaml.load(conf)
