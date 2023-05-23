@@ -77,7 +77,7 @@ task_mcu() {
             ;;
         packages)
             echo dfu-util dfu-programmer avrdude avr-libc device-tree-compiler
-            echo gcc-arm-none-eabi gdbserver hexdiff hexcurse lrzsz
+            echo gcc-arm-none-eabi gdbserver hexdiff hexcurse lrzsz i2c-tools
             if apt-cache show pyboard-rshell >/dev/null 2>&1; then
                 echo pyboard-rshell
             fi
