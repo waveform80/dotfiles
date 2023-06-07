@@ -77,7 +77,7 @@ task_mcu() {
             ;;
         packages)
             echo dfu-util dfu-programmer avrdude avr-libc device-tree-compiler
-            echo gcc-arm-none-eabi gdbserver hexdiff hexcurse lrzsz
+            echo gcc-arm-none-eabi gdbserver hexdiff hexcurse lrzsz i2c-tools
             if apt-cache show pyboard-rshell >/dev/null 2>&1; then
                 echo pyboard-rshell
             fi
@@ -540,7 +540,7 @@ task_uk() {
             echo iw
             if [ "$DISTRO" = "Ubuntu" ]; then
                 if [[ "$RELEASE" > "22.04" ]]; then
-                    echo python3-yaml
+                    echo python3-ruamel.yaml
                 fi
             else
                 echo raspi-config
@@ -554,9 +554,10 @@ task_uk() {
             if [ "$DISTRO" = "Ubuntu" ]; then
                 if [[ "$RELEASE" > "22.04" ]]; then
                     sudo python3 - << EOF
-import yaml
+from ruamel.yaml import YAML
 from pathlib import Path
 
+yaml = YAML()
 for conffile in Path('/etc/netplan').glob('*.yaml'):
     with conffile.open('r') as conf:
         old = yaml.load(conf)
