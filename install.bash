@@ -253,7 +253,7 @@ task_sendmail() {
             echo "Install e-mail sender (msmtp)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo msmtp-mta
@@ -272,7 +272,7 @@ task_fs() {
             echo "Install fs tools (ranger, ncdu, entr, atool)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo atool ncdu entr inotify-tools ranger shed mc lz4 zstd
@@ -298,7 +298,7 @@ task_net() {
             echo "Install net tools (curl, w3m, elinks, zsync)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo curl w3m elinks pastebinit zsync nmap sshuttle sshfs
@@ -322,7 +322,7 @@ task_ssh() {
             echo "Install & configure SSH server"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo openssh-server ssh-import-id
@@ -351,6 +351,9 @@ task_music() {
             ;;
         packages)
             echo cmus
+            ;;
+        postinst)
+            ln -sf "$HOME"/dotfiles/sync-dory "$HOME"/.local/bin/sync-dory
             ;;
     esac
 }
@@ -420,7 +423,7 @@ task_tmux() {
             echo "Install & configure tmux"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo byobu tmux
@@ -448,7 +451,7 @@ task_vim() {
             echo "Install & configure vim"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo aspell ${vim_pkg} vim-addon-manager vim-scripts
@@ -507,7 +510,7 @@ task_zsh() {
             echo "Install & configure zsh"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo zsh zplug direnv fzy
@@ -534,7 +537,7 @@ task_uk() {
             echo "UK configuration (wifi, keyboard, etc.)"
             ;;
         default)
-            echo 1
+            echo 0
             ;;
         packages)
             echo iw
