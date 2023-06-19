@@ -149,6 +149,20 @@ function rm-sbuild() {
     sudo rm -f /etc/schroot/chroot.d/sbuild-"$1"
 }
 
+function dunpack() {
+    local deb="$1"
+
+    mkdir "${deb%.deb}"
+    pushd "${deb%.deb}"
+    ar x ../"$deb"
+    mkdir DEBIAN
+    [ -e "control.tar.gz" ] && tar -C DEBIAN/ -xvzf control.tar.gz
+    [ -e "control.tar.xz" ] && tar -C DEBIAN/ -xvJf control.tar.xz
+    [ -e "data.tar.gz" ] && tar -xvzf data.tar.gz
+    [ -e "data.tar.xz" ] && tar -xvJf data.tar.xz
+    popd
+}
+
 function gcal() {
     while true; do
         clear
