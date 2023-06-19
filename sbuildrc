@@ -8,28 +8,28 @@ if (defined $ENV{'DEBEMAIL'}) {
 # Use the development distribution as the default
 $distribution = `distro-info --devel`;
 $distribution =~ s/\s+$//;
+
 $build_arch_all = 1;
 $build_arch_any = 1;
-$build_source = 0;
+$build_source = 1;
+
+$verbose = 1;
 $run_autopkgtest = 0;
 $log_dir = $ENV{'HOME'} . '/logs';
 
-# schroot setup
-$chroot_mode = 'schroot';
-$purge_build_directory = 'never';
-$purge_session = 'never';
-$purge_build_deps = 'never';
-
 # Make lintian even more bloody verbose
 push @{$lintian_opts}, '-I';
+
+# schroot setup
+$chroot_mode = 'schroot';
+
+# unshare setup
+#$chroot_mode = 'unshare';
 
 ## lxd setup
 #$chroot_mode = 'autopkgtest';
 #$autopkgtest_virt_server = 'autopkgtest-virt-lxd';
 #$autopkgtest_virt_server_options = ['autopkgtest/ubuntu/%SBUILD_DISTRIBUTION/%SBUILD_HOST_ARCH'];
-#$purge_build_deps = 'never';
-#$purge_build_directory = 'never';
-#$purge_session = 'always';
 
 # don't remove this, Perl needs it:
 1;
