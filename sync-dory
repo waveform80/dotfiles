@@ -1,0 +1,288 @@
+#!/usr/bin/python3
+
+import os
+import re
+import sys
+import shutil
+import warnings
+import datetime as dt
+import subprocess as proc
+from pathlib import Path
+from argparse import Namespace, ArgumentParser
+from urllib.parse import unquote, urlsplit
+from collections.abc import Callable
+from collections import Counter, namedtuple
+from typing import Any, Optional, Union, Generator, NamedTuple
+
+from mutagen import mp3, mp4
+
+
+def defaults() -> Any:
+    # This weird setup is just so we can use the handler functions declared
+    # later below. The FOLDER_MAP is the important bit. It maps folders under
+    # the TARGET path to functions that generate their content. See the
+    # function definitions used for more information
+    class defaults:
+        SOURCE = '/mnt/archive/audio'
+        TARGET = '/media/dave/Media'
+        FOLDER_MAP = {
+            'Books':           as_is('books'),
+            'Music By Artist': as_is('music'),
+            'Music By Album':  by_album('Music By Artist'),
+            #'Music By Genre':  by_genre('Music By Artist'),
+            #'Playlists':       from_playlists('.playlists'),
+        }
+    return defaults
+
+
+def main() -> None:
+    d = defaults()
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--source', default=d.SOURCE, type=Path,
+        help="The path to the audio archive (default: %(default)s)")
+    parser.add_argument(
+        '--target', default=d.TARGET, type=Path,
+        help="The path to the removable drive (default: %(default)s)")
+    parser.add_argument(
+        '--rsync', default='rsync',
+        help="Path to the rsync binary (default: %(default)s)")
+    config = parser.parse_args()
+
+    for target, handler in d.FOLDER_MAP.items():
+        handler(config, target)
+    print('Flushing cache')
+    os.sync()
+
+
+def as_is(source: str) -> Callable[[Namespace, str], None]:
+    """
+    This handler synchronizes the *source* path to the mapped *target* verbatim
+    using the configured *rsync* binary. Please note that this includes
+    deletion of items under *target* that do not exist in *source*.
+    """
+    def handler(config: Namespace, target: str) -> None:
+        source_path = config.source / source
+        target_path = config.target / target
+        print(f'Synchronizing {format_path(source_path)} to '
+              f'{format_path(target_path)}')
+        cmd = [
+            config.rsync,
+            '-rt', # recursive, preserve time-stamps
+            '--delete',
+            str(source_path) + '/',
+            str(target_path)
+        ]
+        proc.run(cmd, check=True, shell=False)
+        print(f'Fixing modes under {format_path(target_path, maxlen=40)}')
+        for dirpath, dirnames, filenames, dir_fd in os.fwalk(target_path):
+            for d in dirnames:
+                os.chmod(d, 0o775, dir_fd=dir_fd)
+            for f in filenames:
+                os.chmod(f, 0o664, dir_fd=dir_fd)
+    return handler
+
+
+def by_album(source: str) -> Callable[[Namespace, str], None]:
+    """
+    This handler generates a "by album" view of the specified *source* path,
+    under the *target* path it is called with. The *source* is assumed to be
+    structured as Artist / Album / Tracks.
+
+    If *source* and *target* are on the same file-system, hardlinks will be
+    used to avoid using more space on the device (but ensuring compatibility
+    with systems that do not understand symlinks).
+    """
+    def handler(config: Namespace, target: str) -> None:
+        source_path = config.target / source
+        target_path = config.target / target
+        print(f'Re-generating {format_path(target_path, maxlen=40)}')
+        try:
+            shutil.rmtree(target_path)
+        except FileNotFoundError:
+            pass
+        target_path.mkdir()
+        for artist in source_path.iterdir():
+            if not artist.is_dir():
+                continue
+            for album in artist.iterdir():
+                if not album.is_dir():
+                    continue
+                try:
+                    d = target_path / album.name
+                    d.mkdir()
+                except FileExistsError:
+                    d = target_path / f'{album.name} ({artist.name})'
+                    d.mkdir()
+                for track in album.iterdir():
+                    if track.is_file():
+                        (d / track.name).hardlink_to(track)
+    return handler
+
+
+def by_genre(source: str) -> Callable[[Namespace, str], None]:
+    """
+    This handler generates a "by genre" view of the specified *source* path,
+    under the *target* path it is called with. Please note that as hardlinks
+    are used the *source* and *target* paths must be on the same file-system so
+    in this case *source* is usually a folder under the synchronization target.
+
+    In this case "genre" is calculated at an album level from the genres of all
+    tracks in each album. Any genres that appear in at least half the tracks
+    are assumed to apply to the album as a whole, and the album will appear
+    under that genre in the result.
+    """
+    def handler(config: Namespace, target: str) -> None:
+        source_path = config.target / source
+        target_path = config.target / target
+        print(f'Re-generating {format_path(target_path, maxlen=40)}')
+        try:
+            shutil.rmtree(target_path)
+        except FileNotFoundError:
+            pass
+        target_path.mkdir()
+        for artist in source_path.iterdir():
+            if not artist.is_dir():
+                continue
+            for album in artist.iterdir():
+                if not album.is_dir():
+                    continue
+                tracks = sum(
+                    1
+                    for track in album.iterdir()
+                    if track.is_file()
+                    and track.suffix in ('.mp3', '.mp4', '.m4a')
+                )
+                genres = Counter(
+                    genre
+                    for track in album.iterdir()
+                    if track.is_file()
+                    for genre in (
+                        mp3.EasyMP3(str(track)).tags.get('genre', [])
+                        if track.suffix == '.mp3' else
+                        mp4.MP4(str(track)).tags.get('©gen', [])
+                        if track.suffix in ('.m4a', '.mp4') else
+                        []
+                    )
+                )
+                for genre, count in genres.items():
+                    if count / tracks > 0.5:
+                        d = target_path / genre
+                        d.mkdir(exist_ok=True)
+                        try:
+                            d = target_path / genre / album.name
+                            d.mkdir()
+                        except FileExistsError:
+                            d = target_path / genre / f'{album.name} ({artist.name})'
+                            d.mkdir()
+                        for track in album.iterdir():
+                            if track.is_file():
+                                (d / track.name).hardlink_to(track)
+    return handler
+
+
+class M3UEntry(NamedTuple):
+    track:    int = 1
+    duration: dt.timedelta = dt.timedelta(seconds=0)
+    title:    str = ''
+    path:     Path = Path('.')
+
+
+class M3UPlaylist:
+    def __init__(self, path: Union[Path, str]):
+        self.path = Path(path)
+
+    def __len__(self) -> int:
+        return sum(1 for item in self)
+
+    def __iter__(self) -> Generator[M3UEntry, None, None]:
+        with self.path.open('r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+            if lines.pop(0).rstrip() != '#EXTM3U':
+                raise ValueError(f'invalid playlist: {self.path}')
+            item = M3UEntry()
+            info_re = re.compile('^#EXTINF:(?P<duration>\d+),(?P<title>.*)$')
+            while lines:
+                line = lines.pop(0).rstrip()
+                match = info_re.match(line)
+                if match:
+                    item = item._replace(
+                        duration=dt.timedelta(
+                            seconds=int(match.group('duration'))),
+                        title=match.group('title')
+                    )
+                else:
+                    url = urlsplit(unquote(line))
+                    if url.scheme in ('file', ''):
+                        yield item._replace(path=Path(url.path))
+                    else:
+                        warnings.warn(Warning(f'Ignoring non-file URL {line}'))
+                    item = M3UEntry(track=item.track + 1)
+
+
+def from_playlists(source: str) -> Callable[[Namespace, str], None]:
+    """
+    This handler generates a "playlist" view of the specified *source* path,
+    under the *target* path it is called with. Please note that as hardlinks
+    are used the *source* and *target* paths must be on the same file-system so
+    in this case *source* is usually a folder under the synchronization target.
+
+    Under the specified *source* path, this handler expects to find one or more
+    M3U formatted playlist files. Under the *target* path the handler is called
+    with, it will generate folders named after each playlist file found, with
+    hardlinks to each track named within.
+
+    .. _M3U: https://en.wikipedia.org/wiki/M3U
+    """
+
+    def handler(config: Namespace, target: str) -> None:
+        source_path = config.target / source
+        target_path = config.target / target
+        print(f'Re-generating {format_path(target_path, maxlen=40)}')
+        try:
+            shutil.rmtree(target_path)
+        except FileNotFoundError:
+            pass
+        target_path.mkdir()
+        for path in source_path.glob('*.m3u'):
+            playlist = M3UPlaylist(path)
+            d = target_path / path.name[:-4]
+            d.mkdir()
+            for entry in playlist:
+                name = f'{entry.track:02d}. {entry.title}{entry.path.suffix}'
+                name = sanitize_filename(name)
+                (d / name).hardlink_to(entry.path)
+    return handler
+
+
+def format_path(p: Path, maxlen: int=20) -> str:
+    """
+    Return the :class:`~pathlib.Path` *p* converted to a :class:`str` for
+    display purposes with a maximum length of *maxlen*. Ellipsis will be
+    added to denote elided sections.
+    """
+    result = str(p)
+    if len(result) > maxlen:
+        result = ''
+        for part in reversed(p.parts):
+            if len(result) + len(part) + 1 > maxlen:
+                break
+            result = '/' + part + result
+        if result:
+            result = '…' + result
+        else:
+            result = '…' + p.name[-maxlen:]
+    return result
+
+
+_unsafe_re = re.compile(r'[\x00-\x1f\\/:*?"<>|]')
+def sanitize_filename(s: str, replace: str='-') -> str:
+    """
+    Return the :class:`str` *s* with all characters unsafe for a FAT partition
+    replaced with *replace*.
+    """
+    assert not _unsafe_re.match(replace)
+    return _unsafe_re.sub(replace, s)
+
+if __name__ == '__main__':
+    main()
