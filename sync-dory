@@ -26,7 +26,7 @@ def defaults() -> Any:
         SOURCE = Path('/mnt/archive/audio')
         TARGET = Path('/media/dave/Media')
         FOLDER_MAP = {
-            TARGET / 'Books':           as_is(SOURCE / 'books'),
+            TARGET / 'Books':           by_album(SOURCE / 'books'),
             TARGET / 'Music By Artist': as_is(SOURCE / 'music'),
             TARGET / 'Music By Album':  by_album(TARGET / 'Music By Artist'),
             #TARGET / 'Music By Genre':  by_genre(TARGET / 'Music By Artist'),
@@ -86,7 +86,8 @@ def by_album(source: Path) -> Callable[[Namespace, Path], None]:
     with systems that do not understand symlinks).
     """
     def handler(config: Namespace, target: Path) -> None:
-        print(f'Re-generating {format_path(target, maxlen=40)}')
+        print(f'Generating album view in {format_path(target)} from '
+              f'{format_path(source)}')
         try:
             shutil.rmtree(target)
         except FileNotFoundError:
@@ -130,7 +131,8 @@ def by_genre(source: Path, threshold: float=0.5) -> Callable[[Namespace, Path], 
     with systems that do not understand symlinks).
     """
     def handler(config: Namespace, target: Path) -> None:
-        print(f'Re-generating {format_path(target, maxlen=40)}')
+        print(f'Generating genre view in {format_path(target)} from '
+              f'{format_path(source)}')
         try:
             shutil.rmtree(target)
         except FileNotFoundError:
@@ -240,7 +242,8 @@ def from_playlists(source: Path) -> Callable[[Namespace, Path], None]:
     """
 
     def handler(config: Namespace, target: Path) -> None:
-        print(f'Re-generating {format_path(target, maxlen=40)}')
+        print(f'Generating playlist view in {format_path(target)} from '
+              f'{format_path(source)}')
         try:
             shutil.rmtree(target)
         except FileNotFoundError:
