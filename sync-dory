@@ -23,14 +23,14 @@ def defaults() -> Any:
     # the TARGET path to functions that generate their content. See the
     # function definitions used for more information
     class defaults:
-        SOURCE = '/mnt/archive/audio'
-        TARGET = '/media/dave/Media'
+        SOURCE = Path('/mnt/archive/audio')
+        TARGET = Path('/media/dave/Media')
         FOLDER_MAP = {
-            'Books':           as_is('books'),
-            'Music By Artist': as_is('music'),
-            'Music By Album':  by_album('Music By Artist'),
-            #'Music By Genre':  by_genre('Music By Artist'),
-            #'Playlists':       from_playlists('.playlists'),
+            TARGET / 'Books':           as_is(SOURCE / 'books'),
+            TARGET / 'Music By Artist': as_is(SOURCE / 'music'),
+            TARGET / 'Music By Album':  by_album(TARGET / 'Music By Artist'),
+            #TARGET / 'Music By Genre':  by_genre(TARGET / 'Music By Artist'),
+            #TARGET / 'Playlists':       from_playlists(TARGET / '.playlists'),
         }
     return defaults
 
@@ -38,12 +38,6 @@ def defaults() -> Any:
 def main() -> None:
     d = defaults()
     parser = ArgumentParser()
-    parser.add_argument(
-        '--source', default=d.SOURCE, type=Path,
-        help="The path to the audio archive (default: %(default)s)")
-    parser.add_argument(
-        '--target', default=d.TARGET, type=Path,
-        help="The path to the removable drive (default: %(default)s)")
     parser.add_argument(
         '--rsync', default='rsync',
         help="Path to the rsync binary (default: %(default)s)")
@@ -55,27 +49,25 @@ def main() -> None:
     os.sync()
 
 
-def as_is(source: str) -> Callable[[Namespace, str], None]:
+def as_is(source: Path) -> Callable[[Namespace, Path], None]:
     """
     This handler synchronizes the *source* path to the mapped *target* verbatim
     using the configured *rsync* binary. Please note that this includes
     deletion of items under *target* that do not exist in *source*.
     """
-    def handler(config: Namespace, target: str) -> None:
-        source_path = config.source / source
-        target_path = config.target / target
-        print(f'Synchronizing {format_path(source_path)} to '
-              f'{format_path(target_path)}')
+    def handler(config: Namespace, target: Path) -> None:
+        print(f'Synchronizing {format_path(source)} to '
+              f'{format_path(target)}')
         cmd = [
             config.rsync,
             '-rt', # recursive, preserve time-stamps
             '--delete',
-            str(source_path) + '/',
-            str(target_path)
+            str(source) + '/',
+            str(target)
         ]
         proc.run(cmd, check=True, shell=False)
-        print(f'Fixing modes under {format_path(target_path, maxlen=40)}')
-        for dirpath, dirnames, filenames, dir_fd in os.fwalk(target_path):
+        print(f'Fixing modes under {format_path(target, maxlen=40)}')
+        for dirpath, dirnames, filenames, dir_fd in os.fwalk(target):
             for d in dirnames:
                 os.chmod(d, 0o775, dir_fd=dir_fd)
             for f in filenames:
@@ -83,7 +75,7 @@ def as_is(source: str) -> Callable[[Namespace, str], None]:
     return handler
 
 
-def by_album(source: str) -> Callable[[Namespace, str], None]:
+def by_album(source: Path) -> Callable[[Namespace, Path], None]:
     """
     This handler generates a "by album" view of the specified *source* path,
     under the *target* path it is called with. The *source* is assumed to be
@@ -93,55 +85,59 @@ def by_album(source: str) -> Callable[[Namespace, str], None]:
     used to avoid using more space on the device (but ensuring compatibility
     with systems that do not understand symlinks).
     """
-    def handler(config: Namespace, target: str) -> None:
-        source_path = config.target / source
-        target_path = config.target / target
-        print(f'Re-generating {format_path(target_path, maxlen=40)}')
+    def handler(config: Namespace, target: Path) -> None:
+        print(f'Re-generating {format_path(target, maxlen=40)}')
         try:
-            shutil.rmtree(target_path)
+            shutil.rmtree(target)
         except FileNotFoundError:
             pass
-        target_path.mkdir()
-        for artist in source_path.iterdir():
+        target.mkdir()
+        can_hardlink = same_fs(source, target)
+        for artist in source.iterdir():
             if not artist.is_dir():
                 continue
             for album in artist.iterdir():
                 if not album.is_dir():
                     continue
                 try:
-                    d = target_path / album.name
+                    d = target / album.name
                     d.mkdir()
                 except FileExistsError:
-                    d = target_path / f'{album.name} ({artist.name})'
+                    d = target / f'{album.name} ({artist.name})'
                     d.mkdir()
                 for track in album.iterdir():
                     if track.is_file():
-                        (d / track.name).hardlink_to(track)
+                        if can_hardlink:
+                            (d / track.name).hardlink_to(track)
+                        else:
+                            shutil.copy2(track, d / track.name)
     return handler
 
 
-def by_genre(source: str) -> Callable[[Namespace, str], None]:
+def by_genre(source: Path, threshold: float=0.5) -> Callable[[Namespace, Path], None]:
     """
     This handler generates a "by genre" view of the specified *source* path,
-    under the *target* path it is called with. Please note that as hardlinks
-    are used the *source* and *target* paths must be on the same file-system so
-    in this case *source* is usually a folder under the synchronization target.
+    under the *target* path it is called with. The *source* is assumed to be
+    structured as Artist / Album / Tracks.
 
     In this case "genre" is calculated at an album level from the genres of all
-    tracks in each album. Any genres that appear in at least half the tracks
-    are assumed to apply to the album as a whole, and the album will appear
-    under that genre in the result.
+    tracks in each album. Any genres that appear in at least *threshold* of the
+    tracks (50% by default) are assumed to apply to the album as a whole, and
+    the album will appear under that genre in the result.
+
+    If *source* and *target* are on the same file-system, hardlinks will be
+    used to avoid using more space on the device (but ensuring compatibility
+    with systems that do not understand symlinks).
     """
-    def handler(config: Namespace, target: str) -> None:
-        source_path = config.target / source
-        target_path = config.target / target
-        print(f'Re-generating {format_path(target_path, maxlen=40)}')
+    def handler(config: Namespace, target: Path) -> None:
+        print(f'Re-generating {format_path(target, maxlen=40)}')
         try:
-            shutil.rmtree(target_path)
+            shutil.rmtree(target)
         except FileNotFoundError:
             pass
-        target_path.mkdir()
-        for artist in source_path.iterdir():
+        target.mkdir()
+        can_hardlink = same_fs(source, target)
+        for artist in source.iterdir():
             if not artist.is_dir():
                 continue
             for album in artist.iterdir():
@@ -154,7 +150,7 @@ def by_genre(source: str) -> Callable[[Namespace, str], None]:
                     and track.suffix in ('.mp3', '.mp4', '.m4a')
                 )
                 genres = Counter(
-                    genre
+                    sanitize_filename(genre)
                     for track in album.iterdir()
                     if track.is_file()
                     for genre in (
@@ -166,18 +162,23 @@ def by_genre(source: str) -> Callable[[Namespace, str], None]:
                     )
                 )
                 for genre, count in genres.items():
-                    if count / tracks > 0.5:
-                        d = target_path / genre
+                    if count / tracks >= threshold:
+                        d = target / genre
                         d.mkdir(exist_ok=True)
                         try:
-                            d = target_path / genre / album.name
+                            d = (target / genre /
+                                 sanitize_filename(album.name))
                             d.mkdir()
                         except FileExistsError:
-                            d = target_path / genre / f'{album.name} ({artist.name})'
+                            d = (target / genre /
+                                 sanitize_filename(f'{album.name} ({artist.name})'))
                             d.mkdir()
                         for track in album.iterdir():
                             if track.is_file():
-                                (d / track.name).hardlink_to(track)
+                                if can_hardlink:
+                                    (d / track.name).hardlink_to(track)
+                                else:
+                                    shutil.copy2(track, d / track.name)
     return handler
 
 
@@ -220,38 +221,43 @@ class M3UPlaylist:
                     item = M3UEntry(track=item.track + 1)
 
 
-def from_playlists(source: str) -> Callable[[Namespace, str], None]:
+def from_playlists(source: Path) -> Callable[[Namespace, Path], None]:
     """
     This handler generates a "playlist" view of the specified *source* path,
-    under the *target* path it is called with. Please note that as hardlinks
-    are used the *source* and *target* paths must be on the same file-system so
-    in this case *source* is usually a folder under the synchronization target.
+    under the *target* path it is called with. The *source* is assumed to be
+    structured as Artist / Album / Tracks.
 
     Under the specified *source* path, this handler expects to find one or more
     M3U formatted playlist files. Under the *target* path the handler is called
     with, it will generate folders named after each playlist file found, with
-    hardlinks to each track named within.
+    each track named within.
+
+    If *source* and *target* are on the same file-system, hardlinks will be
+    used to avoid using more space on the device (but ensuring compatibility
+    with systems that do not understand symlinks).
 
     .. _M3U: https://en.wikipedia.org/wiki/M3U
     """
 
-    def handler(config: Namespace, target: str) -> None:
-        source_path = config.target / source
-        target_path = config.target / target
-        print(f'Re-generating {format_path(target_path, maxlen=40)}')
+    def handler(config: Namespace, target: Path) -> None:
+        print(f'Re-generating {format_path(target, maxlen=40)}')
         try:
-            shutil.rmtree(target_path)
+            shutil.rmtree(target)
         except FileNotFoundError:
             pass
-        target_path.mkdir()
-        for path in source_path.glob('*.m3u'):
+        target.mkdir()
+        can_hardlink = same_fs(source, target)
+        for path in source.glob('*.m3u'):
             playlist = M3UPlaylist(path)
-            d = target_path / path.name[:-4]
+            d = target / path.name[:-4]
             d.mkdir()
             for entry in playlist:
                 name = f'{entry.track:02d}. {entry.title}{entry.path.suffix}'
                 name = sanitize_filename(name)
-                (d / name).hardlink_to(entry.path)
+                if can_hardlink:
+                    (d / name).hardlink_to(entry.path)
+                else:
+                    shutil.copy2(entry.path, d / name)
     return handler
 
 
@@ -283,6 +289,15 @@ def sanitize_filename(s: str, replace: str='-') -> str:
     """
     assert not _unsafe_re.match(replace)
     return _unsafe_re.sub(replace, s)
+
+
+def same_fs(f1: Path, f2: Path) -> bool:
+    """
+    Return :data:`True` if the paths *f1* and *f2* both belong to the same
+    file-system (and thus can be hard-linked if necessary).
+    """
+    return f1.stat().st_dev == f2.stat().st_dev
+
 
 if __name__ == '__main__':
     main()
