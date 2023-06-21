@@ -89,7 +89,7 @@ all_partitions() {
 
 
 wait_for_sd() {
-    local dev filter
+    local dev real_dev filter
 
     dev=$(inotifywait -q \
         --event create \
@@ -98,9 +98,20 @@ wait_for_sd() {
         /dev)
     case "$dev" in
         /dev/sg[0-9])
-            sleep 1
-            filter="\$0 ~ \"${dev}[[:space:]]*\$\" { print \$2; }"
-            dev=$(lsscsi --brief --generic | awk "$filter")
+            for ((delay=0; delay<5; delay++)); do
+                sleep $delay
+                real_dev=$(lsscsi --brief --generic | \
+                    awk -v dev="$dev" '$3 == dev { print $2; }')
+                if [ "${real_dev#/dev/}" != "$real_dev" ]; then
+                    dev=$real_dev
+                    break
+                fi
+                echo "Waiting for SCSI to settle" >&2
+            done
+            if [ "${real_dev#/dev/}" == "$real_dev" ]; then
+                echo "Failed to resolve SCSI device" >&2
+                return 1
+            fi
             ;;
         /dev/sd*[0-9])
             dev=${dev%[0-9]}
