@@ -195,11 +195,11 @@ eval "$(direnv hook zsh)"
 
 ssh_agent="$HOME"/.ssh-agent
 if [ -z "$SSH_AUTH_SOCK" -a ! -d "$XDG_RUNTIME_DIR"/keyring ]; then
-    if [ -S $ssh_agent -a -O $ssh_agent -a -L $ssh_agent ]; then
-        export SSH_AUTH_SOCK=$ssh_agent
+    if [ -S "$ssh_agent" -a -O "$ssh_agent" -a -L "$ssh_agent" ]; then
+        export SSH_AUTH_SOCK="$ssh_agent"
     else
         eval $(ssh-agent -s)
-        ln -sf $SSH_AUTH_SOCK $ssh_agent
+        ln -sf "$SSH_AUTH_SOCK" "$ssh_agent"
     fi
 fi
 export GPG_TTY=$(tty)
