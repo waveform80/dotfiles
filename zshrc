@@ -61,18 +61,14 @@ alias diff="diff -u --color=auto"
 autoload -U bashcompinit
 bashcompinit
 
-source /usr/share/zplug/init.zsh
-zplug "agnoster/agnoster-zsh-theme", as:theme, use:"*.zsh-theme"
-zplug "plugins/virtualenvwrapper", from:oh-my-zsh
-zplug "mdumitru/git-aliases", from:github
-zplug "aperezdc/zsh-fzy", from:github
-if ! zplug check --verbose; then
-    printf "Install? [y/N]: "
-    if read -q; then
-        echo; zplug install
-    fi
-fi
-zplug load
+source "${HOME}"/.zsh/zsh-fzy/zsh-fzy.plugin.zsh
+source "${HOME}"/.zsh/git-aliases/git-aliases.zsh
+source "${HOME}"/.zsh/oh-my-zsh/plugins/virtualenvwrapper/virtualenvwrapper.plugin.zsh
+fpath=("${HOME}"/.zsh/themes $fpath)
+
+autoload -U promptinit
+promptinit
+prompt agnoster
 
 bindkey '^F' fzy-file-widget
 bindkey '^R' fzy-history-widget
@@ -83,7 +79,7 @@ function w3w() { w3m en.wikipedia.org/w/index.php\?search="$1"; }
 function w3up() { w3m packages.ubuntu.com/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
 function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
 function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
-function bug() { w3m launchpad.net/bugs/$1; }
+function bug() { w3m launchpad.net/bugs/"$1"; }
 
 function sercon() {
     local uart

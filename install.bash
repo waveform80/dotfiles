@@ -513,7 +513,7 @@ task_zsh() {
             echo 0
             ;;
         packages)
-            echo zsh zplug direnv fzy
+            echo zsh direnv fzy
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/zshrc "$HOME"/.zshrc
@@ -524,6 +524,13 @@ task_zsh() {
             popd
             rm -fr "$OLDPWD"
             sudo sh -c 'echo FONT="/usr/share/consolefonts/ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
+            zsh_plugins="$HOME"/.zsh
+            mkdir -p "$zsh_plugins" "$zsh_plugins"/themes
+            [ -d "$zsh_plugins"/agnoster-zsh-theme ] || git clone https://github.com/agnoster/agnoster-zsh-theme "$zsh_plugins"/agnoster-zsh-theme
+            [ -d "$zsh_plugins"/oh-my-zsh ] || git clone https://github.com/ohmyzsh/ohmyzsh "$zsh_plugins"/oh-my-zsh
+            [ -d "$zsh_plugins"/git-aliases ] || git clone https://github.com/mdumitru/git-aliases "$zsh_plugins"/git-aliases
+            [ -d "$zsh_plugins"/zsh-fzy ] || git clone https://github.com/aperezdc/zsh-fzy "$zsh_plugins"/zsh-fzy
+            ln -sf "$zsh_plugins"/agnoster-zsh-theme/agnoster.zsh-theme "$zsh_plugins"/themes/prompt_agnoster_setup
             UPDATE_INITRAMFS=1
             REBOOT_REQUIRED=1
             ;;
