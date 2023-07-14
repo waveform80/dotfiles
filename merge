@@ -300,7 +300,7 @@ clone() {
 	done
 	pushd "$project"
 	git remote add "$lpuser" "$lpprefix"/~"$lpuser"/ubuntu/+source/"$project"
-	git fetch "$lpuser" --tags
+	git fetch "$lpuser" --tags || true
 	popd
 
 	whatnow "$project"
