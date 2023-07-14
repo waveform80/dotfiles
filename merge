@@ -344,6 +344,7 @@ start_() {
 	echo "	new/debian (tag) pointing at import/${new_debian}"
 	tag_exists start/"$old_ubuntu_tag" || git tag start/"$old_ubuntu_tag" old/ubuntu
 	if tag_exists merge/"$old_ubuntu_tag"; then
+		git tag -d split/"$old_ubuntu_tag" 2>/dev/null || true
 		# Carry over split from old merge to new
 		echo "	split (branch) pointing at merge/$old_ubuntu_tag"
 		git branch split merge/"$old_ubuntu_tag"
@@ -368,6 +369,7 @@ start_() {
 			be resolved before proceeding to the logical phase.
 			$RESET
 			EOF
+			git tag -d logical/"$old_ubuntu_tag" 2>/dev/null || true
 			git checkout split
 		fi
 	else
