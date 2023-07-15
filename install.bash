@@ -276,7 +276,7 @@ task_fs() {
             ;;
         packages)
             echo atool ncdu entr inotify-tools ranger shed mc lz4 zstd
-            echo p7zip-full
+            echo p7zip-full moreutils
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/ranger
