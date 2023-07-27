@@ -124,7 +124,7 @@ def by_genre(source: Path, threshold: float=0.5) -> Callable[[Namespace, Path], 
     In this case "genre" is calculated at an album level from the genres of all
     tracks in each album. Any genres that appear in at least *threshold* of the
     tracks (50% by default) are assumed to apply to the album as a whole, and
-    the album will appear under that genre in the result.
+    the album will appear under those genres in the result.
 
     If *source* and *target* are on the same file-system, hardlinks will be
     used to avoid using more space on the device (but ensuring compatibility
