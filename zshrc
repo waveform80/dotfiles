@@ -55,18 +55,20 @@ alias tiga="tig --all"
 alias dquilt="quilt --quiltrc=${HOME}/.quiltrc-dpkg"
 alias diff="diff -u --color=auto"
 
-[ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
-
-# Enable bash-compatible completion functions
-autoload -U bashcompinit
+# Load completion routines (with bash compatibility)
+autoload -Uz compinit bashcompinit
+compinit
 bashcompinit
+
+[ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
 
 source "${HOME}"/.zsh/zsh-fzy/zsh-fzy.plugin.zsh
 source "${HOME}"/.zsh/git-aliases/git-aliases.zsh
-source "${HOME}"/.zsh/oh-my-zsh/plugins/virtualenvwrapper/virtualenvwrapper.plugin.zsh
+[ -f /usr/share/bash-completion/completions/virtualenvwrapper ] && \
+    source "${HOME}"/.zsh/oh-my-zsh/plugins/virtualenvwrapper/virtualenvwrapper.plugin.zsh
 fpath=("${HOME}"/.zsh/themes $fpath)
 
-autoload -U promptinit
+autoload -Uz promptinit
 promptinit
 prompt agnoster
 
