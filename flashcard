@@ -133,13 +133,25 @@ EOF
 }
 
 
+usage() {
+    echo "Usage: ${0##*/} image-file-or-archive [device]" >&2
+}
+
+
 main() {
     local image dev
 
-    if [ $# -ne 1 ]; then
-        echo "Usage: ${0##*/} image-file-or-archive" >&2
+    if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+        usage
         exit 2
     fi
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+    esac
 
     if [ $EUID -ne 0 ]; then
         info "Not running as root, re-execing under sudo"
@@ -147,16 +159,21 @@ main() {
     fi
 
     image=$1
+    dev=$2
 
     if [ ! -r "$image" ]; then
         warning "Cannot read $image"
         return 1
     fi
 
-    info "Waiting for SD card... "
-    dev=$(wait_for_sd)
-    echo "Found $dev" >&2
-    echo >&2
+    if [ $# -eq 1 ]; then
+        info "Waiting for SD card... "
+        dev=$(wait_for_sd)
+        echo "Found $dev" >&2
+        echo >&2
+    else
+        echo "Using specified $dev" >&2
+    fi
 
     show_parts "$dev"
     show_release "$dev"
