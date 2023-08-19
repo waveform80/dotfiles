@@ -159,7 +159,7 @@ main() {
     fi
 
     image=$1
-    dev=$2
+    dev=${2-}
 
     if [ ! -r "$image" ]; then
         warning "Cannot read $image"
