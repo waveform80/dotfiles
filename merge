@@ -32,7 +32,11 @@ main() {
 			;;
 		rebased)
 			shift
-			rebased "$@"
+			if [ "${1:-}" = "--again" ]; then
+				rebased_again
+			else
+				rebased "$@"
+			fi
 			;;
 		test)
 			shift
@@ -517,6 +521,66 @@ rebased() {
 	echo "Created candidate/$new_ubuntu_tag pointing at HEAD"
 
 	whatnow
+}
+
+
+rebased_again() {
+	local new_debian new_ubuntu new_ubuntu_tag log_msg log_ignore ignored
+
+	new_debian=$(get_version new/debian)
+	new_ubuntu="$new_debian"ubuntu1
+	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+
+	work_dir_clean
+	descends_from new/debian
+	if tag_exists merge/"$new_ubuntu_tag"; then
+		if ! tag_exists candidate/"$new_ubuntu_tag"; then
+			git tag candidate/"$new_ubuntu_tag" merge/"$new_ubuntu_tag"
+		fi
+		if tag_exists candidate/"$new_ubuntu_tag"; then
+			if is_exactly candidate/"$new_ubuntu_tag" merge/"$new_ubuntu_tag"; then
+				git tag -d merge/"$new_ubuntu_tag"
+			else
+				die "candidate/$new_ubuntu_tag and merge/$new_ubuntu_tag" \
+					"both exist but differ; remove the tag you do not want"
+			fi
+		fi
+	fi
+	fix_tag candidate/"$new_ubuntu_tag"
+	if ! git merge-base --is-ancestor logical/"$new_ubuntu_tag" HEAD; then
+		echo "logical/$new_ubuntu_tag is not an ancester of candidate/$new_ubuntu_tag"
+		if confirm "Attempt to find logical tag point? [y/N] "; then
+			log_ignore=( \
+				"reconstruct-changelog" \
+				"merge-changelog" \
+				"changelog" \
+				"metadata" \
+				"update-maintainer" \
+			)
+			while true; do
+				ignored=0
+				log_msg="$(git show -s --format=format:%s HEAD)"
+				for ignore in "${log_ignore[@]}"; do
+					# XXX This should also check the commit only alters
+					# d/changelog or d/control ideally
+					if [ "$log_msg" = "$ignore" ]; then
+						ignored=1
+						echo "Ignoring commit with log message $log_msg"
+						git checkout HEAD^ 2>/dev/null
+						break
+					fi
+				done
+				if [ $ignored -eq 0 ]; then
+					break
+				fi
+			done
+			descends_from new/debian
+			fix_tag logical/"$new_ubuntu_tag"
+			git checkout candidate/"$new_ubuntu_tag" 2>/dev/null
+		else
+			return 1
+		fi
+	fi
 }
 
 
