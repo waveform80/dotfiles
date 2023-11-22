@@ -897,9 +897,10 @@ not_descends_from() {
 
 is_exactly() {
 	local commitish="$1"
+	local compare="${2:-HEAD}"
 
-	git merge-base --is-ancestor "$commitish" HEAD && \
-		git merge-base --is-ancestor HEAD "$commitish"
+	git merge-base --is-ancestor "$commitish" "$compare" && \
+		git merge-base --is-ancestor "$compare" "$commitish"
 }
 
 
