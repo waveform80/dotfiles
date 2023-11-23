@@ -485,7 +485,7 @@ rebased() {
 	descends_from new/debian
 	patches_apply
 
-	merge_bug="$1"
+	merge_bug="${1:-}"
 	new_debian=$(get_version new/debian)
 	new_ubuntu="$new_debian"ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
