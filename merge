@@ -548,7 +548,7 @@ rebased_again() {
 	fi
 	fix_tag candidate/"$new_ubuntu_tag"
 	if ! git merge-base --is-ancestor logical/"$new_ubuntu_tag" HEAD; then
-		echo "logical/$new_ubuntu_tag is not an ancester of candidate/$new_ubuntu_tag"
+		echo "logical/$new_ubuntu_tag is not an ancestor of candidate/$new_ubuntu_tag"
 		if confirm "Attempt to find logical tag point? [y/N] "; then
 			log_ignore=( \
 				"reconstruct-changelog" \
