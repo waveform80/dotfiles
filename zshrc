@@ -188,6 +188,7 @@ function my_prompt_dir() {
 }
 AGNOSTER_PROMPT_SEGMENTS[3]=my_prompt_virtualenv
 AGNOSTER_PROMPT_SEGMENTS[4]=my_prompt_dir
+setopt prompt_sp
 
 eval "$(direnv hook zsh)"
 
