@@ -91,6 +91,11 @@ ssh_import_id:
 apt:
   conf: |
     Acquire::http { Proxy "http://acng.waveform.org.uk:3142"; }
+
+packages_update: true
+packages_upgrade: true
+packages:
+- avahi-daemon
 EOF
             fi
         fi
