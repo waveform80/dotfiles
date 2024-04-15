@@ -83,6 +83,8 @@ function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&sec
 function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
 function bug() { w3m launchpad.net/bugs/"$1"; }
 
+function indent() { sed -e 's/^/    /;' "$@"; }
+
 function sercon() {
     local uart
     local baud=115200
@@ -113,8 +115,23 @@ function bindiff() {
 }
 
 function _sb() {
-    local maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' debian/control)"
-    local keyid="$DEBEMAIL"
+    local maintainer ctrl keyid
+
+    for ctrl in "$@"; do
+        if [[ "$ctrl" = *.dsc ]]; then
+            break
+        fi
+    done
+    if [[ "$ctrl" != *.dsc ]]; then
+        if [[ -e debian/control ]]; then
+            ctrl=debian/control
+        else
+            echo "Cannot find control file or dsc">&2
+            return 1
+        fi
+    fi
+    maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' "$ctrl")"
+    keyid="$DEBEMAIL"
     sbuild --maintainer "$maintainer" --keyid "$keyid" "$@"
 }
 
