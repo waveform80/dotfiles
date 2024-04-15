@@ -61,11 +61,11 @@ compinit
 bashcompinit
 
 [ -f /etc/zsh_command_not_found ] && source /etc/zsh_command_not_found
+[ -f /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh ] && \
+    source /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh
 
 source "${HOME}"/.zsh/zsh-fzy/zsh-fzy.plugin.zsh
 source "${HOME}"/.zsh/git-aliases/git-aliases.zsh
-[ -f /usr/share/bash-completion/completions/virtualenvwrapper ] && \
-    source "${HOME}"/.zsh/oh-my-zsh/plugins/virtualenvwrapper/virtualenvwrapper.plugin.zsh
 fpath=("${HOME}"/.zsh/themes $fpath)
 
 autoload -Uz promptinit
