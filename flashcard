@@ -77,8 +77,9 @@ hostname: miss-piggy
 
 chpasswd:
   expire: false
-  list:
-  - ubuntu:raspberry
+  users:
+  - name: ubuntu
+    password: raspberry
 
 keyboard:
   model: pc105
