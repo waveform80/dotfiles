@@ -18,7 +18,7 @@ $run_autopkgtest = 0;
 $log_dir = $ENV{'HOME'} . '/logs';
 
 # Make lintian even more bloody verbose
-push @{$lintian_opts}, '-I';
+push @{$lintian_opts}, '--pedantic';
 
 # schroot setup
 $chroot_mode = 'schroot';
