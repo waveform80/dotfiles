@@ -80,6 +80,7 @@ chpasswd:
   users:
   - name: ubuntu
     password: raspberry
+    type: text
 
 keyboard:
   model: pc105
