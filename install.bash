@@ -585,11 +585,12 @@ EOF
             else
                 sudo raspi-config nonint do_wifi_country GB
             fi
-            if [ "$DISTRO" = "Ubuntu" ]; then
-                sudo localectl set-locale en_GB.UTF-8
-                sudo localectl set-x11-keymap gb pc105 "" ctrl:nocaps
+            if [ "$DISTRO" = "Ubuntu" ] && [[ "$RELEASE" < "24.04" ]]; then
+                sudo localectl set-locale en_GB.UTF-8 || true
+                sudo localectl set-x11-keymap gb pc105 "" ctrl:nocaps || true
                 UPDATE_INITRAMFS=1
-            else
+            fi
+            if [ -e /etc/default/keyboard ]; then
                 sudo sed -i \
                     -e '/^XKBLAYOUT=/ s/=.*$/="gb"/' \
                     -e '/^XKBOPTIONS=/ s/=.*$/="ctrl: nocaps"/' \
