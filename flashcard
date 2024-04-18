@@ -77,8 +77,10 @@ hostname: miss-piggy
 
 chpasswd:
   expire: false
-  list:
-  - ubuntu:raspberry
+  users:
+  - name: ubuntu
+    password: raspberry
+    type: text
 
 keyboard:
   model: pc105
@@ -92,8 +94,8 @@ apt:
   conf: |
     Acquire::http { Proxy "http://acng.waveform.org.uk:3142"; }
 
-packages_update: true
-packages_upgrade: true
+package_update: true
+package_upgrade: true
 packages:
 - avahi-daemon
 EOF
