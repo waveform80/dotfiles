@@ -1,0 +1,6 @@
+{
+    "description": "Warn if uploading without git-ubuntu Vcs-* entries",
+    "path": "myhooks.check_git_ubuntu",
+    "pre": true
+}
+

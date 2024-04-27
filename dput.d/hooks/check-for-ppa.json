@@ -1,0 +1,5 @@
+{
+    "description": "Stop uploads to the archive with / without ~ppa suffix",
+    "path": "myhooks.check_for_ppa",
+    "pre": true
+}

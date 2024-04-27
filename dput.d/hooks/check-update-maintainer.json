@@ -1,0 +1,6 @@
+{
+    "description": "Stop if ubuntu changes are without ubuntu maintainer",
+    "path": "myhooks.check_update_maintainer",
+    "pre": true
+}
+

@@ -1,0 +1,11 @@
+{
+    "+hooks": [
+        "bad-author",
+        "check-for-ppa",
+        "check-buf-ref",
+        "check-git-ubuntu",
+        "check-update-maintainer",
+        "check-ubuntu-release"
+    ]
+}
+

@@ -1,0 +1,5 @@
+{
+    "description": "Warn about mismatching suffixes, e.g. XX.YY!=20.04 for focal",
+    "path": "myhooks.check_ubuntu_release",
+    "pre": true
+}

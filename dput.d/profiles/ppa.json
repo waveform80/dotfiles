@@ -1,0 +1,12 @@
+{
+    "method": "sftp",
+    "login": "waveform",
+    "+hooks": [
+        "bad-author",
+        "check-for-ppa",
+        "check-ubuntu-release"
+    ],
+    "-hooks": [
+        "supported-distribution"
+    ]
+}

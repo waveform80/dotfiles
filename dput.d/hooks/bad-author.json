@@ -1,0 +1,5 @@
+{
+    "description": "Stop if uploading with root@ or ubuntu@ email addresses",
+    "path": "myhooks.bad_author",
+    "pre": true
+}

@@ -1,0 +1,5 @@
+{
+    "description": "Stop if uploading with no bug reference",
+    "path": "myhooks.check_bug_ref",
+    "pre": true
+}

@@ -1,0 +1,7 @@
+{
+    "fqdn": "build-master.raspberrypi.org",
+    "meta": "debian",
+    "method": "sftp",
+    "login": "waveform",
+    "incoming": "%(rpi)s"
+}

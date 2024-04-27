@@ -120,12 +120,14 @@ task_pack() {
             echo 0
             ;;
         packages)
-            echo ubuntu-dev-tools packaging-dev sbuild shellcheck
+            echo ubuntu-dev-tools packaging-dev sbuild shellcheck dput-ng
+            # Dput-ng hooks use this
+            echo python3-colorzero
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
             ln -sf "$HOME"/dotfiles/quiltrc-dpkg "$HOME"/.quiltrc-dpkg
-            ln -sf "$HOME"/dotfiles/dputcf "$HOME"/.dput.cf
+            ln -sf "$HOME"/dotfiles/dput.d "$HOME"/.dput.d
             ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
             ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
             ln -sf "$HOME"/dotfiles/reportbugrc "$HOME"/.reportbugrc
