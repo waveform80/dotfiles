@@ -184,6 +184,7 @@ task_db() {
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/psqlrc "$HOME"/.psqlrc
+            ln -sf "$HOME"/dotfiles/sqliterc "$HOME"/.sqliterc
             ;;
     esac
 }
