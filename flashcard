@@ -69,61 +69,18 @@ fix_config() {
     if [ -e "$boot_part" ]; then
         mount "$boot_part" "$boot_mount"
         if [ -e "$boot_mount"/user-data ]; then
-            if confirm "Customize cloud-init configuration? [y/n] "; then
-                cat << EOF > "$boot_mount"/user-data
-#cloud-config
-
-hostname: miss-piggy
-
-chpasswd:
-  expire: false
-  users:
-  - name: ubuntu
-    password: raspberry
-    type: text
-
-keyboard:
-  model: pc105
-  layout: gb
-  options: ctrl:nocaps
-
-ssh_import_id:
-- lp:waveform
-
-apt:
-  conf: |
-    Acquire::http { Proxy "http://acng.waveform.org.uk:3142"; }
-
-package_update: true
-package_upgrade: true
-packages:
-- avahi-daemon
-EOF
-            fi
-        fi
-        if [ -e "$boot_mount"/network-config ]; then
-            if confirm "Add wifi configuration? [y/n] "; then
-                read -r -p "Access point name: " ap
-                read -r -p "Access point password: " password
-                cat << EOF >> "$boot_mount"/network-config
-wifis:
-  wlan0:
-    dhcp4: true
-    optional: true
-    access-points:
-      ${ap}:
-        password: ${password}
-EOF
-                # If this is the "netplan conformant" version of network-config
-                # we need to indent the additional lines
-                if grep -q "^network:" "$boot_mount"/network-config; then
-                    sed -i -r -e '/^wifis:/,+6 s/^/  /' "$boot_mount"/network-config
-                fi
-            fi
-            if confirm "Remove ethernet configuration? [y/n] "; then
-                sed -i -r \
-                    -e '/^ +ethernets:/,+3 s/^/#/' "$boot_mount"/network-config
-            fi
+            customizecard \
+                --hostname miss-piggy \
+                --username ubuntu \
+                --password raspberry \
+                --kb-model pc105 \
+                --kb-layout gb \
+                --kb-options ctrl:nocaps \
+                --ssh-import-id lp:waveform \
+                --apt-cache http://acng.waveform.org.uk:3142 \
+                --update --upgrade \
+                --install avahi-daemon \
+                "$boot_mount"
         fi
         if [ -e "$boot_mount"/config.txt ]; then
             if ! grep "^disable_overscan=1" "$boot_mount"/config.txt >/dev/null; then

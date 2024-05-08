@@ -278,7 +278,7 @@ task_fs() {
             ;;
         packages)
             echo atool ncdu entr inotify-tools ranger shed mc lz4 zstd
-            echo p7zip-full moreutils
+            echo p7zip-full moreutils python3-ruamel.yaml
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/ranger
@@ -288,6 +288,7 @@ task_fs() {
                 sed -i -e 's/\bbat\b/batcat/' "$XDG_CONFIG_HOME"/ranger/scope.sh
             fi
             ln -sf "$HOME"/dotfiles/flashcard "$HOME"/.local/bin/flashcard
+            ln -sf "$HOME"/dotfiles/customizecard "$HOME"/.local/bin/customizecard
             ln -sf "$HOME"/dotfiles/mountcard "$HOME"/.local/bin/mountcard
             ;;
     esac
