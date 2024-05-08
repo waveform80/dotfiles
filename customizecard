@@ -1,0 +1,229 @@
+#!/usr/bin/python3
+
+"""
+A simple script for building custom cloud-init configurations suitable for use
+with the Ubuntu for Raspberry Pi images.
+"""
+
+import sys
+import argparse
+from pathlib import Path
+
+from ruamel.yaml import dump
+
+
+NIC_STATES = {'i': 'ignored', 'o': 'optional', 'r': 'required'}
+
+
+def main(args=None):
+    config = get_parser().parse_args(args)
+    if config.hostname is None:
+        config.hostname = query('Enter board hostname')
+    if config.eth is None:
+        config.eth = query(
+            'eth0 connection', choices=NIC_STATES, default='o')
+    if config.wlan is None:
+        config.wlan = query(
+            'wlan0 connection', choices=NIC_STATES, default='o')
+        if config.wlan != 'ignored':
+            if config.wlan_ssid is None:
+                config.wlan_ssid = query('wlan0 AP name')
+            if config.wlan_password is None:
+                config.wlan_password = query('wlan0 AP password')
+
+    cloud_config = build_cloud_config(config)
+    network_config = build_network_config(config)
+
+    with (config.seed_path / 'user-data').open('w') as f:
+        f.write('#cloud-config\n\n')
+        dump(cloud_config, f)
+    with (config.seed_path / 'network-config').open('w') as f:
+        dump(network_config, f)
+    return 0
+
+
+def build_cloud_config(config):
+    cloud_config = {
+        'hostname': config.hostname,
+        'chpasswd': {
+            'expire': 'true' if config.expire else 'false',
+            'users': [
+                {
+                    'name': config.username,
+                    'password': config.password,
+                    'type': 'text',
+                },
+            ],
+        },
+        'keyboard': {
+            'model': config.kb_model,
+            'layout': config.kb_layout,
+        },
+    }
+    if config.kb_options is not None:
+        cloud_config['keyboard']['options'] = config.kb_options
+    if config.ssh_import_id is not None:
+        cloud_config['ssh_import_id'] = [config.ssh_import_id]
+    if config.apt_cache is not None:
+        cloud_config['apt'] = {
+            'conf': f'Acquire::http {{ Proxy "{config.apt_cache}"; }}'
+        }
+    if config.update:
+        cloud_config['package_update'] = True
+    if config.upgrade:
+        cloud_config['package_upgrade'] = True
+    if config.install:
+        cloud_config['packages'] = config.install
+    return cloud_config
+
+
+def build_network_config(config):
+    network_config = {
+        'network': {'version': 2}
+    }
+    if config.eth != 'ignored':
+        network_config['network']['ethernets'] = {
+            'eth0': {
+                'dhcp4': True,
+                'optional': config.eth == 'optional'
+            },
+        }
+    if config.wlan != 'ignored':
+        network_config['network']['wifis'] = {
+            'wlan0': {
+                'dhcp4': True,
+                'optional': config.wlan == 'required',
+                'access-points': {
+                    config.wlan_ssid: {
+                        'password': config.wlan_password,
+                    },
+                },
+            },
+        }
+    return network_config
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument(
+        'seed_path', type=Path,
+        help="The path to the cloud-init seed to be customized")
+    parser.add_argument(
+        '--hostname', action='store',
+        help="The hostname to assign to the board. Will be prompted for if "
+        "not specified")
+    parser.add_argument(
+        '--username', action='store', default='ubuntu',
+        help="The username to create on first boot. Default: %(default)s")
+    parser.add_argument(
+        '--password', action='store', default='ubuntu',
+        help="The password to associated with the created user. "
+        "Default: %(default)s")
+    parser.add_argument(
+        '--expire', action='store_true', default=True)
+    parser.add_argument(
+        '--no-expire', action='store_false', dest='expire',
+        help="Set the initial user's password to expired or valid. Defaults "
+        "to expiring the password")
+    parser.add_argument(
+        '--kb-model', default='pc105',
+        help="Set the keyboard model. Default: %(default)s")
+    parser.add_argument(
+        '--kb-layout', default='us',
+        help="Set the keyboard layout. Default: %(default)s")
+    parser.add_argument(
+        '--kb-options', default=None,
+        help="Set the keyboard layout options. Default: %(default)s")
+    parser.add_argument(
+        '--ssh-import-id', action='store',
+        help="Specifies an account from which to import SSH keys. Must begin "
+        "with gh: for GitHub, or lp: for Launchpad")
+    parser.add_argument(
+        '--apt-cache', action='store',
+        help="Specifies the URL of an apt-cache to configure")
+    parser.add_argument(
+        '--update', action='store_true', default=False)
+    parser.add_argument(
+        '--no-update', action='store_false', dest='update',
+        help="Run (or do not run) apt update on first boot")
+    parser.add_argument(
+        '--upgrade', action='store_true', default=False)
+    parser.add_argument(
+        '--no-upgrade', action='store_false', dest='upgrade',
+        help="Run (or do not run) apt upgrade on first boot")
+    parser.add_argument(
+        '--install', action='append',
+        help="Install the specified package. May be given multiple times to "
+        "install several packages")
+    parser.add_argument(
+        '--eth', choices=list(NIC_STATES.values()), default=None,
+        help="Specifies whether the eth0 interface is defined and required by "
+        "the network configuration. Will be prompted for if not specified")
+    parser.add_argument(
+        '--wlan', choices=list(NIC_STATES.values()), default=None,
+        help="Specifies whether the wlan0 interface is defined and required by "
+        "the network configuration. Will be prompted for if not specified")
+    parser.add_argument(
+        '--wlan-ssid', action='store',
+        help="Specifies the SSID of the AP to connect to. Required if --wlan "
+        "is anything other than 'ignored'")
+    parser.add_argument(
+        '--wlan-password', action='store',
+        help="Specifies the Wifi AP password. Required if --wlan is anything "
+        "other than 'ignored'")
+    return parser
+
+
+def query(prompt, *, choices=None, default=None):
+    """
+    Write *prompt* to the terminal repeatedly until the user enters a coherent
+    response, returning that response as a :class:`str`.
+
+    If *choices* is specified, it must be a :class:`dict` mapping :class:`str`
+    to the return value. Only responses matching one of the choices keys will
+    be accepted.
+
+    If *default* is given, it specifies the value that will be returned if the
+    user enters a blank string if *choices* is :data:`None`, or the *key* of
+    the value that will be return if *choices* is specified. If *default* is
+    :data:`None` a blank string will not be accepted.
+    """
+    if choices is not None:
+        if default is not None:
+            assert default in choices
+            keys = sorted(
+                choices, key=lambda s: 0 if s == default else 1)
+            keys[0] = keys[0].title()
+            keys.append('?')
+            prompt = f"{prompt} [{'/'.join(keys)}]"
+        else:
+            keys = list(choices) + ['?']
+            prompt = f"{prompt} ({'/'.join(keys)})"
+    elif default is not None:
+        prompt = f"{prompt} [{default}]"
+    prompt = f"{prompt}: "
+
+    result = ''
+    while True:
+        result = input(prompt)
+        if result == '':
+            if default is not None:
+                if choices is not None:
+                    return choices[default]
+                else:
+                    return default
+        elif choices is not None:
+            if result in choices:
+                return choices[result]
+            elif result == '?':
+                print('\n'.join(
+                    f'{key}={value}' for key, value in choices.items()))
+        else:
+            return result
+
+
+if __name__ == '__main__':
+    sys.exit(main())
