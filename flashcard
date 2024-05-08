@@ -2,8 +2,9 @@
 
 set -eu
 
+my_path="$(dirname "$(realpath "$0")")"
 # shellcheck source=functions.bash
-. "$(dirname "$(realpath "$0")")"/functions.bash
+. "$my_path"/functions.bash
 
 root_mount=$(mktemp -d)
 boot_mount=$(mktemp -d)
@@ -62,14 +63,14 @@ umount_parts() {
 
 
 fix_config() {
-    local dev boot_part ap password
+    local dev boot_part
 
     dev="$1"
     boot_part="$(boot_partition "$dev")"
     if [ -e "$boot_part" ]; then
         mount "$boot_part" "$boot_mount"
         if [ -e "$boot_mount"/user-data ]; then
-            customizecard \
+            "$my_path"/customizecard \
                 --hostname miss-piggy \
                 --username ubuntu \
                 --password raspberry \

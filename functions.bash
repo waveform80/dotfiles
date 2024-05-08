@@ -89,7 +89,7 @@ all_partitions() {
 
 
 wait_for_sd() {
-    local dev real_dev filter
+    local dev real_dev
 
     dev=$(inotifywait -q \
         --event create \
@@ -99,7 +99,7 @@ wait_for_sd() {
     case "$dev" in
         /dev/sg[0-9])
             for ((delay=0; delay<5; delay++)); do
-                sleep $delay
+                sleep "$delay"
                 real_dev=$(lsscsi --brief --generic | \
                     awk -v dev="$dev" '$3 == dev { print $2; }')
                 if [ "${real_dev#/dev/}" != "$real_dev" ]; then
