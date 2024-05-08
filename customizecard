@@ -46,7 +46,7 @@ def build_cloud_config(config):
     cloud_config = {
         'hostname': config.hostname,
         'chpasswd': {
-            'expire': 'true' if config.expire else 'false',
+            'expire': config.expire,
             'users': [
                 {
                     'name': config.username,
