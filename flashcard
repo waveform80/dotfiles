@@ -74,6 +74,7 @@ fix_config() {
                 --hostname miss-piggy \
                 --username ubuntu \
                 --password raspberry \
+                --no-expire \
                 --kb-model pc105 \
                 --kb-layout gb \
                 --kb-options ctrl:nocaps \
