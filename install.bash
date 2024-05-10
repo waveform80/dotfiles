@@ -153,6 +153,11 @@ task_travel() {
                 echo python3-colorzero python3-dot3k
             fi
             ;;
+        preinst)
+            if [ "$DISTRO" = "Ubuntu" ]; then
+                sudo add-apt-repository -y ppa:waveform/collator
+            fi
+            ;;
         postinst)
             ln -sf "$HOME"/dotfiles/setfor "$HOME"/.local/bin/setfor
             ln -sf "$HOME"/dotfiles/bt-tether "$HOME"/.local/bin/bt-tether
