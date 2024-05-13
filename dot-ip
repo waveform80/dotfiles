@@ -8,6 +8,7 @@ import signal
 import selectors
 from itertools import tee, cycle
 from collections import deque
+from subprocess import run
 
 import netifaces
 from dothat import lcd, backlight, touch as nav
@@ -78,10 +79,15 @@ class Application:
         netifaces.AF_INET6: 'IP6',
         netifaces.AF_LINK: 'MAC',
     }
+    actions = {
+        'off': 'Power Off',
+        'reboot': 'Reboot',
+    }
 
     def __init__(self):
         self.iface = next(iter(self.interfaces))
         self.family = next(iter(self.families))
+        self.action = next(iter(self.actions))
         self.color = Color('black')
         backlight.off()
 
@@ -97,17 +103,29 @@ class Application:
 
         @nav.on(nav.LEFT)
         def handle_left(ch, evt):
-            self.family = prior_key(self.family, self.families)
+            if self.iface == 'ctrl':
+                self.action = prior_key(self.action, self.actions)
+            else:
+                self.family = prior_key(self.family, self.families)
             self.refresh()
 
         @nav.on(nav.RIGHT)
         def handle_right(ch, evt):
-            self.family = next_key(self.family, self.families)
+            if self.iface == 'ctrl':
+                self.action = next_key(self.action, self.actions)
+            else:
+                self.family = next_key(self.family, self.families)
             self.refresh()
 
         @nav.on(nav.BUTTON)
         def handle_btn(ch, evt):
-            self.refresh()
+            if self.iface == 'ctrl':
+                run({
+                    'off': ['poweroff'],
+                    'reboot': ['reboot'],
+                }[self.action])
+            else:
+                self.refresh()
 
     def close(self):
         """
@@ -139,7 +157,7 @@ class Application:
                 for iface_spec in netifaces.ifaddresses(name).get(family, [])
             }
             for name in sorted(netifaces.interfaces())
-        }
+        } | {'ctrl': {}}
 
     def sweep(self, new_color, *, duration=1):
         """
@@ -168,15 +186,21 @@ class Application:
         Refresh the display to show the current :attr:`iface` and
         :attr:`family`.
         """
-        ifaces = self.interfaces
-        backlight.set_graph(0)
-        try:
-            address = ifaces[self.iface][self.family]
-            new_color = Color('#00c000')
-        except KeyError:
-            address = 'No address!'
-            new_color = Color('#c04000')
-        self._show_text(f'{self.iface}:{self.families[self.family]}\n{address}')
+        if self.iface == 'ctrl':
+            new_color = Color('#0000c0')
+            self._show_text(
+                f'{self.iface}:\n{self.actions[self.action]}')
+        else:
+            ifaces = self.interfaces
+            backlight.set_graph(0)
+            try:
+                address = ifaces[self.iface][self.family]
+                new_color = Color('#00c000')
+            except KeyError:
+                address = 'No address!'
+                new_color = Color('#c04000')
+            self._show_text(
+                f'{self.iface}:{self.families[self.family]}\n{address}')
         if self.color != new_color:
             self.sweep(new_color, duration=0.5)
 
