@@ -150,14 +150,16 @@ class Application:
                     netifaces.AF_INET6: '::1'},
              'eth0': {netifaces.AF_INET: '192.168.0.1'}}
         """
-        return {
-            name: {
-                family: iface_spec.get('addr')
-                for family in self.families
-                for iface_spec in netifaces.ifaddresses(name).get(family, [])
-            }
-            for name in sorted(netifaces.interfaces())
-        } | {'ctrl': {}}
+        result = {'ctrl': {}}
+        for name in sorted(netifaces.interfaces()):
+            try:
+                iface = netifaces.ifaddresses(name)
+            except ValueError:
+                continue
+            for family in self.families:
+                for iface_spec in iface.get(family, []):
+                    result.setdefault(name, {})[family] = iface_spec.get('addr')
+        return result
 
     def sweep(self, new_color, *, duration=1):
         """
