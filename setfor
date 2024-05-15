@@ -50,10 +50,11 @@ EOF
         comment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
         comment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
-            sudo systemctl enable dot-ip.service
-            echo "Replace Fan-shim with Display-o-Tron"
+            if sudo systemctl enable dot-ip.service; then
+                echo "Replace Fan-shim with Display-o-Tron"
+            fi
             sudo systemctl stop nut-monitor.service || true
-            sudo systemctl disable nut-monitor.service
+            sudo systemctl disable nut-monitor.service || true
         fi
         ;;
 
@@ -63,9 +64,10 @@ EOF
         uncomment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
         uncomment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
-            sudo systemctl disable dot-ip.service
-            echo "Replace Display-o-Tron with Fan-shim"
-            sudo systemctl enable nut-monitor.service
+            if sudo systemctl disable dot-ip.service; then
+                echo "Replace Display-o-Tron with Fan-shim"
+            fi
+            sudo systemctl enable nut-monitor.service || true
         fi
         ;;
 
