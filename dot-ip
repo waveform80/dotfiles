@@ -3,7 +3,6 @@
 import os
 import sys
 import math
-import time
 import signal
 import selectors
 from itertools import tee, cycle
@@ -135,7 +134,7 @@ class Application:
         Called to close the application down.
         """
         self.stop_sweep()
-        self.sweep(Color('black'), duration=0.5)
+        self.sweep(self.color, Color('black'), duration=0.5)
         lcd.clear()
         backlight.off()
 
@@ -165,8 +164,7 @@ class Application:
                     result.setdefault(name, {})[family] = iface_spec.get('addr')
         return result
 
-    @staticmethod
-    def sweep(old_color, new_color, duration=1):
+    def sweep(self, old_color, new_color, duration=1):
         """
         Changes the background color of the display to *new_color* (an instance
         of :class:`~colorzero.Color`) with a nice "sweeping" animation from
@@ -185,19 +183,21 @@ class Application:
                     backlight.single_rgb(
                         (5 - led), *color.rgb_bytes, auto_update=False)
                 backlight.update()
-            time.sleep(1 / 30)
+            if self.sweep_event.wait(1 / 30):
+                break
 
     def start_sweep(self, old_color, new_color, *, duration=1):
         self.stop_sweep()
         self.sweep_thread = Thread(
             target=self.sweep, args=(old_color, new_color, duration),
             daemon=True)
+        self.sweep_event.clear()
         self.sweep_thread.start()
 
     def stop_sweep(self):
         if self.sweep_thread is not None:
             self.sweep_event.set()
-            self.sweep_thread.join(1)
+            self.sweep_thread.join(2)
             assert not self.sweep_thread.is_alive()
 
     def refresh(self):
