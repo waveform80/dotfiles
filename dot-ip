@@ -9,6 +9,7 @@ import selectors
 from itertools import tee, cycle
 from collections import deque
 from subprocess import run
+from threading import Thread, Event
 
 import netifaces
 from dothat import lcd, backlight, touch as nav
@@ -89,6 +90,8 @@ class Application:
         self.family = next(iter(self.families))
         self.action = next(iter(self.actions))
         self.color = Color('black')
+        self.sweep_thread = None
+        self.sweep_event = Event()
         backlight.off()
 
         @nav.on(nav.UP)
@@ -131,6 +134,7 @@ class Application:
         """
         Called to close the application down.
         """
+        self.stop_sweep()
         self.sweep(Color('black'), duration=0.5)
         lcd.clear()
         backlight.off()
@@ -161,15 +165,16 @@ class Application:
                     result.setdefault(name, {})[family] = iface_spec.get('addr')
         return result
 
-    def sweep(self, new_color, *, duration=1):
+    @staticmethod
+    def sweep(old_color, new_color, duration=1):
         """
         Changes the background color of the display to *new_color* (an instance
         of :class:`~colorzero.Color`) with a nice "sweeping" animation from
         left to right taking *duration* seconds.
         """
         anim = (
-            [self.color] * 6 +
-            list(self.color.gradient(new_color, steps=math.ceil(duration * 30))) +
+            [old_color] * 6 +
+            list(old_color.gradient(new_color, steps=math.ceil(duration * 30))) +
             [new_color] * 6
         )
         queue = deque(maxlen=6)
@@ -181,7 +186,19 @@ class Application:
                         (5 - led), *color.rgb_bytes, auto_update=False)
                 backlight.update()
             time.sleep(1 / 30)
-        self.color = new_color
+
+    def start_sweep(self, old_color, new_color, *, duration=1):
+        self.stop_sweep()
+        self.sweep_thread = Thread(
+            target=self.sweep, args=(old_color, new_color, duration),
+            daemon=True)
+        self.sweep_thread.start()
+
+    def stop_sweep(self):
+        if self.sweep_thread is not None:
+            self.sweep_event.set()
+            self.sweep_thread.join(1)
+            assert not self.sweep_thread.is_alive()
 
     def refresh(self):
         """
@@ -204,7 +221,8 @@ class Application:
             self._show_text(
                 f'{self.iface}:{self.families[self.family]}\n{address}')
         if self.color != new_color:
-            self.sweep(new_color, duration=0.5)
+            self.start_sweep(self.color, new_color, duration=0.5)
+            self.color = new_color
 
     def _show_text(self, text):
         lcd.clear()
