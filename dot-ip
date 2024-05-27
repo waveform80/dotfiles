@@ -3,11 +3,12 @@
 import os
 import sys
 import math
-import time
 import signal
 import selectors
 from itertools import tee, cycle
 from collections import deque
+from subprocess import run
+from threading import Thread, Event
 
 import netifaces
 from dothat import lcd, backlight, touch as nav
@@ -78,11 +79,18 @@ class Application:
         netifaces.AF_INET6: 'IP6',
         netifaces.AF_LINK: 'MAC',
     }
+    actions = {
+        'off': 'Power Off',
+        'reboot': 'Reboot',
+    }
 
     def __init__(self):
         self.iface = next(iter(self.interfaces))
         self.family = next(iter(self.families))
+        self.action = next(iter(self.actions))
         self.color = Color('black')
+        self.sweep_thread = None
+        self.sweep_event = Event()
         backlight.off()
 
         @nav.on(nav.UP)
@@ -97,23 +105,36 @@ class Application:
 
         @nav.on(nav.LEFT)
         def handle_left(ch, evt):
-            self.family = prior_key(self.family, self.families)
+            if self.iface == 'ctrl':
+                self.action = prior_key(self.action, self.actions)
+            else:
+                self.family = prior_key(self.family, self.families)
             self.refresh()
 
         @nav.on(nav.RIGHT)
         def handle_right(ch, evt):
-            self.family = next_key(self.family, self.families)
+            if self.iface == 'ctrl':
+                self.action = next_key(self.action, self.actions)
+            else:
+                self.family = next_key(self.family, self.families)
             self.refresh()
 
         @nav.on(nav.BUTTON)
         def handle_btn(ch, evt):
-            self.refresh()
+            if self.iface == 'ctrl':
+                run({
+                    'off': ['poweroff'],
+                    'reboot': ['reboot'],
+                }[self.action])
+            else:
+                self.refresh()
 
     def close(self):
         """
         Called to close the application down.
         """
-        self.sweep(Color('black'), duration=0.5)
+        self.stop_sweep()
+        self.sweep(self.color, Color('black'), duration=0.5)
         lcd.clear()
         backlight.off()
 
@@ -132,24 +153,26 @@ class Application:
                     netifaces.AF_INET6: '::1'},
              'eth0': {netifaces.AF_INET: '192.168.0.1'}}
         """
-        return {
-            name: {
-                family: iface_spec.get('addr')
-                for family in self.families
-                for iface_spec in netifaces.ifaddresses(name).get(family, [])
-            }
-            for name in sorted(netifaces.interfaces())
-        }
+        result = {'ctrl': {}}
+        for name in sorted(netifaces.interfaces()):
+            try:
+                iface = netifaces.ifaddresses(name)
+            except ValueError:
+                continue
+            for family in self.families:
+                for iface_spec in iface.get(family, []):
+                    result.setdefault(name, {})[family] = iface_spec.get('addr')
+        return result
 
-    def sweep(self, new_color, *, duration=1):
+    def sweep(self, old_color, new_color, duration=1):
         """
         Changes the background color of the display to *new_color* (an instance
         of :class:`~colorzero.Color`) with a nice "sweeping" animation from
         left to right taking *duration* seconds.
         """
         anim = (
-            [self.color] * 6 +
-            list(self.color.gradient(new_color, steps=math.ceil(duration * 30))) +
+            [old_color] * 6 +
+            list(old_color.gradient(new_color, steps=math.ceil(duration * 30))) +
             [new_color] * 6
         )
         queue = deque(maxlen=6)
@@ -160,25 +183,46 @@ class Application:
                     backlight.single_rgb(
                         (5 - led), *color.rgb_bytes, auto_update=False)
                 backlight.update()
-            time.sleep(1 / 30)
-        self.color = new_color
+            if self.sweep_event.wait(1 / 30):
+                break
+
+    def start_sweep(self, old_color, new_color, *, duration=1):
+        self.stop_sweep()
+        self.sweep_thread = Thread(
+            target=self.sweep, args=(old_color, new_color, duration),
+            daemon=True)
+        self.sweep_event.clear()
+        self.sweep_thread.start()
+
+    def stop_sweep(self):
+        if self.sweep_thread is not None:
+            self.sweep_event.set()
+            self.sweep_thread.join(2)
+            assert not self.sweep_thread.is_alive()
 
     def refresh(self):
         """
         Refresh the display to show the current :attr:`iface` and
         :attr:`family`.
         """
-        ifaces = self.interfaces
-        backlight.set_graph(0)
-        try:
-            address = ifaces[self.iface][self.family]
-            new_color = Color('#00c000')
-        except KeyError:
-            address = 'No address!'
-            new_color = Color('#c04000')
-        self._show_text(f'{self.iface}:{self.families[self.family]}\n{address}')
+        if self.iface == 'ctrl':
+            new_color = Color('#0000c0')
+            self._show_text(
+                f'{self.iface}:\n{self.actions[self.action]}')
+        else:
+            ifaces = self.interfaces
+            backlight.set_graph(0)
+            try:
+                address = ifaces[self.iface][self.family]
+                new_color = Color('#00c000')
+            except KeyError:
+                address = 'No address!'
+                new_color = Color('#c04000')
+            self._show_text(
+                f'{self.iface}:{self.families[self.family]}\n{address}')
         if self.color != new_color:
-            self.sweep(new_color, duration=0.5)
+            self.start_sweep(self.color, new_color, duration=0.5)
+            self.color = new_color
 
     def _show_text(self, text):
         lcd.clear()
