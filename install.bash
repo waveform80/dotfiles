@@ -134,6 +134,7 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/merge "$HOME"/.local/bin/merge
             ln -sf "$HOME"/dotfiles/enable-proposed "$HOME"/.local/bin/enable-proposed
             ln -sf "$HOME"/dotfiles/sync-images "$HOME"/.local/bin/sync-images
+            ln -sf "$HOME"/dotfiles/get-patches "$HOME"/.local/bin/get-patches
             ;;
     esac
 }
