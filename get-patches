@@ -1,162 +1,60 @@
 #!/usr/bin/python3
 
 """
-A utility for retrieving all patches from a launchpad bug.
+A simple script for bulk retrieval of attachments from Launchpad bugs.
 """
 
-import io
 import os
 import sys
 import argparse
-import textwrap
-from html.parser import HTMLParser
-from urllib.request import urlopen, Request
-from urllib.error import HTTPError
-from collections import namedtuple
+from pathlib import Path
 from shutil import copyfileobj
+from urllib.request import urlopen
+
+from launchpadlib.launchpad import Launchpad
 
 
 def main(args=None):
-    if sys.version_info < (3, 7):
-        raise SystemExit('This script requires Python 3.7 or later')
-
-    if int(os.environ.get('TEST', '0')):
-        # To run the test suite (via the built-in doctest module):
-        #
-        #   $ TEST=1 ./refresh_os_list
-        #
-        # Optionally, if you have python3-coverage installed, and you want to
-        # track the coverage of the test suite you can further do:
-        #
-        #   $ TEST=1 python3-coverage run --source=./ ./refresh_os_list
-        #   $ python3-coverage report --show-missing
-        return _test_main()
-
     parser = argparse.ArgumentParser(
-        description=textwrap.dedent(__doc__),
+        description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        'bug_number', type=int,
-        help="The number of the bug to retrieve patches from")
+        'bug', type=int,
+        help="The ID of the bug to retrieve all patches or attachments from")
+    parser.add_argument(
+        '--type', choices=('patches', 'all'), default='patches',
+        help="The type of attachments to retrieve; defaults to %(default)s")
+    parser.add_argument(
+        '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
+        help=argparse.SUPPRESS)
     config = parser.parse_args(args)
+    config.filter = {
+        'patches': lambda a: a.type == 'Patch',
+        'all':     lambda a: True,
+    }[config.type]
 
     try:
-        get_patches(config.bug_number)
-    except Exception as e:
-        # If you want full stack traces just run me like this:
-        #
-        #     $ DEBUG=1 ./refresh_os_list blah
+        lp = Launchpad.login_anonymously(
+            'get-patches', 'production', str(config.cache_dir),
+            version='devel')
+        bug = lp.bugs[config.bug]
+        for attachment in bug.attachments_collection:
+            if config.filter(attachment):
+                print(f'Downloading {attachment.title}', flush=True)
+                with (
+                    urlopen(attachment.data_link) as source,
+                    open(attachment.title, 'wb') as target
+                ):
+                    copyfileobj(source, target)
+    except Exception as err:
         if int(os.environ.get('DEBUG', '0')):
             raise
         else:
-            print(str(e), file=sys.stderr)
-            sys.exit(1)
+            print(str(err), file=sys.stderr)
+            return 1
 
-
-class ListParser(HTMLParser):
-    """
-    A sub-class of :class:`html.parser.HTMLParser` that finds all <a>
-    tags (indirectly) under the a <ul> or <ol> with the specified "id"
-    attribute.
-
-    It stores the content of the <a> tags as a mapping from their textual
-    content (assumed to be a filename) to their URL. All data is represented
-    as strings, as as ``None`` for entries that lack an "href" attribute.
-    For example::
-
-        >>> html = '''
-        ... <html><body><table>
-        ... <p>Patches:
-        ... <ul id="patches">
-        ... <li><a href="/files/foo.patch">foo.patch</a></li>
-        ... <li><a href="/files/bar.patch">bar.patch</a></li>
-        ... <li><a>baz.patch</a></li>
-        ... </ul></body></html>
-        ... '''
-        >>> parser = ListParser(list_id='patches')
-        >>> parser.feed(html)
-        >>> parser.files
-        {'foo.patch': '/files/foo.patch', 'bar.patch': '/files/bar.patch',
-        'baz.patch': None}
-
-    .. note::
-
-        As this is a subclass of an HTML parser (as opposed to an XML parser)
-        there is no requirement that the input is strictly valid XML, hence the
-        lack of a closing ``<p>`` tag above is acceptable.
-    """
-    def __init__(self, list_id=None):
-        super().__init__(convert_charrefs=True)
-        self.state = 'html'
-        self.list_id = list_id
-        self.div_tag = self.list_tag = self.filename = self.fileurl = None
-        self.files = {}
-
-    def handle_starttag(self, tag, attrs):
-        if self.state == 'html': # tag can be anything, not just <div>
-            for name, value in attrs:
-                if name == 'id' and value == self.list_id:
-                    self.state = 'div'
-                    self.div_tag = tag
-                    break
-        elif self.state == 'div' and tag in ('ol', 'ul'):
-            self.state = 'list'
-            self.list_tag = tag
-        elif self.state == 'list' and tag == 'li':
-            for name, value in attrs:
-                if name == 'class' and 'download-attachment' in value.split():
-                    self.state = 'li'
-                    break
-        elif self.state == 'li' and tag == 'a':
-            for name, value in attrs:
-                if name == 'class' and 'action-icon' in value.split():
-                    return
-            self.state = 'a'
-            self.filename = ''
-            for name, value in attrs:
-                if name == 'href':
-                    self.fileurl = value
-                    break
-
-    def handle_data(self, data):
-        if self.state == 'a':
-            self.filename += data
-
-    def handle_endtag(self, tag):
-        if self.state == 'div' and tag == self.div_tag:
-            self.state = 'html'
-            self.div_tag = None
-        if self.state == 'list' and tag == self.list_tag:
-            self.state = 'div'
-            self.list_tag = None
-        elif self.state == 'li' and tag == 'li':
-            self.state = 'list'
-        elif self.state == 'a' and tag == 'a':
-            self.files[self.filename] = self.fileurl
-            self.filename = self.fileurl = None
-            self.state = 'li'
-
-
-def get_patches(bug):
-    url = f'https://bugs.launchpad.net/bugs/{bug}'
-    parser = ListParser(list_id='portlet-patches')
-    try:
-        with urlopen(url) as page:
-            while True:
-                buf = page.read(1024).decode('utf-8')
-                if not buf:
-                    break
-                parser.feed(buf)
-    except HTTPError:
-        raise ValueError(
-            f'unable to retrieve bug {bug}; are you sure the number '
-            'is correct?')
-    for filename, url in parser.files.items():
-        print(f'Downloading {filename}')
-        with urlopen(url) as source:
-            with open(filename, 'xb') as target:
-                copyfileobj(source, target)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
