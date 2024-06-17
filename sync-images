@@ -316,7 +316,10 @@ def get_index(url):
     if 'SHA256SUMS' in entries:
         with urlopen(url + 'SHA256SUMS') as hashes:
             for line in hashes:
-                cksum, name = line.decode('utf-8').strip().split(None, 1)
+                line = line.decode('utf-8').strip()
+                if not line:
+                    continue
+                cksum, name = line.split(None, 1)
                 cksum = cksum.strip().lower()
                 if name.startswith('*'):
                     name = name[1:]
