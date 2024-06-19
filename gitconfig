@@ -4,8 +4,13 @@
 	name = Dave Jones
 [push]
 	default = current
+	gpgSign = if-asked
 [pull]
 	ff = only
+[commit]
+	gpgSign = true
+[tag]
+	gpgSign = true
 [pager]
 	log = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
 	show = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
