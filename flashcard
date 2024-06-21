@@ -70,19 +70,21 @@ fix_config() {
     if [ -e "$boot_part" ]; then
         mount "$boot_part" "$boot_mount"
         if [ -e "$boot_mount"/user-data ]; then
-            "$my_path"/customizecard \
-                --hostname miss-piggy \
-                --username ubuntu \
-                --password raspberry \
-                --no-expire \
-                --kb-model pc105 \
-                --kb-layout gb \
-                --kb-options ctrl:nocaps \
-                --ssh-import-id lp:waveform \
-                --apt-cache http://acng.waveform.org.uk:3142 \
-                --update --upgrade \
-                --install avahi-daemon \
-                "$boot_mount"
+            if confirm "Customize cloud-init seed [y/n] "; then
+                "$my_path"/customizecard \
+                    --hostname miss-piggy \
+                    --username ubuntu \
+                    --password raspberry \
+                    --no-expire \
+                    --kb-model pc105 \
+                    --kb-layout gb \
+                    --kb-options ctrl:nocaps \
+                    --ssh-import-id lp:waveform \
+                    --apt-cache http://acng.waveform.org.uk:3142 \
+                    --update --upgrade \
+                    --install avahi-daemon \
+                    "$boot_mount"
+            fi
         fi
         if [ -e "$boot_mount"/config.txt ]; then
             if ! grep "^disable_overscan=1" "$boot_mount"/config.txt >/dev/null; then
