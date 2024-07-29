@@ -340,13 +340,13 @@ start_() {
 	fi
 
 	echo "Creating new tags and branches:"
-	git tag old/ubuntu origin/ubuntu/devel
+	git tag old/ubuntu origin/ubuntu/devel -m "Old Ubuntu version"
 	echo "	old/ubuntu (tag) pointing at import/${old_ubuntu}"
-	git tag old/debian "$merge_base"
+	git tag old/debian "$merge_base" -m "Old Debian version"
 	echo "	old/debian (tag) pointing at import/${old_debian}"
-	git tag new/debian "$merge_target"
+	git tag new/debian "$merge_target" -m "New Debian version (merge base)"
 	echo "	new/debian (tag) pointing at import/${new_debian}"
-	tag_exists start/"$old_ubuntu_tag" || git tag start/"$old_ubuntu_tag" old/ubuntu
+	tag_exists start/"$old_ubuntu_tag" || git tag start/"$old_ubuntu_tag" old/ubuntu -m "Merge start point for $old_ubuntu_tag"
 	if tag_exists merge/"$old_ubuntu_tag"; then
 		git tag -d split/"$old_ubuntu_tag" 2>/dev/null || true
 		# Carry over split from old merge to new
@@ -354,7 +354,7 @@ start_() {
 		git branch split merge/"$old_ubuntu_tag"
 		if git diff --quiet old/ubuntu merge/"$old_ubuntu_tag" --; then
 			echo "	split/$old_ubuntu_tag (tag) pointing at merge/$old_ubuntu_tag"
-			git tag split/"$old_ubuntu_tag" merge/"$old_ubuntu_tag"
+			git tag split/"$old_ubuntu_tag" merge/"$old_ubuntu_tag" -m "Merge split point for $old_ubuntu_tag"
 			if tag_exists logical/"$old_ubuntu_tag"; then
 				echo "	logical (branch) pointing at logical/$old_ubuntu_tag"
 				git branch logical logical/"$old_ubuntu_tag"
@@ -403,7 +403,7 @@ split() {
 	old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
 
 	echo "Creating new tags and branches:"
-	git tag split/"$old_ubuntu_tag"
+	git tag split/"$old_ubuntu_tag" -m "Merge split point for $old_ubuntu_tag"
 	echo "	split/$old_ubuntu_tag (tag) pointing at HEAD"
 	git checkout -b logical
 	echo "	logical (branch) potining at HEAD"
@@ -451,7 +451,7 @@ logical() {
 	old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
 
 	echo "Creating new tags and branches:"
-	git tag logical/"$old_ubuntu_tag"
+	git tag logical/"$old_ubuntu_tag" -m "Merge logical split for $old_ubuntu_tag"
 	echo "	logical/$old_ubuntu_tag (tag) pointing at HEAD"
 	git checkout -b merge
 	echo "	merge pointing at HEAD"
@@ -471,7 +471,7 @@ review() {
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
 
-	git tag logical/"$new_ubuntu_tag"
+	git tag logical/"$new_ubuntu_tag" -m "Merge logical split for $old_ubuntu_tag"
 	echo "Created logical/$new_ubuntu_tag pointing at HEAD"
 
 	whatnow
@@ -517,7 +517,7 @@ rebased() {
 		git commit -m metadata -- debian/control
 	fi
 	git commit -m reconstruct-changelog -- debian/changelog
-	git tag candidate/"$new_ubuntu_tag"
+	git tag candidate/"$new_ubuntu_tag" -m "Merge candidate for $new_ubuntu_tag"
 	echo "Created candidate/$new_ubuntu_tag pointing at HEAD"
 
 	whatnow
@@ -535,7 +535,7 @@ rebased_again() {
 	descends_from new/debian
 	if tag_exists merge/"$new_ubuntu_tag"; then
 		if ! tag_exists candidate/"$new_ubuntu_tag"; then
-			git tag candidate/"$new_ubuntu_tag" merge/"$new_ubuntu_tag"
+			git tag candidate/"$new_ubuntu_tag" merge/"$new_ubuntu_tag" -m "Merge finish for $new_ubuntu_tag"
 		fi
 		if tag_exists candidate/"$new_ubuntu_tag"; then
 			if is_exactly candidate/"$new_ubuntu_tag" merge/"$new_ubuntu_tag"; then
@@ -823,7 +823,7 @@ finish() {
 	work_dir_clean
 	descends_from "candidate/$new_ubuntu_tag"
 
-	git tag merge/"$new_ubuntu_tag"
+	git tag merge/"$new_ubuntu_tag" -m "Merge finish for $new_ubuntu_tag"
 	echo "Created merge/$new_ubuntu_tag pointing at HEAD"
 
 	echo "Generating debdiff"
@@ -931,6 +931,7 @@ patches_apply() {
 
 
 fix_tag() {
+	local msg
 	local tag="$1"
 
 	if ! tag_exists "$tag"; then
@@ -944,8 +945,9 @@ fix_tag() {
 		return 0
 	fi
 	if confirm "Move $tag to HEAD? [y/N] "; then
+		msg=$(git tag -n1 -l "$tag" | sed -e "s%^$tag\s*%%")
 		git tag -d "$tag"
-		git tag "$tag"
+		git tag "$tag" -m "$msg"
 	else
 		return 1
 	fi
