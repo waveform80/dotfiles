@@ -461,12 +461,13 @@ logical() {
 
 
 review() {
-	local new_debian new_ubuntu new_ubuntu_tag old_ubuntu_tag
+	local new_debian new_ubuntu new_ubuntu_tag old_ubuntu old_ubuntu_tag
 
 	work_dir_clean
 	descends_from new/debian
 	patches_apply
 
+	old_ubuntu=$(get_version old/ubuntu)
 	new_debian=$(get_version new/debian)
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
