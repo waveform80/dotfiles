@@ -461,7 +461,7 @@ logical() {
 
 
 review() {
-	local new_debian new_ubuntu new_ubuntu_tag
+	local new_debian new_ubuntu new_ubuntu_tag old_ubuntu_tag
 
 	work_dir_clean
 	descends_from new/debian
@@ -470,6 +470,7 @@ review() {
 	new_debian=$(get_version new/debian)
 	new_ubuntu=${new_debian}ubuntu1
 	new_ubuntu_tag=$(version_to_tag "$new_ubuntu")
+	old_ubuntu_tag=$(version_to_tag "$old_ubuntu")
 
 	git tag logical/"$new_ubuntu_tag" -m "Merge logical split for $old_ubuntu_tag"
 	echo "Created logical/$new_ubuntu_tag pointing at HEAD"
