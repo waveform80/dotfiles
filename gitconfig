@@ -15,6 +15,9 @@
 	log = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
 	show = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
 	diff = perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -RFX
+[diff]
+	colorMoved = dimmed-zebra
+	colorMovedWS = allow-indentation-change
 ;[diff "image"]
 ;	command = ~/dotfiles/gitimgdiff
 [core]
