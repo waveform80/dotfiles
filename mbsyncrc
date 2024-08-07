@@ -1,6 +1,6 @@
 # Global defaults
-Create Slave
-Remove Slave
+Create Near
+Remove Near
 Expunge Both
 SyncState *
 
@@ -37,11 +37,11 @@ Path ~/.mail/work/
 Inbox ~/.mail/work/INBOX
 
 Channel home
-Master :gmail-home:
-Slave :local-home:
+Far :gmail-home:
+Near :local-home:
 Patterns * !.notmuch*
 
 Channel work
-Master :gmail-work:
-Slave :local-work:
+Far :gmail-work:
+Near :local-work:
 Patterns * !.notmuch*
