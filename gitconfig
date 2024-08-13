@@ -31,6 +31,8 @@
 	insteadof = lp:
 [url "git@github.com:"]
 	insteadof = gh:
+[url "git@gitlab.com:"]
+	insteadof = gl:
 [url "git@salsa.debian.org:"]
 	insteadof = deb:
 [includeIf "gitdir:~/dotfiles/"]
