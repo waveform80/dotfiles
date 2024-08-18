@@ -1,5 +1,5 @@
 export DEFAULT_USER=dave
-export PATH="$PATH":"$HOME"/.local/bin:/snap/bin
+export PATH="$PATH":"$HOME"/.local/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export EDITOR=vim
 export WORKON_HOME="$HOME"/envs
