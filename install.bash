@@ -152,6 +152,13 @@ task_travel() {
             echo bluez dbus python3-netifaces
             if grep -q "Raspberry Pi" /proc/cpuinfo; then
                 echo python3-colorzero python3-dot3k
+                if [ "$DISTRO" = "Ubuntu" ]; then
+                    if [[ "$RELEASE" < "24.04" ]]; then
+                        echo python3-rpi.gpio
+                    else
+                        echo python3-rpi-lgpio
+                    fi
+                fi
             fi
             ;;
         preinst)
