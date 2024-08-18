@@ -416,17 +416,15 @@ EOF
             fi
             ;;
         postinst)
-            [ -e /etc/kmscon/kmscon.conf ] && sudo sed -i \
-                -e '/#font-size=/ s/.*/font-size=14/' \
-                -e '/#font-name=/ s/.*/font-name=Ubuntu Mono/' \
-                /etc/kmscon/kmscon.conf
-            cat << EOF
-Installed in experimental mode: tty1 remains standard getty; all other ttys
-will auto-launch kmscon. Once you are satisfied things are working, switch tty1
-to kmscon like so:
+            sudo mkdir -p /etc/kmscon
+            cat << EOF | sudo sh -c 'cat >> /etc/kmscon/kmscon.conf'
+xkb-repeat-delay=200
+xkb-repeat-rate=25
 
-sudo systemctl disable getty@tty1
-sudo systemctl enable kmsconvt@tty1
+drm
+
+font-name=Ubuntu Mono
+font-size=14
 EOF
             REBOOT_REQUIRED=1
             ;;
@@ -614,13 +612,11 @@ EOF
                     /etc/default/keyboard
             fi
             if [ -e /etc/kmscon/kmscon.conf ]; then
-                sudo sed -i \
-                    -e '/#xkb-layout=/ s/.*/xkb-layout=gb/' \
-                    -e '/#xkb-options=/ s/.*/xkb-options=ctrl:nocaps/' \
-                    -e '/#xkb-repeat-delay=/ s/.*/xkb-repeat-delay=200/' \
-                    -e '/#xkb-repeat-rate=/ s/.*/xkb-repeat-rate=25/' \
-                    -e '/#no-compose/ s/.*/compose/' \
-                    /etc/kmscon/kmscon.conf
+                cat << EOF | sudo sh -c 'cat >> /etc/kmscon/kmscon.conf'
+xkb-model=pc105
+xkb-layout=gb
+xkb-options=ctrl:nocaps
+EOF
                 REBOOT_REQUIRED=1
             fi
             if [ -x /usr/bin/gsettings ]; then
