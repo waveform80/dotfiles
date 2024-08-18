@@ -163,8 +163,8 @@ task_travel() {
             ln -sf "$HOME"/dotfiles/setfor "$HOME"/.local/bin/setfor
             ln -sf "$HOME"/dotfiles/bt-tether "$HOME"/.local/bin/bt-tether
             if grep -q "Raspberry Pi" /proc/cpuinfo; then
-                ln -sf "$HOME"/dotfiles/dot-ip /usr/local/bin/dot-ip
-                ln -sf "$HOME"/dotfiles/dot-ip.service /etc/systemd/system/dot-ip.service
+                sudo ln -sf "$HOME"/dotfiles/dot-ip /usr/local/bin/dot-ip
+                sudo ln -sf "$HOME"/dotfiles/dot-ip.service /etc/systemd/system/dot-ip.service
                 sudo systemctl daemon-reload
                 # NOTE: dot-ip service is not enabled automatically; setfor
                 # handles this when required
