@@ -37,7 +37,7 @@ main() {
     local archive
 
     if [ $# -gt 1 ]; then
-        echo "Usage: ${0##*/} [image-file-or-archive]" >&2
+        echo "Usage: ${0##*/} [image-file|archive|device]" >&2
         exit 2
     fi
 
@@ -50,6 +50,8 @@ main() {
         info "Waiting for SD card... "
         DEVICE=$(wait_for_sd)
         echo "Found $DEVICE" >&2
+    elif [ "${1%/*}" = "/dev" ]; then
+        DEVICE="$1"
     else
         archive="$1"
         if [ "${archive##*.}" = "img" ]; then
