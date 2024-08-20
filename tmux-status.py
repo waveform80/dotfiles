@@ -3,6 +3,7 @@
 import os
 import math
 import time
+import struct
 import pickle
 import tempfile
 import datetime as dt
@@ -10,6 +11,10 @@ import subprocess as sp
 from pathlib import Path
 from getpass import getuser
 from functools import lru_cache
+
+
+def percent(value, min_value, max_value):
+    return int(100 * (value - min_value) / (max_value - min_value))
 
 
 def format_decimal_size(size, suffixes=('', 'k', 'M', 'G', 'T', 'P'),
@@ -99,7 +104,11 @@ class Stat:
 
     def _format_value(self, value):
         if value:
-            return f'#[fg={self.bg}]#[fg={self.fg},bg={self.bg}] {value or ""} '
+            prefix = suffix = ' '
+            return (
+                f'#[fg={self.bg}]#[fg={self.fg},bg={self.bg}]'
+                f'{prefix}{value or ""}{suffix}'
+            )
         else:
             return ''
 
@@ -192,7 +201,7 @@ class LoadStat(Stat):
     name = 'loadavg'
     timeout = 2
     fg = 'black'
-    bg = 'brightyellow'
+    bg = 'green'
 
     def _format_value(self, value):
         return super()._format_value(f'{value:.2f}')
@@ -205,7 +214,7 @@ class CPUTempStat(Stat):
     name = 'cputemp'
     timeout = 3
     fg = 'black'
-    bg = 'brightred'
+    bg = '#ffdd00'
 
     def _format_value(self, value):
         return super()._format_value(f'{value:.0f}°C')
@@ -216,6 +225,45 @@ class CPUTempStat(Stat):
                 return int(f.read()) / 1000
         except FileNotFoundError:
             raise ValueError('no thermal zone')
+
+
+class PiBatteryStat(Stat):
+    name = 'battery'
+    timeout = 31
+    fg = 'white'
+    bg = '#ff6600'
+    addr = 0x36
+    register = 2
+    scale = 78.125 / 1_000_000
+
+    def _format_value(self, value):
+        volts, capacity = value
+        return super()._format_value(f'{volts:.1f}V#[bright]{capacity}%#[nobright]')
+
+    def _raw_value(self):
+        try:
+            from smbus import SMBus
+        except ImportError:
+            try:
+                from smbus2 import SMBus
+            except ImportError:
+                raise ValueError('no I2C module')
+        try:
+            bus = SMBus(1)
+        except OSError:
+            raise ValueError('no I2C bus')
+        try:
+            try:
+                chip = bus.read_byte(self.addr)
+            except OSError:
+                raise ValueError('no battery chip found')
+            value = bus.read_word_data(self.addr, self.register)
+            # Byte-swap big-endian value
+            value, = struct.unpack('<H', struct.pack('>H', value))
+            volts = value * self.scale
+            return volts, percent(volts, 3.5, 4.2)
+        finally:
+            bus.close()
 
 
 class NetStat(Stat):
@@ -242,7 +290,8 @@ class StorageStat(Stat):
 
 class MemStat(StorageStat):
     name = 'mem'
-    bg = 'green'
+    fg = 'black'
+    bg = 'cyan'
 
     def _raw_value(self):
         values = {}
@@ -264,8 +313,7 @@ class MemStat(StorageStat):
                 return ''
         if not total:
             raise ValueError('no memory found?!')
-        used = 100 - int(free * 100 / total)
-        return total, used
+        return total, 100 - percent(free, 0, total)
 
 
 class SwapStat(StorageStat):
@@ -289,8 +337,7 @@ class SwapStat(StorageStat):
                 return ''
         if not total:
             raise ValueError('no swap found')
-        used = 100 - int(free * 100 / total)
-        return total, used
+        return total, 100 - percent(free, 0, total)
 
 
 class DiskStat(StorageStat):
@@ -302,14 +349,13 @@ class DiskStat(StorageStat):
         total = stat.f_blocks * stat.f_frsize
         if not stat.f_blocks:
             raise ValueError('root file-system is 0 blocks big?!')
-        used = 100 - int(stat.f_bfree * 100 / stat.f_blocks)
-        return total, used
+        return total, 100 - percent(stat.f_bfree, 0, stat.f_blocks)
 
 
 if __name__ == '__main__':
     stats = (
         UpdatesStat(),
-        UptimeStat(),
+        PiBatteryStat(),
         CPUTempStat(),
         LoadStat(),
         MemStat(),
