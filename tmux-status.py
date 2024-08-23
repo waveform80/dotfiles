@@ -227,8 +227,28 @@ class CPUTempStat(Stat):
             raise ValueError('no thermal zone')
 
 
+class LaptopBatteryStat(Stat):
+    name = 'laptop_battery'
+    timeout = 31
+    fg = 'white'
+    bg = '#ff6600'
+
+    def _format_value(self, value):
+        volts, capacity = value
+        return super()._format_value(f'{volts:.1f}V#[bright]{capacity}%#[nobright]')
+
+    def _raw_value(self):
+        bat_path = Path('/sys/class/power_supply/BAT1')
+        try:
+            capacity = int((bat_path / 'capacity').read_text())
+            volts = int((bat_path / 'voltage_now').read_text()) / 1_000_000
+        except FileNotFoundError:
+            raise ValueError('no battery found')
+        return volts, capacity
+
+
 class PiBatteryStat(Stat):
-    name = 'battery'
+    name = 'pi_battery'
     timeout = 31
     fg = 'white'
     bg = '#ff6600'
@@ -355,6 +375,7 @@ class DiskStat(StorageStat):
 if __name__ == '__main__':
     stats = (
         UpdatesStat(),
+        LaptopBatteryStat(),
         PiBatteryStat(),
         CPUTempStat(),
         LoadStat(),
