@@ -220,11 +220,13 @@ class CPUTempStat(Stat):
         return super()._format_value(f'{value:.0f}°C')
 
     def _raw_value(self):
-        try:
-            with open('/sys/class/thermal/thermal_zone0/temp') as f:
-                return int(f.read()) / 1000
-        except FileNotFoundError:
-            raise ValueError('no thermal zone')
+        for path in Path('/sys/class/thermal').glob('thermal_zone*'):
+            try:
+                if (path / 'type').read_text().rstrip() in ('TCPU', 'cpu-thermal'):
+                    return int((path / 'temp').read_text()) / 1000
+            except FileNotFoundError:
+                pass
+        raise ValueError('no thermal zone')
 
 
 class LaptopBatteryStat(Stat):
