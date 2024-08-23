@@ -13,6 +13,12 @@ from getpass import getuser
 from functools import lru_cache
 
 
+def bar(value):
+    bars = ' ▁▂▃▄▅▆▇█'
+    value = max(0, min(len(bars) - 1, (len(bars) * value) // 100))
+    return bars[value]
+
+
 def percent(value, min_value, max_value):
     return int(100 * (value - min_value) / (max_value - min_value))
 
@@ -204,7 +210,8 @@ class LoadStat(Stat):
     bg = 'green'
 
     def _format_value(self, value):
-        return super()._format_value(f'{value:.2f}')
+        pct = percent(value, 0, os.cpu_count())
+        return super()._format_value(f'{value:.2f}{bar(pct)}')
 
     def _raw_value(self):
         return os.getloadavg()[0]
@@ -237,7 +244,7 @@ class LaptopBatteryStat(Stat):
 
     def _format_value(self, value):
         volts, capacity = value
-        return super()._format_value(f'{volts:.1f}V#[bright]{capacity}%#[nobright]')
+        return super()._format_value(f'{volts:.1f}V#[bright]{bar(capacity)}#[nobright]')
 
     def _raw_value(self):
         bat_path = Path('/sys/class/power_supply/BAT1')
@@ -260,7 +267,7 @@ class PiBatteryStat(Stat):
 
     def _format_value(self, value):
         volts, capacity = value
-        return super()._format_value(f'{volts:.1f}V#[bright]{capacity}%#[nobright]')
+        return super()._format_value(f'#[bright]{volts:.1f}V{bar(capacity)}#[nobright]')
 
     def _raw_value(self):
         try:
@@ -302,12 +309,12 @@ class NetStat(Stat):
 class StorageStat(Stat):
     name = 'storage'
     timeout = 13
-    fg = 'white'
+    fg = 'brightwhite'
     bg = 'black'
 
     def _format_value(self, value):
         total, used = value
-        return super()._format_value(f'{format_binary_size(total)}#[bright]{used}%#[nobright]')
+        return super()._format_value(f'{format_binary_size(total)}{bar(used)}')
 
 
 class MemStat(StorageStat):
@@ -332,7 +339,7 @@ class MemStat(StorageStat):
                         free = values['MemFree:'] + values['Cached:']
                         break
             else:
-                return ''
+                raise ValueError('MemFree and MemTotal not found')
         if not total:
             raise ValueError('no memory found?!')
         return total, 100 - percent(free, 0, total)
@@ -356,7 +363,7 @@ class SwapStat(StorageStat):
                         free = values['SwapFree:']
                         break
             else:
-                return ''
+                raise ValueError('SwapTotal and SwapFree not found')
         if not total:
             raise ValueError('no swap found')
         return total, 100 - percent(free, 0, total)
