@@ -37,22 +37,24 @@ uncomment() {
 case "${1:-}" in
     -h|--help)
         cat << EOF >& 2
-Set your Pi or laptop for sprint or home environments
+Set your Pi or laptop for away or home environments
 
-usage: setfor <sprint|home>
+usage: setfor <away|home>
 EOF
         exit 0
         ;;
 
-    sprint)
+    away)
         comment 'leela:' /etc/fstab
         comment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
-        comment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
         comment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
+        for src in $(schroot -l --all-source-chroots); do
+            schroot -u root -d / -c $src -- \
+                sed -i -E -e '/^ *Acquire/ s/^ */#/' \
+                /etc/apt/apt.conf.d/99mk-sbuild-proxy
+        done
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
-            if sudo systemctl enable dot-ip.service; then
-                echo "Replace Fan-shim with Display-o-Tron"
-            fi
+            comment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
             sudo systemctl stop nut-monitor.service || true
             sudo systemctl disable nut-monitor.service || true
         fi
@@ -61,12 +63,14 @@ EOF
     home)
         uncomment 'leela:' /etc/fstab
         uncomment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
-        uncomment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
         uncomment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
+        for src in $(schroot -l --all-source-chroots); do
+            schroot -u root -d / -c $src -- \
+                sed -i -E -e '/^#+ *Acquire/ s/^#+ *//' \
+                /etc/apt/apt.conf.d/99mk-sbuild-proxy
+        done
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
-            if sudo systemctl disable dot-ip.service; then
-                echo "Replace Display-o-Tron with Fan-shim"
-            fi
+            uncomment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
             sudo systemctl enable nut-monitor.service || true
         fi
         ;;
