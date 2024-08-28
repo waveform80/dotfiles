@@ -20,7 +20,7 @@ launch_shell() {
 
 
 clean_all_mounts() {
-    while grep "^$DEVICE" /proc/mounts; do
+    while grep "^$DEVICE\b" /proc/mounts; do
         info "Removing mount at $(grep "^$DEVICE" | cut -f 2 -d " ")"
         umount "$DEVICE"
     done
