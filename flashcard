@@ -4,7 +4,7 @@ set -eu
 
 my_path="$(dirname "$(realpath "$0")")"
 # shellcheck source=functions.bash
-. "$my_path"/functions.bash
+. "$my_path"/../share/dotfiles/functions.bash || . "$my_path"/functions.bash
 
 root_mount=$(mktemp -d)
 boot_mount=$(mktemp -d)

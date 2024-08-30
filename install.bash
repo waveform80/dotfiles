@@ -2,6 +2,8 @@
 
 set -eu
 
+DESTDIR=/usr/local
+CONFDIR=/etc
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-${HOME}/.config}
 DISTRO=$(lsb_release -is)
 RELEASE=$(lsb_release -rs)
@@ -131,10 +133,10 @@ task_pack() {
             ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
             ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
             ln -sf "$HOME"/dotfiles/reportbugrc "$HOME"/.reportbugrc
-            ln -sf "$HOME"/dotfiles/merge "$HOME"/.local/bin/merge
-            ln -sf "$HOME"/dotfiles/enable-proposed "$HOME"/.local/bin/enable-proposed
-            ln -sf "$HOME"/dotfiles/sync-images "$HOME"/.local/bin/sync-images
-            ln -sf "$HOME"/dotfiles/get-patches "$HOME"/.local/bin/get-patches
+            sudo install "$HOME"/dotfiles/merge "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/enable-proposed "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/sync-images "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/get-patches "$DESTDIR"/bin/
             ;;
     esac
 }
@@ -167,14 +169,12 @@ task_travel() {
             fi
             ;;
         postinst)
-            ln -sf "$HOME"/dotfiles/setfor "$HOME"/.local/bin/setfor
-            ln -sf "$HOME"/dotfiles/bt-tether "$HOME"/.local/bin/bt-tether
+            sudo install "$HOME"/dotfiles/setfor "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/bt-tether "$DESTDIR"/bin/
             if grep -q "Raspberry Pi" /proc/cpuinfo; then
-                sudo ln -sf "$HOME"/dotfiles/dot-ip /usr/local/bin/dot-ip
-                sudo ln -sf "$HOME"/dotfiles/dot-ip.service /etc/systemd/system/dot-ip.service
+                sudo install "$HOME"/dotfiles/dot-ip "$DESTDIR"/bin/
+                sudo install --mode 644 "$HOME"/dotfiles/dot-ip.service "$CONFDIR"/systemd/system/
                 sudo systemctl daemon-reload
-                # NOTE: dot-ip service is not enabled automatically; setfor
-                # handles this when required
             fi
             ;;
     esac
@@ -301,9 +301,11 @@ task_fs() {
                 ranger --copy-config=scope
                 sed -i -e 's/\bbat\b/batcat/' "$XDG_CONFIG_HOME"/ranger/scope.sh
             fi
-            ln -sf "$HOME"/dotfiles/flashcard "$HOME"/.local/bin/flashcard
-            ln -sf "$HOME"/dotfiles/customizecard "$HOME"/.local/bin/customizecard
-            ln -sf "$HOME"/dotfiles/mountcard "$HOME"/.local/bin/mountcard
+            sudo install -d "$DESTDIR"/share/dotfiles
+            sudo install -m 644 "$HOME"/dotfiles/functions.bash "$DESTDIR"/share/dotfiles/
+            sudo install "$HOME"/dotfiles/flashcard "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/mountcard "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/customizecard "$DESTDIR"/bin/
             ;;
     esac
 }
@@ -370,7 +372,7 @@ task_music() {
             echo cmus
             ;;
         postinst)
-            ln -sf "$HOME"/dotfiles/sync-dory "$HOME"/.local/bin/sync-dory
+            sudo install "$HOME"/dotfiles/sync-dory "$DESTDIR"/bin/
             ;;
     esac
 }
