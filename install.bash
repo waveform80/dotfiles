@@ -444,6 +444,9 @@ task_tmux() {
             ;;
         packages)
             echo byobu tmux python3-cbor2
+            if grep -q "Raspberry Pi" /proc/cpuinfo; then
+                echo python3-smbus python3-libgpiod
+            fi
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/tmux.conf "$HOME"/.tmux.conf

@@ -16,7 +16,7 @@ import cbor2
 
 def bar(value):
     bars = ' ▁▂▃▄▅▆▇█'
-    value = max(0, min(len(bars) - 1, (len(bars) * value) // 100))
+    value = max(0, min(len(bars) - 1, (len(bars) * int(value)) // 100))
     return bars[value]
 
 
@@ -78,7 +78,7 @@ class StaleError(ValueError):
 
 class Stat:
     timeout = 15
-    fg = 'white'
+    fg = 'brightwhite'
     bg = 'black'
 
     def __str__(self):
@@ -260,15 +260,14 @@ class LaptopBatteryStat(Stat):
 class PiBatteryStat(Stat):
     name = 'pi_battery'
     timeout = 31
-    fg = 'white'
+    fg = 'brightwhite'
     bg = '#ff6600'
     addr = 0x36
-    register = 2
     scale = 78.125 / 1_000_000
 
     def _format_value(self, value):
         volts, capacity = value
-        return super()._format_value(f'#[bright]{volts:.1f}V{bar(capacity)}#[nobright]')
+        return super()._format_value(f'{volts:.1f}V{bar(capacity)}')
 
     def _raw_value(self):
         try:
@@ -287,11 +286,13 @@ class PiBatteryStat(Stat):
                 chip = bus.read_byte(self.addr)
             except OSError:
                 raise ValueError('no battery chip found')
-            value = bus.read_word_data(self.addr, self.register)
+            value = bus.read_word_data(self.addr, 2)
             # Byte-swap big-endian value
             value, = struct.unpack('<H', struct.pack('>H', value))
             volts = value * self.scale
-            return volts, percent(volts, 3.5, 4.2)
+            # Assumes linear relationship between volts and capacity (which is
+            # reasonably true for chemistries like Li-NMC, but not LiFePo4)
+            return volts, percent(volts, 3.2, 4.16)
         finally:
             bus.close()
 
