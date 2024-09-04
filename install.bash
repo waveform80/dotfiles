@@ -443,7 +443,7 @@ task_tmux() {
             echo 0
             ;;
         packages)
-            echo byobu tmux
+            echo byobu tmux python3-cbor2
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/tmux.conf "$HOME"/.tmux.conf

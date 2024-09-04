@@ -4,13 +4,14 @@ import os
 import math
 import time
 import struct
-import pickle
 import tempfile
 import datetime as dt
 import subprocess as sp
 from pathlib import Path
 from getpass import getuser
 from functools import lru_cache
+
+import cbor2
 
 
 def bar(value):
@@ -87,13 +88,13 @@ class Stat:
             except StaleError:
                 value = self._raw_value()
                 with self._cache_file().open('wb') as f:
-                    pickle.dump(value, f)
+                    cbor2.dump(value, f)
         except ValueError:
             return ''
         return self._format_value(value)
 
     def _cache_file(self):
-        return cache_dir() / f'{self.name}.cache'
+        return cache_dir() / f'{self.name}.cbor'
 
     def _cached_value(self):
         path = self._cache_file()
@@ -103,7 +104,7 @@ class Stat:
         except FileNotFoundError:
             raise StaleError()
         with path.open('rb') as f:
-            return pickle.load(f)
+            return cbor2.load(f)
 
     def _raw_value(self):
         raise NotImplementedError
@@ -152,7 +153,7 @@ class UpdatesStat(Stat):
                             if line.startswith('Inst')
                         )
                         with temp_file.open('wb') as f:
-                            pickle.dump(count, f)
+                            cbor2.dump(count, f)
                         temp_file.rename(cache_file)
             except FileExistsError:
                 pass
@@ -162,7 +163,7 @@ class UpdatesStat(Stat):
                 raise SystemExit(0)
         try:
             with cache_file.open('rb') as f:
-                return pickle.load(f)
+                return cbor2.load(f)
         except FileNotFoundError:
             return 0
 
@@ -185,7 +186,7 @@ class UpdatesStat(Stat):
             if dt.datetime.now().timestamp() - cache_stat.st_mtime > self.timeout:
                 raise StaleError()
         with cache_file.open('rb') as f:
-            return pickle.load(f)
+            return cbor2.load(f)
 
 
 class UptimeStat(Stat):
