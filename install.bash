@@ -298,7 +298,7 @@ task_fs() {
             mkdir -p "$XDG_CONFIG_HOME"/ranger
             ln -sf "$HOME"/dotfiles/ranger.conf "$XDG_CONFIG_HOME"/ranger/rc.conf
             if apt-cache show bat >/dev/null 2>&1; then
-                ranger --copy-config=scope
+                ranger --copy-config=scope || true
                 sed -i -e 's/\bbat\b/batcat/' "$XDG_CONFIG_HOME"/ranger/scope.sh
             fi
             sudo install -d "$DESTDIR"/share/dotfiles
