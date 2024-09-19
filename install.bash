@@ -129,7 +129,7 @@ task_pack() {
         postinst)
             ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
             ln -sf "$HOME"/dotfiles/quiltrc-dpkg "$HOME"/.quiltrc-dpkg
-            ln -sf "$HOME"/dotfiles/dput.d "$HOME"/.dput.d
+            ln -sfn "$HOME"/dotfiles/dput.d "$HOME"/.dput.d
             ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
             ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
             ln -sf "$HOME"/dotfiles/reportbugrc "$HOME"/.reportbugrc
