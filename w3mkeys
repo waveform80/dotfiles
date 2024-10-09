@@ -120,7 +120,8 @@ keymap	k	MOVE_UP
 keymap	l	MOVE_RIGHT
 keymap	m	MARK_URL
 keymap	n	SEARCH_NEXT
-keymap	o	OPTIONS
+keymap	o	GOTO
+keymap	O	OPTIONS
 keymap	q	QUIT
 keymap	r	RELOAD
 keymap	t	TAB_LINK
