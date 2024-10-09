@@ -153,7 +153,8 @@ task_travel() {
         packages)
             echo bluez dbus python3-netifaces
             if grep -q "Raspberry Pi" /proc/cpuinfo; then
-                echo python3-colorzero python3-dot3k
+                echo python3-colorzero python3-dot3k python3-smbus
+                echo python3-libgpiod
                 if [ "$DISTRO" = "Ubuntu" ]; then
                     if [[ "$RELEASE" < "24.04" ]]; then
                         echo python3-rpi.gpio
@@ -292,7 +293,7 @@ task_fs() {
             ;;
         packages)
             echo atool ncdu entr inotify-tools ranger shed mc lz4 zstd
-            echo p7zip-full moreutils python3-ruamel.yaml
+            echo p7zip-full moreutils python3-ruamel.yaml lsscsi
             ;;
         postinst)
             mkdir -p "$XDG_CONFIG_HOME"/ranger
