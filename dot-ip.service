@@ -3,6 +3,7 @@ Description=Show IPs on Display-o-Tron HAT
 
 [Service]
 Type=simple
+Restart=on-failure
 ExecStart=/usr/local/bin/dot-ip
 
 [Install]
