@@ -32,8 +32,8 @@ setopt AUTO_PUSHD
 setopt PUSHD_MINUS
 
 # Execute history expansions on request instead of editing them first
-HISTSIZE=1500
-SAVEHIST=1000
+HISTSIZE=15000
+SAVEHIST=10000
 HISTFILE=~/.zsh_history
 setopt HIST_EXPIRE_DUPS_FIRST
 setopt HIST_IGNORE_SPACE
