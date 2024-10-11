@@ -1,5 +1,4 @@
 export DEFAULT_USER=dave
-export PATH="$PATH":"$HOME"/.local/bin
 # export MANPATH="/usr/local/man:$MANPATH"
 export EDITOR=vim
 export WORKON_HOME="$HOME"/envs
@@ -80,7 +79,7 @@ function w3g() { w3m google.com/search\?q="$1"; }
 function w3w() { w3m en.wikipedia.org/w/index.php\?search="$1"; }
 function w3up() { w3m packages.ubuntu.com/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
 function w3dp() { w3m packages.debian.org/search\?searchon=names\&suite=all\&section=all\&keywords="$1"; }
-function w3lp() { w3m launchpad.net/+search\?field.text="$1"; }
+function w3lp() { w3m launchpad.net/ubuntu/+source/"$1"; }
 function bug() { w3m launchpad.net/bugs/"$1"; }
 
 function indent() { sed -e 's/^/    /;' "$@"; }

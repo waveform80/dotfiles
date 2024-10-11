@@ -3,16 +3,24 @@
 import os
 import sys
 import math
+import struct
 import signal
 import selectors
+from pathlib import Path
 from itertools import tee, cycle
 from collections import deque
 from subprocess import run
 from threading import Thread, Event
 
 import netifaces
+from smbus import SMBus
 from dothat import lcd, backlight, touch as nav
 from colorzero import Color
+
+
+RED = Color('#c04000')
+GREEN = Color('#00c000')
+BLUE = Color('#0000c0')
 
 
 def pairwise(iterable):
@@ -60,6 +68,121 @@ def prior_key(item, items):
         return None
 
 
+def format_binary_size(size, suffixes=('', 'k', 'M', 'G', 'T', 'P'),
+                       zero='0', template='{size:.1f}{suffix}'):
+    try:
+        index = min(len(suffixes) - 1, int(round(math.log(abs(size), 2) / 10, 2)))
+    except ValueError:
+        return zero
+    else:
+        return template.format(size=(size / 2 ** (index * 10)),
+                               suffix=suffixes[index])
+
+
+def status_color(value, steps=32):
+    colors = list(RED.gradient(GREEN, steps=steps))
+    return colors[max(0, min(steps - 1, int(steps * value)))]
+
+
+def load_status():
+    load = os.getloadavg()
+    cpus = os.cpu_count()
+    color = (
+        GREEN if load[0] < cpus - 1 else
+        status_color(1 - (load[0] + 1 - cpus)))
+    return color, '/'.join(f'{l:.2f}' for l in load)
+
+
+def temp_status(path='/sys/class/thermal/thermal_zone0/temp'):
+    temp = int(Path(path).read_text()) / 1000
+    color = GREEN if temp < 60 else status_color(1 - ((temp - 60) / 25))
+    return color, f'{temp:.1f}C'
+
+
+def mem_status(path='/proc/meminfo'):
+    total = free = None
+    with Path(path).open('r') as f:
+        values = {}
+        labels = {'MemTotal:', 'MemAvailable:', 'MemFree:', 'Cached:'}
+        for line in f:
+            label, value, units = line.split()
+            if label in labels:
+                values[label] = int(value) * 1024
+                if {'MemTotal:', 'MemAvailable:'} <= values.keys():
+                    total = values['MemTotal:']
+                    free = values['MemAvailable:']
+                    break
+                elif {'MemTotal:', 'MemFree:', 'Cached:'} <= values.keys():
+                    total = values['MemTotal:']
+                    free = values['MemFree:'] + values['Cached:']
+                    break
+    if not total:
+        return RED, '???'
+    used = total - free
+    gb = 1024**3
+    color = GREEN if free >= gb else status_color(free / gb)
+    return color, f'{format_binary_size(used)}/{format_binary_size(total)}'
+
+
+def swap_status(path='/proc/meminfo'):
+    total = free = None
+    with Path(path).open('r') as f:
+        values = {}
+        labels = {'SwapTotal:', 'SwapFree:'}
+        for line in f:
+            label, value, units = line.split()
+            if label in labels:
+                assert units == 'kB'
+                values[label] = int(value) * 1024
+                if {'SwapTotal:', 'SwapFree:'} == values.keys():
+                    total = values['SwapTotal:']
+                    free = values['SwapFree:']
+                    break
+    if not total:
+        return RED, '???'
+    used = total - free
+    gb = 1024**3
+    color = GREEN if free >= gb else status_color(free / gb)
+    return color, f'{format_binary_size(used)}/{format_binary_size(total)}'
+
+
+def disk_status(path='/'):
+    stat = os.statvfs(path)
+    total = stat.f_blocks * stat.f_frsize
+    free = stat.f_bfree * stat.f_frsize
+    used = total - free
+    gb = 1024**3
+    color = GREEN if free >= 10*gb else status_color(free / (10*gb))
+    return color, f'{format_binary_size(used)}/{format_binary_size(total)}'
+
+
+def power_status(address=0x36):
+    bus = SMBus(1)
+    try:
+        value = bus.read_word_data(address, 2)
+        value, = struct.unpack('<H', struct.pack('>H', value))
+    except OSError:
+        return RED, '???'
+    finally:
+        bus.close()
+    volts = value * (78.125 / 1_000_000)
+    # The capacity from the FuelGauge chip is nonsense (because it's not
+    # calibrated for 8P cells), so just estimate it based on the pack voltage
+    capacity = 100 * ((volts - 3.2) / 0.96)
+    color = GREEN if capacity > 40 else status_color(capacity / 40)
+    return color, f'{volts:.1f}V ({capacity:.0f}%)'
+
+
+def battery_present(address=0x36):
+    bus = SMBus(1)
+    try:
+        chip = bus.read_byte(address)
+    except OSError:
+        return False
+    else:
+        return True
+
+
 class Application:
     """
     Class representing the application, keeping the state of the display and
@@ -79,15 +202,25 @@ class Application:
         netifaces.AF_INET6: 'IP6',
         netifaces.AF_LINK: 'MAC',
     }
-    actions = {
+    controls = {
         'off': 'Power Off',
         'reboot': 'Reboot',
+    }
+    statuses = {
+        'load': load_status,
+        'temp': temp_status,
+        'mem': mem_status,
+        'swap': swap_status,
+        'disk': disk_status,
     }
 
     def __init__(self):
         self.iface = next(iter(self.interfaces))
         self.family = next(iter(self.families))
-        self.action = next(iter(self.actions))
+        self.control = next(iter(self.controls))
+        self.status = next(iter(self.statuses))
+        if battery_present():
+            self.statuses['power'] = power_status
         self.color = Color('black')
         self.sweep_thread = None
         self.sweep_event = Event()
@@ -105,16 +238,20 @@ class Application:
 
         @nav.on(nav.LEFT)
         def handle_left(ch, evt):
-            if self.iface == 'ctrl':
-                self.action = prior_key(self.action, self.actions)
+            if self.iface == 'status':
+                self.status = prior_key(self.status, self.statuses)
+            elif self.iface == 'ctrl':
+                self.control = prior_key(self.control, self.controls)
             else:
                 self.family = prior_key(self.family, self.families)
             self.refresh()
 
         @nav.on(nav.RIGHT)
         def handle_right(ch, evt):
-            if self.iface == 'ctrl':
-                self.action = next_key(self.action, self.actions)
+            if self.iface == 'status':
+                self.status = next_key(self.status, self.statuses)
+            elif self.iface == 'ctrl':
+                self.control = next_key(self.control, self.controls)
             else:
                 self.family = next_key(self.family, self.families)
             self.refresh()
@@ -125,7 +262,7 @@ class Application:
                 run({
                     'off': ['poweroff'],
                     'reboot': ['reboot'],
-                }[self.action])
+                }[self.control])
             else:
                 self.refresh()
 
@@ -153,7 +290,7 @@ class Application:
                     netifaces.AF_INET6: '::1'},
              'eth0': {netifaces.AF_INET: '192.168.0.1'}}
         """
-        result = {'ctrl': {}}
+        result = {'status': {}, 'ctrl': {}}
         for name in sorted(netifaces.interfaces()):
             try:
                 iface = netifaces.ifaddresses(name)
@@ -205,19 +342,21 @@ class Application:
         Refresh the display to show the current :attr:`iface` and
         :attr:`family`.
         """
-        if self.iface == 'ctrl':
-            new_color = Color('#0000c0')
-            self._show_text(
-                f'{self.iface}:\n{self.actions[self.action]}')
+        if self.iface == 'status':
+            new_color, text = self.statuses[self.status]()
+            self._show_text(f'{self.iface}:{self.status}\n{text}')
+        elif self.iface == 'ctrl':
+            new_color = BLUE
+            self._show_text(f'{self.iface}:\n{self.controls[self.control]}')
         else:
             ifaces = self.interfaces
             backlight.set_graph(0)
             try:
                 address = ifaces[self.iface][self.family]
-                new_color = Color('#00c000')
+                new_color = GREEN
             except KeyError:
                 address = 'No address!'
-                new_color = Color('#c04000')
+                new_color = RED
             self._show_text(
                 f'{self.iface}:{self.families[self.family]}\n{address}')
         if self.color != new_color:
