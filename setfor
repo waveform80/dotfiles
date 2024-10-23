@@ -45,7 +45,7 @@ EOF
         ;;
 
     away)
-        comment 'leela:' /etc/fstab
+        comment 'leela[^ \t]*:' /etc/fstab
         comment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
         comment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
         for src in $(schroot -l --all-source-chroots); do
@@ -61,7 +61,7 @@ EOF
         ;;
 
     home)
-        uncomment 'leela:' /etc/fstab
+        uncomment 'leela[^ \t]*:' /etc/fstab
         uncomment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
         uncomment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
         for src in $(schroot -l --all-source-chroots); do
