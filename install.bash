@@ -498,6 +498,7 @@ task_vim() {
             [ -d "$vim_pack"/vim-table-mode ] || git clone https://github.com/dhruvasagar/vim-table-mode "$vim_pack"/vim-table-mode
             [ -d "$vim_pack"/vim-bracketed-paste ] || git clone https://github.com/ConradIrwin/vim-bracketed-paste "$vim_pack"/vim-bracketed-paste
             [ -d "$vim_pack"/vim-notmuch-address ] || git clone https://github.com/waveform80/vim-notmuch-address "$vim_pack"/vim-notmuch-address
+            [ -d "$vim_pack"/vim-flavored-markdown ] || git clone https://github.com/jtratner/vim-flavored-markdown.git "$vim_pack"/vim-flavored-markdown
             #git clone https://github.com/Vimjas/vim-python-pep8-indent "$vim_pack"/vim-python-pep8-indent
             #git clone https://github.com/mg979/vim-visual-multi "$vim_pack"/vim-visual-multi
             sudo update-alternatives --set editor "${vim_path}"
