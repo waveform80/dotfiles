@@ -49,9 +49,11 @@ EOF
         comment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
         comment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
         for src in $(schroot -l --all-source-chroots); do
-            schroot -u root -d / -c $src -- \
-                sed -i -E -e '/^ *Acquire/ s/^ */#/' \
-                /etc/apt/apt.conf.d/99mk-sbuild-proxy
+            in_chroot="schroot -u root -d / -c $src --"
+            if $in_chroot test -e /etc/apt/apt.conf.d/99-mk-sbuild-proxy; then
+                $in_chroot sed -i -E -e '/^ *Acquire/ s/^ */#/' \
+                    /etc/apt/apt.conf.d/99mk-sbuild-proxy
+            fi
         done
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
             comment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
@@ -65,9 +67,11 @@ EOF
         uncomment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
         uncomment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
         for src in $(schroot -l --all-source-chroots); do
-            schroot -u root -d / -c $src -- \
-                sed -i -E -e '/^#+ *Acquire/ s/^#+ *//' \
-                /etc/apt/apt.conf.d/99mk-sbuild-proxy
+            in_chroot="schroot -u root -d / -c $src --"
+            config=/etc/apt/apt.conf.d/99mk-sbuild-proxy
+            if $in_chroot test -e /etc/apt/apt.conf.d/99-mk-sbuild-proxy; then
+                $in_chroot sed -i -E -e '/^#+ *Acquire/ s/^#+ *//' $config
+            fi
         done
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
             uncomment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
