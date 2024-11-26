@@ -108,6 +108,11 @@ function sercon() {
     fi
 }
 
+function mpvc() {
+    mpv --vo=tct --vo-tct-width=$COLUMNS --vo-tct-height=$LINES \
+        --really-quiet "$@"
+}
+
 function bindiff() {
     local dump() { hexdump -e '1/1 "%02x "' -e '"%_c\n"' "$1" }
     diff --label "$1" <(dump "$1") --label "$2" <(dump "$2")
