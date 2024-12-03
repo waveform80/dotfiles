@@ -131,7 +131,7 @@ function _sb() {
     fi
     maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' "$ctrl")"
     keyid="$DEBEMAIL"
-    sbuild --maintainer "$maintainer" --keyid "$keyid" "$@"
+    sbuild --maintainer "$maintainer" --keyid "$keyid" --no-clean-source "$@"
 }
 
 alias sbs="_sb --no-arch-any --no-arch-all --source"
