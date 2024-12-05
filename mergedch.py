@@ -22,7 +22,7 @@ def split_entries(source, delimiter='### END ###'):
 
 def filter_items(entry, tags='*+-'):
     tags = tuple(tags)
-    bugs_re = re.compile(' *(\()?(, *)?LP: *#\d+(, *)?(?(1)\)|)')
+    bugs_re = re.compile(r' *(\()?(, *)?LP: *#\d+(, *)?(?(1)\)|)')
     for line in entry:
         if line.strip():
             if line.lstrip().startswith(tags):

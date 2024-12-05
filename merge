@@ -741,6 +741,7 @@ test_post() {
 build() {
 	local new_debian new_ubuntu new_ubuntu_tag project devel_name top_level
 	local parent log_file upstream orig_tar deb_format tarball rev_count
+	local maintainer keyid
 
 	top_level=$(git rev-parse --show-toplevel)
 	deb_format=$(git cat-file blob HEAD:debian/source/format)
@@ -756,6 +757,7 @@ build() {
 	work_dir_clean
 	descends_from new/debian
 	descends_from "candidate/$new_ubuntu_tag"
+	maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' "$top_level"/debian/control)"
 
 	if [ "$deb_format" = "3.0 (quilt)" ]; then
 		echo "Extracting orig tar-ball for ${project} ${upstream}"
@@ -798,8 +800,9 @@ build() {
 
 	echo "Building source package for $devel_name"
 	if sbuild --dist "$devel_name" \
+		--maintainer "$maintainer" --keyid "$DEBEMAIL" \
 		--no-arch-any --no-arch-all --source \
-		--force-orig-source > "$log_file" 2>&1
+		--force-orig-source --no-clean-source > "$log_file" 2>&1
 	then
 		rm -f "${log_file}.fail"
 		whatnow
