@@ -51,7 +51,7 @@ def split_items(entry, tags='*+-'):
             lines = [line]
         elif line.startswith(' '):
             lines.append(line.strip())
-        else:
+        elif line:
             assert False
     yield from make_item()
 
