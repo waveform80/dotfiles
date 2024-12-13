@@ -578,7 +578,7 @@ rebased_again() {
 			done
 			descends_from new/debian
 			fix_tag logical/"$new_ubuntu_tag"
-			git checkout candidate/"$new_ubuntu_tag" 2>/dev/null
+			git checkout merge
 		else
 			return 1
 		fi
