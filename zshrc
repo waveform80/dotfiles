@@ -118,6 +118,26 @@ function bindiff() {
     diff --label "$1" <(dump "$1") --label "$2" <(dump "$2")
 }
 
+function get-package() {
+    local pkg="$1"
+    local series="$2"
+
+    if [ -z "$pkg" ]; then
+        echo "Must specify a package name" >2
+        return 1
+    fi
+    if [ -z "$series" ]; then
+        series="$(ubuntu-distro-info --devel)"
+    fi
+    if [ "$(basename $(pwd))" != "$pkg" ]; then
+        mkdir -p "$1"
+        cd "$1"
+    fi
+    [ -d "$pkg" ] || git clone lp:ubuntu/+source/"$pkg"
+    pull-lp-source --download-only "$pkg" "$series"
+    pull-lp-debs --download-only "$pkg" "$series"
+}
+
 function _sb() {
     local maintainer ctrl keyid
 
