@@ -1,0 +1,117 @@
+#!/usr/bin/python3
+
+"""
+A simple script to retrieve build-status of livefs'.
+"""
+
+import os
+import sys
+import argparse
+from pathlib import Path
+from itertools import islice
+
+from colorzero import Color
+from distro_info import UbuntuDistroInfo
+from launchpadlib.launchpad import Launchpad
+
+
+GREEN = Color('green')
+RED = Color('red')
+YELLOW = Color('yellow')
+STATUS = {
+    'Needs building':               '…',
+    'Successfully built':           f'{GREEN:8}✓{GREEN:0}',
+    'Failed to build':              f'{RED:8}✗{RED:0}',
+    'Dependency wait':              '…',
+    'Chroot problem':               f'{RED:8}✗{RED:0}',
+    'Build for superseded Source':  f'{YELLOW:8}✗{YELLOW:0}',
+    'Currently building':           '▸',
+    'Failed to upload':             f'{RED:8}✗{RED:0}',
+    'Uploading build':              '…',
+    'Cancelling build':             f'{YELLOW:8}✗{YELLOW:0}',
+    'Cancelled build':              f'{YELLOW:8}✗{YELLOW:0}',
+    'Gathering build output':       '…',
+}
+
+def main(args=None):
+    info = UbuntuDistroInfo()
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        'name',
+        help="The name of the livefs to query")
+    parser.add_argument(
+        '-O', '--owner', default='ubuntu-cdimage',
+        help="Limit results to livefs owned by the specified team "
+        "(default: %(default)s)")
+    parser.add_argument(
+        '-s', '--series', default=info.devel(),
+        help="Limit results to the specified release (default: %(default)s)")
+    parser.add_argument(
+        '--archs', default=[], type=lambda s: s.split(','),
+        help="Limit results to the comma-separated list of architectures")
+    parser.add_argument(
+        '--subarchs', default=[], type=lambda s: s.split(','),
+        help="Limit results to the comma-separated list of sub-architectures")
+    parser.add_argument(
+        '-l', '--limit', default=10, type=int,
+        help="The maximum number of results to list")
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help="Output more detail")
+    parser.add_argument(
+        '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
+        help=argparse.SUPPRESS)
+    config = parser.parse_args(args)
+
+    try:
+        lp = Launchpad.login_anonymously(
+            'get-livefs', 'production', str(config.cache_dir),
+            version='devel')
+        ubuntu = lp.distributions['ubuntu']
+        series = ubuntu.getSeries(name_or_version=config.series)
+        archs = [
+            series.getDistroArchSeries(archtag=arch)
+            for arch in config.archs
+        ]
+        team = lp.people[config.owner]
+        fs = lp.livefses.getByName(
+            distro_series=series, name=config.name, owner=team)
+        print(f'{fs.name} has {len(fs.builds_collection)} builds')
+        builds = filter_archs(fs.builds_collection, archs)
+        builds = filter_subarchs(builds, config.subarchs)
+        for build in islice(builds, config.limit):
+            print(f'{STATUS[build.buildstate]} {build.title}')
+            if config.verbose:
+                print(f'  Finished: {build.datebuilt} ({build.duration})')
+                print(f'  Status:   {build.buildstate}')
+                print(f'  Link:     {build.web_link}')
+                print()
+    except Exception as err:
+        if int(os.environ.get('DEBUG', '0')):
+            raise
+        else:
+            print(str(err), file=sys.stderr)
+            return 1
+
+    return 0
+
+
+def filter_archs(builds, archs):
+    for build in builds:
+        if not archs or build.distro_arch_series in archs:
+            yield build
+
+
+def filter_subarchs(builds, subarchs):
+    for build in builds:
+        subarch = build.metadata_override.get('subarch')
+        if not subarchs or subarch in subarchs:
+            yield build
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+
