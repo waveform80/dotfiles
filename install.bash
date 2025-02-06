@@ -165,8 +165,10 @@ task_travel() {
             fi
             ;;
         preinst)
-            if [ "$DISTRO" = "Ubuntu" ]; then
-                sudo add-apt-repository -y ppa:waveform/collator
+            if grep -q "Raspberry Pi" /proc/cpuinfo; then
+                if [ "$DISTRO" = "Ubuntu" ]; then
+                    sudo add-apt-repository -y ppa:waveform/collator
+                fi
             fi
             ;;
         postinst)
