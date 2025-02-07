@@ -1,0 +1,119 @@
+#!/usr/bin/python3
+
+"""
+A simple script to retrieve build-status of livefs'.
+"""
+
+import os
+import sys
+import shutil
+import argparse
+from pathlib import Path
+from textwrap import fill
+from itertools import groupby
+
+from colorzero import Color
+from distro_info import UbuntuDistroInfo
+from launchpadlib.launchpad import Launchpad
+
+
+GREEN = Color('#0f0')
+RED = Color('#800')
+YELLOW = Color('#880')
+WHITE = Color('#fff')
+STATUS = {
+    'New': f'{YELLOW:8}🗰{YELLOW:0}',
+    'Unapproved': f'{YELLOW:8}?{YELLOW:0}',
+    'Accepted': f'{GREEN:8}✓{GREEN:0}',
+    'Done': f'•',
+    'Rejected': f'{RED:8}✗{RED:0}',
+}
+
+
+def main(args=None):
+    info = UbuntuDistroInfo()
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        'package',
+        help="The name of the package to query")
+    parser.add_argument(
+        'version', nargs='?',
+        help="The optional version of the package to query")
+    parser.add_argument(
+        '-s', '--series', default=info.devel(),
+        help="Limit results to the specified release (default: %(default)s)")
+    parser.add_argument(
+        '-l', '--limit', default=10, type=int,
+        help="The maximum number of results to list")
+    parser.add_argument(
+        '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
+        help=argparse.SUPPRESS)
+    config = parser.parse_args(args)
+
+    try:
+        lp = Launchpad.login_anonymously(
+            'get-queue', 'production', str(config.cache_dir),
+            version='devel')
+        ubuntu = lp.distributions['ubuntu']
+        series = ubuntu.getSeries(name_or_version=config.series)
+        all_uploads = series.getPackageUploads(
+            archive=series.main_archive, name=config.package,
+            version=config.version)
+        all_uploads = [
+            upload for upload in all_uploads
+            if upload.package_version is not None
+            and upload.package_name == config.package
+        ]
+        dump_uploads(all_uploads)
+    except Exception as err:
+        if int(os.environ.get('DEBUG', '0')):
+            raise
+        else:
+            print(str(err), file=sys.stderr)
+            return 1
+
+    return 0
+
+
+def dump_uploads(all_uploads):
+    width, height = shutil.get_terminal_size()
+    for version, uploads in groupby(
+        reversed(all_uploads),
+        key=lambda u: u.package_version
+    ):
+        print(f'{GREEN:8}{version}{GREEN:0}')
+        for upload in uploads:
+            content = {
+                (True,  True):  'source+binary',
+                (True,  False): 'binary',
+                (False, True):  'source',
+                (False, False): '???',
+            }[(upload.contains_build, upload.contains_source)]
+            action = 'copy' if upload.contains_copy else 'upload'
+            component = (
+                '' if upload.component_name is None else
+                f' ({upload.component_name})')
+            archs = (
+                '' if upload.contains_source and not upload.contains_build else
+                f' [{upload.display_arches}]')
+            status = STATUS[upload.status]
+            print(f'{status} {YELLOW:8}{upload.date_created:%Y-%m-%d %H:%M:%S}{YELLOW:0} '
+                  f'{content}{component}{archs} {action} to '
+                  f'{upload.pocket.lower()} {upload.status.lower()}')
+            for log in reversed(upload.logs_collection):
+                status = STATUS[log.new_status]
+                print(f'{status} {YELLOW:8}{log.date_created:%Y-%m-%d %H:%M:%S}{YELLOW:0} '
+                      f'{WHITE:8}{log.reviewer.name}{WHITE:0} changed '
+                      f'{log.old_status.lower()}->{log.new_status.lower()}')
+                if log.comment is not None:
+                    print(fill(
+                        f'comment: {log.comment}', width=width,
+                        initial_indent='    ', subsequent_indent='    '))
+        print()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
