@@ -137,6 +137,8 @@ task_pack() {
             sudo install "$HOME"/dotfiles/enable-proposed "$DESTDIR"/bin/
             sudo install "$HOME"/dotfiles/sync-images "$DESTDIR"/bin/
             sudo install "$HOME"/dotfiles/get-patches "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/get-image-builds "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/get-uploads "$DESTDIR"/bin/
             ;;
     esac
 }
