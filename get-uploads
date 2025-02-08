@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 """
-A simple script to retrieve build-status of livefs'.
+List the upload history of a specific package (and optionally a specific
+version). Defaults to retrieving the history from the current development
+series. Use --series to specify a historical series.
 """
 
 import os
@@ -57,9 +59,6 @@ def main(args=None):
     parser.add_argument(
         '-s', '--series', default=info.devel(),
         help="Limit results to the specified release (default: %(default)s)")
-    parser.add_argument(
-        '-l', '--limit', default=10, type=int,
-        help="The maximum number of results to list")
     parser.add_argument(
         '-v', '--verbose', action='store_true',
         help="Produce more output")
