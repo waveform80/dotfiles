@@ -7,10 +7,13 @@ A simple script to retrieve build-status of livefs'.
 import os
 import sys
 import shutil
+import logging
 import argparse
+import datetime as dt
 from pathlib import Path
 from textwrap import fill
 from itertools import groupby
+from typing import NamedTuple
 
 from colorzero import Color
 from distro_info import UbuntuDistroInfo
@@ -19,15 +22,24 @@ from launchpadlib.launchpad import Launchpad
 
 GREEN = Color('#0f0')
 RED = Color('#800')
-YELLOW = Color('#880')
+BROWN = Color('#880')
+YELLOW = Color('#ff0')
 WHITE = Color('#fff')
-STATUS = {
-    'New': f'{YELLOW:8}🗰{YELLOW:0}',
-    'Unapproved': f'{YELLOW:8}?{YELLOW:0}',
-    'Accepted': f'{GREEN:8}✓{GREEN:0}',
-    'Done': f'•',
-    'Rejected': f'{RED:8}✗{RED:0}',
+ICONS = {
+    'new': f'{YELLOW:8}*{YELLOW:0}',
+    'unapproved': f'{BROWN:8}?{BROWN:0}',
+    'accepted': f'{GREEN:8}✓{GREEN:0}',
+    'done': f'•',
+    'rejected': f'{RED:8}✗{RED:0}',
 }
+
+
+class Event(NamedTuple):
+    timestamp: dt.datetime
+    version: str
+    icon: str
+    event: str
+    comment: str
 
 
 def main(args=None):
@@ -49,25 +61,34 @@ def main(args=None):
         '-l', '--limit', default=10, type=int,
         help="The maximum number of results to list")
     parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help="Produce more output")
+    parser.add_argument(
         '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
         help=argparse.SUPPRESS)
     config = parser.parse_args(args)
+    logging.basicConfig(
+        stream=sys.stderr, format='%(message)s',
+        level=logging.INFO if config.verbose else logging.WARNING)
 
     try:
         lp = Launchpad.login_anonymously(
             'get-queue', 'production', str(config.cache_dir),
             version='devel')
         ubuntu = lp.distributions['ubuntu']
+        logging.info('Found Ubuntu distribution')
         series = ubuntu.getSeries(name_or_version=config.series)
-        all_uploads = series.getPackageUploads(
+        logging.info('Found %s series', config.series)
+        uploads = series.getPackageUploads(
             archive=series.main_archive, name=config.package,
             version=config.version)
-        all_uploads = [
-            upload for upload in all_uploads
-            if upload.package_version is not None
-            and upload.package_name == config.package
-        ]
-        dump_uploads(all_uploads)
+        logging.info('Found %d uploads for %s', len(uploads), config.package)
+        events = []
+        for event in get_events(uploads, config.package, config.version):
+            events.append(event)
+            if not len(events) % 10:
+                logging.info('Found %d events', len(events))
+        dump_events(events)
     except Exception as err:
         if int(os.environ.get('DEBUG', '0')):
             raise
@@ -78,40 +99,64 @@ def main(args=None):
     return 0
 
 
-def dump_uploads(all_uploads):
+def get_events(uploads, package, version):
+    for upload in uploads:
+        # Filter out uploads with no version (this covers pure translation
+        # uploads and other things) and uploads where the package doesn't match
+        # (getPackageUploads just searches for prefixes...)
+        if upload.package_version is None:
+            continue
+        if upload.package_name != package:
+            continue
+
+        content = {
+            (True,  True):  'source+binary',
+            (True,  False): 'binary',
+            (False, True):  'source',
+            (False, False): '???',
+        }[(upload.contains_build, upload.contains_source)]
+        action = 'copy' if upload.contains_copy else 'upload'
+        component = (
+            '' if upload.component_name is None else
+            f' ({upload.component_name})')
+        archs = (
+            '' if upload.contains_source and not upload.contains_build else
+            f' [{upload.display_arches}]')
+        status = (
+            upload.logs_collection[0].old_status.lower()
+            if upload.logs_collection else
+            upload.status.lower()
+        )
+        yield Event(
+            upload.date_created, upload.package_version, ICONS[status],
+            f'{content}{component}{archs} {action} to '
+            f'{upload.pocket.lower()}: {status}', '')
+        for log in reversed(upload.logs_collection):
+            yield Event(
+                log.date_created, upload.package_version,
+                ICONS[log.new_status.lower()],
+                f'{content}{component}{archs} {log.new_status.lower()} '
+                f'by {WHITE:8}{log.reviewer.name}{WHITE:0}',
+                log.comment or '')
+
+
+def dump_events(all_events):
     width, height = shutil.get_terminal_size()
-    for version, uploads in groupby(
-        reversed(all_uploads),
-        key=lambda u: u.package_version
-    ):
+    width = 120 if width > 120 else width
+
+    all_events = sorted(
+        all_events, key=lambda ev: (ev.timestamp, ev.version, ev.event))
+    released = False
+    for version, events in groupby(all_events, key=lambda ev: ev.version):
         print(f'{GREEN:8}{version}{GREEN:0}')
-        for upload in uploads:
-            content = {
-                (True,  True):  'source+binary',
-                (True,  False): 'binary',
-                (False, True):  'source',
-                (False, False): '???',
-            }[(upload.contains_build, upload.contains_source)]
-            action = 'copy' if upload.contains_copy else 'upload'
-            component = (
-                '' if upload.component_name is None else
-                f' ({upload.component_name})')
-            archs = (
-                '' if upload.contains_source and not upload.contains_build else
-                f' [{upload.display_arches}]')
-            status = STATUS[upload.status]
-            print(f'{status} {YELLOW:8}{upload.date_created:%Y-%m-%d %H:%M:%S}{YELLOW:0} '
-                  f'{content}{component}{archs} {action} to '
-                  f'{upload.pocket.lower()} {upload.status.lower()}')
-            for log in reversed(upload.logs_collection):
-                status = STATUS[log.new_status]
-                print(f'{status} {YELLOW:8}{log.date_created:%Y-%m-%d %H:%M:%S}{YELLOW:0} '
-                      f'{WHITE:8}{log.reviewer.name}{WHITE:0} changed '
-                      f'{log.old_status.lower()}->{log.new_status.lower()}')
-                if log.comment is not None:
-                    print(fill(
-                        f'comment: {log.comment}', width=width,
-                        initial_indent='    ', subsequent_indent='    '))
+        for ev in events:
+            print(
+                f'{ev.icon} {BROWN:8}{ev.timestamp:%Y-%m-%d %H:%M:%S}{BROWN:0} '
+                f'{ev.event}')
+            if ev.comment:
+                print(fill(
+                    ev.comment, width=width, initial_indent='    ',
+                    subsequent_indent='    '))
         print()
 
 
