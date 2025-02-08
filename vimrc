@@ -302,6 +302,7 @@ nnoremap [e :lprevious<CR>
 
 " Some mappings for Unicode chars
 inoremap <Leader>,, ,
+inoremap <Leader>. •
 inoremap <Leader>... …
 inoremap <Leader>- –
 inoremap <Leader>-- —
