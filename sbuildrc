@@ -15,7 +15,8 @@ $build_source = 1;
 
 $verbose = 1;
 $run_autopkgtest = 0;
-$log_dir = $ENV{'HOME'} . '/logs';
+$log_dir = $ENV{'PWD'} . '/..';
+#$log_dir = $ENV{'HOME'} . '/logs';
 
 # Make lintian even more bloody verbose
 push @{$lintian_opts}, '--pedantic';
