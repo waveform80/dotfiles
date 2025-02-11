@@ -6,13 +6,17 @@ A simple script to retrieve build-status of livefs'.
 
 import os
 import sys
+import logging
 import argparse
+import datetime as dt
 from pathlib import Path
 from itertools import islice
+from collections import deque
 
 from colorzero import Color
 from distro_info import UbuntuDistroInfo
 from launchpadlib.launchpad import Launchpad
+from dateutil.relativedelta import relativedelta
 
 
 GREEN = Color('green')
@@ -65,27 +69,38 @@ def main(args=None):
         '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
         help=argparse.SUPPRESS)
     config = parser.parse_args(args)
+    logging.basicConfig(
+        stream=sys.stderr, format='%(message)s',
+        level=logging.INFO if config.verbose else logging.WARNING)
 
     try:
         lp = Launchpad.login_anonymously(
             'get-livefs', 'production', str(config.cache_dir),
             version='devel')
         ubuntu = lp.distributions['ubuntu']
+        logging.info('Found Ubuntu distribution')
         series = ubuntu.getSeries(name_or_version=config.series)
+        logging.info('Found %s series', config.series)
         archs = [
             series.getDistroArchSeries(archtag=arch)
             for arch in config.archs
         ]
+        logging.info('Found %s arch(s)', ', '.join(config.archs))
         team = lp.people[config.owner]
+        logging.info('Found %s owner', config.owner)
         fs = lp.livefses.getByName(
             distro_series=series, name=config.name, owner=team)
-        print(f'{fs.name} has {len(fs.builds_collection)} builds')
+        logging.info(
+            'Found %d builds; filtering and listing %d',
+            len(fs.builds_collection), config.limit)
         builds = filter_archs(fs.builds_collection, archs)
         builds = filter_subarchs(builds, config.subarchs)
         for build in islice(builds, config.limit):
-            print(f'{STATUS[build.buildstate]} {build.title}')
+            print(f'{STATUS[build.buildstate]} {build.title} '
+                  f'{since(build.datebuilt)}')
             if config.verbose:
-                print(f'  Finished: {build.datebuilt} ({build.duration})')
+                print(f'  Finished: {build.datebuilt:%Y-%m-%d %H:%M:%S} '
+                      f'({build.duration})')
                 print(f'  Status:   {build.buildstate}')
                 print(f'  Link:     {build.web_link}')
                 print()
@@ -110,6 +125,115 @@ def filter_subarchs(builds, subarchs):
         subarch = build.metadata_override.get('subarch')
         if not subarchs or subarch in subarchs:
             yield build
+
+
+def window(it, n):
+    d = deque(maxlen=n)
+    for item in it:
+        d.append(item)
+        if len(d) == n:
+            yield tuple(d)
+
+
+_SPANS = [
+    'years',
+    'months',
+    'days',
+    'hours',
+    'minutes',
+    'seconds',
+    'microseconds',
+]
+def duration(delta, *, granularity=2):
+    """
+    Convert a :class:`~datetime.timedelta` or a
+    :class:`~dateutil.relativedelta.relativedelta` to a readable string. The
+    output for the latter is suitable for input to
+    :func:`~hamstercam.config.duration`.
+
+    The *granularity* (which defaults to 2, and only applies if the *delta* is
+    a :class:`~dateutil.relativedelta.relativedelta`) specifies the number of
+    (consecutive) gradations of duration which will be included in the result
+    (from years, months, days, hours, minutes, and seconds).
+
+    For example::
+
+        >>> import datetime as dt
+        >>> from dateutil.relativedelta import relativedelta
+        >>> duration(dt.timedelta(hours=1))
+        '1:00:00'
+        >>> duration(dt.timedelta(minutes=5, seconds=2))
+        '5:02'
+        >>> duration(relativedelta(months=5, days=1, hours=24))
+        '5 months, 2 days'
+        >>> duration(relativedelta(months=5, days=1, hours=20))
+        '5 months, 1 day'
+        >>> duration(relativedelta(months=5, days=1, hours=20), granularity=3)
+        '5 months, 1 day, 20 hours'
+    """
+    if isinstance(delta, dt.timedelta):
+        s = delta.total_seconds()
+        suffix = 's' if s < 60 else ''
+        secs = int(s % 60)
+        s /= 60
+        mins = int(s % 60)
+        s /= 60
+        hrs = int(s % 24)
+        return f'{hrs:02d}:{mins:02d}:{secs:02d}{suffix}'.lstrip('0:')
+    elif isinstance(delta, relativedelta):
+        assert granularity > 0
+        for subset in window(_SPANS, granularity):
+            if getattr(delta, subset[0]) > 0:
+                return ', '.join(
+                    f'{value} {suffix}'
+                    for prop in subset
+                    for value in (getattr(delta, prop),)
+                    for suffix in ([prop.rstrip('s'), prop][value > 1],)
+                    if value > 0
+                )
+        return 'a moment'
+    else:
+        assert False, 'not a valid duration type'
+
+
+def between(start, finish, *, granularity=2):
+    """
+    Given a *start* and *finish* :class:`~datetime.datetime`, returns a human
+    readable string describing the duration between the two. The *granularity*
+    parameter has the same meaning as in :func:`duration`.
+
+    For example::
+
+        >>> import datetime as dt
+        >>> now = dt.datetime.now(tz=dt.timezone.utc)
+        >>> then = now + dt.timedelta(days=2, hours=10, minutes=5, seconds=2)
+        >>> between(now, then)
+        '2 days, 10 hours'
+        >>> between(now, then, granularity=1)
+        '2 days'
+        >>> between(now, then, granularity=3)
+        '2 days, 10 hours, 5 minutes'
+    """
+    finish = finish.replace(microsecond=start.microsecond) # eliminate msecs
+    return duration(relativedelta(finish, start), granularity=granularity)
+
+
+def since(when, *, granularity=2):
+    """
+    A variant of :func:`between` which returns the duration since the
+    :class:`~datetime.datetime` *when*, along with the suffix "ago". The
+    *granularity* is passed verbatim to :func:`between`::
+
+        >>> import datetime as dt
+        >>> now = dt.datetime.now(tz=dt.timezone.utc)
+        >>> then = now - dt.timedelta(days=2, hours=10, minutes=5)
+        >>> since(then)
+        '2 days, 10 hours ago'
+        >>> since(then, granularity=3)
+        '2 days, 10 hours, 5 minutes ago'
+    """
+    s = between(when, dt.datetime.now(tz=when.tzinfo), granularity=granularity)
+    return f'{s} ago'
 
 
 if __name__ == '__main__':

@@ -123,8 +123,7 @@ task_pack() {
             ;;
         packages)
             echo ubuntu-dev-tools packaging-dev sbuild shellcheck dput-ng
-            # Dput-ng hooks use this
-            echo python3-colorzero
+            echo python3-colorzero python3-dateutil
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
