@@ -196,7 +196,7 @@ EOF
 			Review the changes, open a merge bug on Launchpad, then reconstruct changelogs
 			and complete the rebase with:
 			$RESET
-			\$ git range-diff old/debian..logical/$old_ubuntu_tag new/debian..logical/$new_ubuntu_tag
+			\$ git range-diff --creation-factor=100 old/debian..logical/$old_ubuntu_tag new/debian..logical/$new_ubuntu_tag
 			\$ www-browser ${LINK}http://pad.lv/fb/u/$project${RESET}
 			\$ merge rebased \$merge_bug
 			$MSG
@@ -773,28 +773,34 @@ build() {
 			git branch --track pristine-tar origin/importer/debian/pristine-tar
 		fi
 		orig_tar="$(pristine-tar list | grep -F "${project}_${upstream}" || true)"
-		if [ -z "$orig_tar" ]; then
-			echo "No ${project}_${upstream} tar-ball found in pristine-tar!"
-			echo "Attempting Debian source download..."
-			orig_tar="$( \
-				pull-debian-source --pull=list "$project" "$new_debian" 2>&1 \
-				| grep "\.orig\.tar")"
-			for tarball in $orig_tar; do
-				if [ -e "$parent"/"$tarball" ]; then
-					continue
-				else
-					pushd "$parent"
-					pull-debian-source --download-only "$project" "$new_debian"
-					popd
-					break
-				fi
-			done
-		else
+		if [ -n "$orig_tar" ]; then
 			for tarball in $orig_tar; do
 				if ! [ -e "$parent"/"$tarball" ]; then
 					pristine-tar checkout "$parent"/"$tarball"
 				fi
 			done
+		else
+			echo "No ${project}_${upstream} tar-ball found in pristine-tar!"
+			echo "Attempting Debian source download..."
+			orig_tar="$( \
+				pull-debian-source --pull=list "$project" "$new_debian" 2>&1 \
+				| grep "\.orig\.tar" || true)"
+			if [ -n "$orig_tar" ]; then
+				for tarball in $orig_tar; do
+					if [ -e "$parent"/"$tarball" ]; then
+						continue
+					else
+						pushd "$parent"
+						pull-debian-source --download-only "$project" "$new_debian"
+						popd
+						break
+					fi
+				done
+			else
+				echo "No ${project}_${upstream} tar-ball found in Debian!"
+				echo "Attempting origtargz..."
+				origtargz --download-only --tar-only
+			fi
 		fi
 	fi
 
