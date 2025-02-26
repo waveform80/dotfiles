@@ -123,8 +123,7 @@ task_pack() {
             ;;
         packages)
             echo ubuntu-dev-tools packaging-dev sbuild shellcheck dput-ng
-            # Dput-ng hooks use this
-            echo python3-colorzero
+            echo python3-colorzero python3-dateutil
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
@@ -137,7 +136,7 @@ task_pack() {
             sudo install "$HOME"/dotfiles/enable-proposed "$DESTDIR"/bin/
             sudo install "$HOME"/dotfiles/sync-images "$DESTDIR"/bin/
             sudo install "$HOME"/dotfiles/get-patches "$DESTDIR"/bin/
-            sudo install "$HOME"/dotfiles/get-image-builds "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/get-livefs "$DESTDIR"/bin/
             sudo install "$HOME"/dotfiles/get-uploads "$DESTDIR"/bin/
             ;;
     esac

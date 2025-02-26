@@ -1,5 +1,7 @@
 [init]
 	defaultBranch = main
+[advice]
+	nestedTag = false
 [user]
 	name = Dave Jones
 [push]
