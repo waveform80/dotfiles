@@ -1,0 +1,513 @@
+#!/usr/bin/python3
+
+from __future__ import annotations
+
+import re
+import sys
+import ast
+import logging
+import mailbox
+import argparse
+import typing as t
+from pathlib import Path
+from collections import abc
+from configparser import ConfigParser, SectionProxy, ExtendedInterpolation
+from email.utils import parsedate_to_datetime
+from types import TracebackType, CodeType
+
+
+def main(args: t.Optional[t.Sequence[str]]=None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'config', type=argparse.FileType('r'),
+        help="The configuration file to execute")
+    parser.add_argument(
+        '--dry-run', action='store_true',
+        help="If specified, run all rules and report matches but do not make "
+        "any changes to the mailboxes")
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help="Produce more console output")
+    options = parser.parse_args(args)
+
+    logging.basicConfig(
+        stream=sys.stderr, format='%(message)s',
+        level=logging.INFO if options.verbose else logging.WARNING)
+    config = ConfigParser(
+        delimiters=('=',),
+        comment_prefixes=('#',),
+        interpolation=ExtendedInterpolation())
+    config.read_file(options.config)
+    rules = [
+        Rule.from_section(config[section])
+        for section in config
+        if 'source' in config[section]
+    ]
+    sources: dict[Path, list[Rule]] = {}
+    matches: dict[Path, dict[str, list[Rule]]] = {}
+    boxes = Boxes()
+    for rule in rules:
+        sources.setdefault(rule.source, []).append(rule)
+
+    for source, source_rules in sources.items():
+        logging.info('Scanning mailbox under %s', source)
+        for key, msg in boxes[source].iteritems():
+            for rule in source_rules:
+                if rule.match(msg):
+                    logging.debug('Key %s matches %s', key, rule)
+                    matches.setdefault(
+                        source, {}).setdefault(key, []).append(rule)
+        logging.info('Matched %d messages', len(matches[source]))
+    with boxes:
+        for source, keys in matches.items():
+            for key, rules in keys.items():
+                try:
+                    if len(rules) > 1:
+                        conflicts(rules)
+                except ConflictError as exc:
+                    msg = boxes[source][key]
+                    logging.warning('Message matches conflicting rules:')
+                    logging.warning('%s', format_message(msg))
+                    for rule in exc.rules:
+                        logging.warning('%s', rule)
+                for rule in rules:
+                    if options.verbose:
+                        msg = boxes[source][key]
+                        logging.info('Processing %s', format_message(msg))
+                    if not options.dry_run:
+                        rule.execute(key, boxes)
+        if not options.dry_run:
+            boxes.clean()
+            boxes.flush()
+    boxes.close()
+    return 0
+
+
+class Boxes(abc.Mapping[Path, mailbox.Maildir]):
+    """
+    A trivial class representing a mapping of :class:`pathlib.Path` to
+    mailboxes. Constructs :class:`~mailbox.Mailbox` instances on request of
+    paths.
+    """
+    def __init__(self) -> None:
+        self._boxes: dict[Path, mailbox.Maildir] = {}
+
+    def close(self) -> None:
+        """
+        Close all mailboxes and clear the mapping.
+        """
+        for box in self._boxes.values():
+            box.close()
+        self._boxes.clear()
+
+    def flush(self) -> None:
+        """
+        Call :meth:`mailbox.Mailbox.flush` on all mailboxes.
+        """
+        for box in self._boxes.values():
+            box.flush()
+
+    def clean(self) -> None:
+        """
+        Call :meth:`mailbox.Mailbox.clean` on all mailboxes.
+        """
+        for box in self._boxes.values():
+            box.clean()
+
+    def lock(self) -> None:
+        """
+        Call :meth:`mailbox.Mailbox.lock` on all mailboxes. Note that the
+        mapping may also be used as a context manager to perform locking and
+        unlocking.
+        """
+        for box in self._boxes.values():
+            box.lock()
+
+    def unlock(self) -> None:
+        """
+        Call :meth:`mailbox.Mailbox.unlock` on all mailboxes.
+        """
+        for box in self._boxes.values():
+            box.unlock()
+
+    def __enter__(self) -> None:
+        self.lock()
+        return None
+
+    def __exit__(
+        self,
+        type_: type[BaseException] | None,
+        value: BaseException | None,
+        tb: TracebackType | None,
+    ) -> bool | None:
+        self.unlock()
+        return None
+
+    def __len__(self) -> int:
+        return len(self._boxes)
+
+    def __iter__(self) -> t.Iterator[Path]:
+        return iter(self._boxes)
+
+    def __getitem__(self, key: Path) -> mailbox.Maildir:
+        try:
+            return self._boxes[key]
+        except KeyError:
+            box = self._boxes[key] = mailbox.Maildir(key, create=False)
+            return box
+
+
+class Rule(t.NamedTuple):
+    """
+    A named-tuple representing a filter rule.
+
+    .. attribute:: source
+
+        The :class:`~pathlib.Path` of the mailbox the rule applies to.
+
+    .. attribute:: test
+
+        The original string containing the filter's test.
+
+    .. attribute:: code
+
+        A Python code object containing the compiled version of the
+        :attr:`test`.
+
+    .. attribute:: move
+
+        The :class:`~pathlib.Path` of the mailbox to move matching message to,
+        or :data:`None`.
+
+    .. attribute:: copy
+
+        The :class:`~pathlib.Path` of the mailbox to copy matching message to,
+        or :data:`None`.
+
+    .. attribute:: mark
+
+        The set of flags to apply to matching messages
+
+    .. attribute:: unmark
+
+        The set of flags to remove from matching messages
+    """
+    source: Path
+    test: str
+    code: CodeType
+    move: Path | None
+    copy: Path | None
+    mark: set[str]
+    unmark: set[str]
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> Rule:
+        if 'test' in section:
+            test = section['test']
+            parsed = parse(test)
+        else:
+            test = 'true'
+            parsed = ast.parse('True', '<string>', 'eval')
+        code = compile(parsed, '<string>', 'eval')
+        return cls(
+            Path(section['source']).expanduser(),
+            test,
+            code,
+            Path(section['move']).expanduser() if 'move' in section else None,
+            Path(section['copy']).expanduser() if 'copy' in section else None,
+            set(section.get('mark', '').split(',')),
+            set(section.get('unmark', '').split(',')),
+        )
+
+    def __repr__(self) -> str:
+        return f'<Rule: {self.test}>'
+
+    def match(self, message: mailbox.Message) -> bool:
+        """
+        Return a :class:`bool` indicating whether the *message* matches the
+        rule's test.
+        """
+        return bool(eval(self.code, {'msg': message}))
+
+    def execute(self, key: str, boxes: Boxes) -> None:
+        """
+        Execute the actions of the rule on *message*, given the various mail
+        *boxes*.
+        """
+        # Once compat moves beyond 3.13, use boxes[source].add_flag(key, ...)
+        # and only retrieve message in the event move/copy is required
+        message = boxes[self.source][key]
+        if self.mark:
+            message.add_flag(''.join(self.mark))
+        if self.unmark:
+            message.remove_flag(''.join(self.unmark))
+        if self.copy is not None:
+            boxes[self.copy].add(message)
+        if self.move is not None:
+            boxes[self.move].add(message)
+            boxes[self.source].discard(key)
+
+
+def format_message(message: mailbox.Message) -> str:
+    """
+    Return a short string representing the email *message* containing a
+    truncated (if necessary) subject line, and delivery date.
+    """
+    subj = message['Subject']
+    if len(subj) > 60:
+        subj = f'{subj[:30]}…{subj[-30:]}'
+    date = parsedate_to_datetime(message['Date'])
+    return f'{date:%Y-%m-%d %H:%M:%S} {subj}'
+
+
+class ConflictError(ValueError):
+    """
+    A derivative of :exc:`ValueError` raised when a message matches multiple
+    rules with conflicting actions, e.g. a move to multiple different folders.
+    """
+    def __init__(self, msg: str, rules: t.Sequence[Rule]) -> None:
+        super().__init__(msg)
+        self.rules = rules
+
+
+def conflicts(rules: t.Sequence[Rule]) -> None:
+    """
+    Check the list of *rules* (a sequence of :class:`Rule` instances) do not
+    conflict with each other. For example, a message may be copied to multiple
+    folders, but only moved to one.
+    """
+    moves = {rule.move for rule in rules if rule.move is not None}
+    marks = {mark for rule in rules for mark in rule.mark}
+    unmarks = {mark for rule in rules for mark in rule.unmark}
+    if len(moves) > 1:
+        raise ConflictError(f'Move to {len(moves)} folders', rules)
+    if marks & unmarks:
+        raise ConflictError(
+            f'Mark and unmark the same flags: {",".join(marks & unmarks)}',
+            rules)
+
+
+T = t.TypeVar('T')
+class Peek(t.Generic[T]):
+    """
+    A wrapper for an iterator which permits peeking at the top item.
+    """
+    def __init__(self, it: t.Iterable[T]):
+        self._it: t.Iterator[T] = iter(it)
+        self._peek: T = next(self._it)
+        self._peeked: bool = True
+
+    def __iter__(self) -> t.Iterator[T]:
+        return self
+
+    def peek(self) -> T:
+        if not self._peeked:
+            self._peek = next(self._it)
+            self._peeked = True
+        return self._peek
+
+    def __next__(self) -> T:
+        if self._peeked:
+            self._peeked = False
+            return self._peek
+        return next(self._it)
+
+
+class Token(t.NamedTuple):
+    """
+    Represents a single parsing token.
+
+    .. attribute:: token
+
+        The type of the token. A string in all-caps, e.g. 'EOF', 'COMPOP',
+        'VALUE', 'IDENT'.
+
+    .. attribute:: source
+
+        A string containing the source code corresponding to this token.
+
+    .. attribute:: value
+
+        The "value" of the token. For string literals, this is the content
+        of the string, for operators, it's the operator string, etc.
+
+    .. attribute:: line
+
+        The 1-based line number at which this token occurs in the original
+        source.
+
+    .. attribute:: column
+
+        The 1-based column at which this token occurs in the original source.
+    """
+    token: str
+    source: str
+    value: str
+    line: int
+    column: int
+
+    def __repr__(self) -> str:
+        return f'{self.token}: {self.source!r}'
+
+
+class ParserError(ValueError):
+    """
+    A derivative of :exc:`ValueError` representing a parsing error. Constructed
+    with the parsing error messasge, and the token at which the error was
+    encountered.
+    """
+    def __init__(self, msg: str, token: Token):
+        super().__init__(msg)
+        self.token = token
+
+
+def unquote(s: str) -> str:
+    """
+    Strip the leading and trailing quotation marks from the input string *s*,
+    and the backslashes escaping any quotation marks within the string.
+    """
+    try:
+        qchar = s[0]
+    except IndexError:
+        raise ValueError('empty string literal')
+    else:
+        return s[1:-1].replace('\\' + qchar, qchar)
+
+
+def tokenize(s: str) -> t.Iterable[Token]:
+    """
+    Split the input string *s* into a stream of :class:`Token` tuples.
+    """
+    identity = lambda x: x
+    table: list[tuple[str, t.Callable[[str], str], re.Pattern[str]]] = [
+        # token    xform     regex
+        ('COMPOP', identity, re.compile(r'(==|!=|in)')),
+        ('BOOLOP', identity, re.compile(r'(and|or)')),
+        ('LPAR',   identity, re.compile(r'\(')),
+        ('RPAR',   identity, re.compile(r'\)')),
+        ('SEP',    identity, re.compile(r',')),
+        ('WS',     identity, re.compile(r'\s+')),
+        ('IDENT',  identity, re.compile(r'[A-Za-z][A-Za-z0-9-]*')),
+        #('REGEX',  unquote,  re.compile(r'/([^/]|\/)*?/')),
+        ('CONST',  unquote,  re.compile(
+            r'('
+            r'"([^"]|\")*?"'
+            r'|'
+            r"'([^']|\')*?'"
+            r')')),
+    ]
+    index = 0
+    line = column = 1
+    while index < len(s):
+        for token, value_fn, regex in table:
+            match = regex.match(s, pos=index)
+            if match is not None:
+                break
+        else:
+            raise ValueError(f'invalid token at {s[index:index + 10]!r}')
+        source = s[match.start():match.end()]
+        yield Token(token, source, value_fn(source), line, column)
+        index += len(source)
+        for char in source:
+            if char == '\n':
+                column = 1
+                line += 1
+            else:
+                column += 1
+    # Add an EOF token to simplify EOF handling in the parser
+    yield Token('EOF', 'EOF', 'EOF', line, column)
+
+
+def parse(s: str) -> ast.Expression:
+    """
+    Parse the input string *s* into an executable filter expression, returned
+    as a Python :class:`~ast.AST`.
+    """
+    tokens = Peek(token for token in tokenize(s) if token.token != 'WS')
+    node = _parse_expression(tokens)
+    for t in tokens:
+        if t.token != 'EOF':
+            raise ParserError(f'unexpected {t.source!r}', t)
+    ast.fix_missing_locations(node)
+    return ast.Expression(body=node)
+
+
+def _parse_expression(tokens: Peek[Token]) -> ast.AST:
+    # EXPR -> COMP and EXPR
+    # EXPR -> COMP or EXPR
+    # EXPR -> COMP
+    node = _parse_compare(tokens)
+    while tokens.peek().token == 'BOOLOP':
+        left = node
+        op = {'and': ast.And(), 'or': ast.Or()}[next(tokens).value]
+        right = _parse_expression(tokens)
+        node = ast.BoolOp(values=[left, right], op=op)
+    return node
+
+
+def _parse_compare(tokens: Peek[Token]) -> ast.AST:
+    # COMP -> VALUE ==/!= VALUE
+    # COMP -> VALUE in SET
+    # COMP -> (EXPR)
+    if tokens.peek().token == 'LPAR':
+        start = next(tokens)
+        node = _parse_expression(tokens)
+        if next(tokens).token != 'RPAR':
+            raise ParserError('missing closing ")" for "("', start)
+    else:
+        node = _parse_value(tokens)
+        if tokens.peek().token == 'COMPOP':
+            head = next(tokens)
+            left = node
+            op = {
+                '==': ast.Eq(),
+                '!=': ast.NotEq(),
+                'in': ast.In(),
+            }[head.value]
+            if head.value == 'in':
+                right = _parse_set(tokens)
+            else:
+                right = _parse_value(tokens)
+            node = ast.Compare(left=left, ops=[op], comparators=[right])
+    return node
+
+
+def _parse_set(tokens: Peek[Token]) -> ast.AST:
+    # SET -> (VALUE, VALUE, ...)
+    start = next(tokens)
+    if start.token != 'LPAR':
+        raise ParserError(f'unexpected {start.source!r}; expected "("', start)
+    # Empty set not permitted
+    node = _parse_value(tokens)
+    elements = [node]
+    for sep in tokens:
+        if sep.token == 'SEP':
+            # Permit trailing comma in a set
+            if tokens.peek().token == 'RPAR':
+                sep = next(tokens)
+                break
+            elements.append(_parse_value(tokens))
+        else:
+            break
+    if sep.token != 'RPAR':
+        raise ParserError('missing closing ")" for "("', start)
+    return ast.List(elts=elements, ctx=ast.Load())
+
+
+def _parse_value(tokens: Peek[Token]) -> ast.AST:
+    # VALUE -> CONST | IDENT
+    t = next(tokens)
+    if t.token == 'CONST':
+        return ast.Constant(value=t.value)
+    elif t.token == 'IDENT':
+        return ast.Subscript(
+            value=ast.Name('msg', ctx=ast.Load()),
+            slice=ast.Constant(value=t.value),
+            ctx=ast.Load())
+    else:
+        raise ParserError(
+            f'unexpected {t.source!r}; expected string or header', t)
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
