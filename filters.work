@@ -1,0 +1,14 @@
+[paths]
+root = ~/.mail/work
+inbox = ${root}/INBOX
+trash = ${root}/[Gmail].Trash
+
+[skipper]
+source = ${paths:inbox}
+test = X-Launchpad-Message-For == 'skipper-screen-team'
+move = ${paths:trash}
+
+[lexbuilder]
+source = ${paths:inbox}
+test = X-Launchpad-Bug-Reporter == 'OEM Taipei Bot (oem-taipei-bot)'
+move = ${paths:trash}
