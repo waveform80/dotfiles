@@ -12,3 +12,14 @@ move = ${paths:trash}
 source = ${paths:inbox}
 test = X-Launchpad-Bug-Reporter == 'OEM Taipei Bot (oem-taipei-bot)'
 move = ${paths:trash}
+
+[failedbuilds]
+source = ${paths:inbox}
+test = (
+      X-Launchpad-Notification-Type == 'ci-build-status' and
+      X-Launchpad-Message-For == 'variants-wg'
+  ) or (
+      X-Launchpad-Notification-Type == 'snap-build-status' and
+      X-Launchpad-Message-For == 'ubuntu-core-service'
+  )
+move = ${paths:trash}
