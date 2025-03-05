@@ -57,7 +57,7 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
                     logging.debug('Key %s matches %s', key, rule)
                     matches.setdefault(
                         source, {}).setdefault(key, []).append(rule)
-        logging.info('Matched %d messages', len(matches[source]))
+        logging.info('Matched %d messages', len(matches.get(source, {})))
     with boxes:
         for source, keys in matches.items():
             for key, rules in keys.items():
