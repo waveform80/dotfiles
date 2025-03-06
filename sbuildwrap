@@ -1,0 +1,136 @@
+#!/usr/bin/python3
+
+"""
+A wrapper for sbuild that sets the maintainer according to the d/control file,
+and calculates the last released version to correctly include the full
+changelog for SRU purposes. If $DEBEMAIL is set in the environment, it is also
+passed as the --keyid parameter to sbuild. Only the sbuild parameters that this
+script handles are listed below. All others are passed through.
+"""
+
+import os
+import io
+import sys
+import shlex
+import logging
+import argparse
+import tempfile
+import subprocess as sp
+from pathlib import Path
+from contextlib import contextmanager
+
+import distro_info
+from debian.deb822 import Deb822
+from launchpadlib.launchpad import Launchpad
+
+
+def main(args=None):
+    info = distro_info.UbuntuDistroInfo()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'source', nargs='?', default=None, type=Path,
+        help="The Debian source package (dsc) to build. If not specified, "
+        "try and build the unpacked source in the current directory")
+    parser.add_argument(
+        '-d', '--dist', dest='distribution', default=None,
+        help="The distribution series to build for (default: derived from "
+        f"debian/changelog header or {info.devel()})")
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help="Output more detail")
+    parser.add_argument(
+        '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
+        help=argparse.SUPPRESS)
+
+    config, remaining = parser.parse_known_args()
+    logging.basicConfig(
+        stream=sys.stderr, format='%(message)s',
+        level=logging.INFO if config.verbose else logging.WARNING)
+
+    try:
+        if not 'DEBEMAIL' in os.environ:
+            logging.error('DEBEMAIL is not set; aborting')
+            return 1
+        with get_source(config.source) as pkg_path:
+            logging.info('Parsing debian/changelog')
+            with tempfile.TemporaryFile() as changelog:
+                sp.run([
+                    'dpkg-parsechangelog',
+                    '--file', str(pkg_path / 'debian/changelog')
+                ], stdout=changelog, check=True)
+                changelog.seek(0)
+                for section in Deb822.iter_paragraphs(changelog):
+                    config.package = section['Source']
+                    config.version = section['Version']
+                    if config.distribution is None:
+                        config.distribution = section['Distribution']
+                    break
+            with (pkg_path / 'debian/control').open() as control:
+                for section in Deb822.iter_paragraphs(control):
+                    config.maintainer = section['Maintainer']
+                    break
+        if not info.valid(config.distribution):
+            config.distribution = info.devel()
+        config.last_version = get_last_version(
+            config.package, config.distribution, config.cache_dir)
+
+        cmd_line = [
+            'sbuild',
+            '--maintainer', config.maintainer,
+            '--keyid', os.environ['DEBEMAIL'],
+            '--no-clean-source',
+            '--debbuildopt', f'-v{config.last_version}',
+            '--dist', config.distribution,
+        ] + (
+            ['--verbose'] if config.verbose else []
+        ) + remaining
+        logging.info(shlex.join(cmd_line))
+        os.execvp(cmd_line[0], cmd_line)
+    except Exception as err:
+        if int(os.environ.get('DEBUG', '0')):
+            raise
+        else:
+            logging.fatal(str(err))
+            return 1
+
+    return 0
+
+
+@contextmanager
+def get_source(source):
+    if source is not None:
+        with tempfile.TemporaryDirectory(dir='.') as temp_dir:
+            logging.info('Unpacking source in temp dir %s', temp_dir)
+            sp.run(
+                ['dpkg-source', '--extract', source.resolve()],
+                stdout=sp.DEVNULL, stderr=sp.DEVNULL, cwd=temp_dir, check=True)
+            for d in Path(temp_dir).iterdir():
+                if d.is_dir():
+                    yield d
+    else:
+        yield Path('.')
+
+
+def get_last_version(package, series, cache_dir):
+    logging.info(
+        'Querying Launchpad for last publication of %s in %s', package, series)
+    lp = Launchpad.login_anonymously(
+        'get-livefs', 'production', str(cache_dir),
+        version='devel')
+    ubuntu = lp.distributions['ubuntu']
+    archive = ubuntu.getArchive(name='primary')
+    series = ubuntu.getSeries(name_or_version=series)
+    spph = archive.getPublishedSources(
+        distro_series=series,
+        source_name=package,
+        exact_match=True,
+        status='Published')
+    for record in spph:
+        if record.pocket != 'Proposed':
+            return record.source_package_version
+    raise ValueError('Could not determine last published version')
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))

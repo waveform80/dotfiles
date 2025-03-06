@@ -138,30 +138,9 @@ function get-package() {
     pull-lp-debs --download-only "$pkg" "$series"
 }
 
-function _sb() {
-    local maintainer ctrl keyid
-
-    for ctrl in "$@"; do
-        if [[ "$ctrl" = *.dsc ]]; then
-            break
-        fi
-    done
-    if [[ "$ctrl" != *.dsc ]]; then
-        if [[ -e debian/control ]]; then
-            ctrl=debian/control
-        else
-            echo "Cannot find control file or dsc">&2
-            return 1
-        fi
-    fi
-    maintainer="$(sed -n -e '/^Maintainer:/ s/^.*: *// p' "$ctrl")"
-    keyid="$DEBEMAIL"
-    sbuild --maintainer "$maintainer" --keyid "$keyid" --no-clean-source "$@"
-}
-
-alias sbs="_sb --no-arch-any --no-arch-all --source"
-alias sbb="_sb --arch-any --arch-all --no-source"
-alias sba="_sb --arch-any --arch-all --source"
+alias sbs="sbuildwrap --no-arch-any --no-arch-all --source"
+alias sbb="sbuildwrap --arch-any --arch-all --no-source"
+alias sba="sbuildwrap --arch-any --arch-all --source"
 
 function sync() {
     local profile="$1"
