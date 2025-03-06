@@ -254,6 +254,7 @@ task_mutt() {
         postinst)
             mkdir -p "$HOME"/.mail/{home,work}
             mkdir -p "$HOME"/.cache/mutt/{home,work}
+            sudo install "$HOME"/dotfiles/mailfilter "$DESTDIR"/bin/
             ln -sf "$HOME"/dotfiles/mbsyncrc "$HOME"/.mbsyncrc
             ln -sf "$HOME"/dotfiles/notmuch-home "$HOME"/.mail/home/.notmuch-config
             ln -sf "$HOME"/dotfiles/notmuch-work "$HOME"/.mail/work/.notmuch-config

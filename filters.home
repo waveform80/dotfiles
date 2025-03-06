@@ -1,0 +1,4 @@
+[paths]
+root = ~/.mail/home
+inbox = ${root}/INBOX
+trash = ${root}/[Gmail].Bin

@@ -7,4 +7,5 @@ ConditionPathExists=%t/isync-%i
 Type=oneshot
 Environment=NOTMUCH_CONFIG=%h/.mail/%i/.notmuch-config
 ExecStart=/usr/bin/mbsync -V %i
+ExecStart=/usr/local/bin/mailfilter -v %h/dotfiles/filters.%i
 ExecStart=/usr/bin/notmuch new
