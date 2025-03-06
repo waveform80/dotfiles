@@ -138,6 +138,7 @@ task_pack() {
             sudo install "$HOME"/dotfiles/get-patches "$DESTDIR"/bin/
             sudo install "$HOME"/dotfiles/get-livefs "$DESTDIR"/bin/
             sudo install "$HOME"/dotfiles/get-uploads "$DESTDIR"/bin/
+            sudo install "$HOME"/dotfiles/sbuildwrap "$DESTDIR"/bin/
             ;;
     esac
 }
