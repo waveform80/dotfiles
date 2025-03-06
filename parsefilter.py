@@ -294,13 +294,16 @@ class Peek(t.Generic[T]):
     """
     def __init__(self, it: t.Iterable[T]):
         self._it: t.Iterator[T] = iter(it)
-        self._peek: T = next(self._it)
-        self._peeked: bool = True
+        self._peeked: bool = False
 
     def __iter__(self) -> t.Iterator[T]:
         return self
 
     def peek(self) -> T:
+        """
+        Return the next item from the iterator, without (apparently) advancing
+        it.
+        """
         if not self._peeked:
             self._peek = next(self._it)
             self._peeked = True
