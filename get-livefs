@@ -4,10 +4,13 @@
 A simple script to retrieve build-status of livefs'.
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import logging
 import argparse
+import typing as t
 import datetime as dt
 from pathlib import Path
 from itertools import islice
@@ -37,7 +40,11 @@ STATUS = {
     'Gathering build output':       '…',
 }
 
-def main(args=None):
+def main(args: t.Optional[t.Sequence[str]]=None) -> int:
+    """
+    Main entry-point for the application. Takes the list of the command line
+    *args* and returns the exit code of the application.
+    """
     info = UbuntuDistroInfo()
 
     parser = argparse.ArgumentParser(
@@ -104,30 +111,42 @@ def main(args=None):
                 print(f'  Status:   {build.buildstate}')
                 print(f'  Link:     {build.web_link}')
                 print()
-    except Exception as err:
+    except Exception as err: # pylint: disable=broad-exception-caught
         if int(os.environ.get('DEBUG', '0')):
             raise
-        else:
-            print(str(err), file=sys.stderr)
-            return 1
+        print(str(err), file=sys.stderr)
+        return 1
 
     return 0
 
 
 def filter_archs(builds, archs):
+    """
+    Filter the given *builds* to only include the specified *archs*. If
+    *archs* is empty, nothing is filtered.
+    """
     for build in builds:
         if not archs or build.distro_arch_series in archs:
             yield build
 
 
 def filter_subarchs(builds, subarchs):
+    """
+    Filter the given *builds* to only include the specified *subarchs*. If
+    *subarchs* is empty, nothing is filtered.
+    """
     for build in builds:
         subarch = build.metadata_override.get('subarch')
         if not subarchs or subarch in subarchs:
             yield build
 
 
-def window(it, n):
+T = t.TypeVar('T')
+def window(it: t.Iterator[T], n: int) -> t.Iterator[tuple[T, ...]]:
+    """
+    Produce a sliding window of *n* elements (in a tuple) over *it*, an
+    iterator.
+    """
     d = deque(maxlen=n)
     for item in it:
         d.append(item)
@@ -238,4 +257,3 @@ def since(when, *, granularity=2):
 
 if __name__ == '__main__':
     sys.exit(main())
-
