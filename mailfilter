@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+"""
+A rudimentary mail filtering application. Designed to work with Maildir style
+storage, and configurable with a simple INI-style format. Permits filtering
+individual mails by boolean expressions against their headers.
+"""
+
 from __future__ import annotations
 
 import re
@@ -14,10 +20,18 @@ from collections import abc
 from configparser import ConfigParser, SectionProxy, ExtendedInterpolation
 from email.utils import parsedate_to_datetime
 from types import TracebackType, CodeType
+from operator import itemgetter
+from itertools import groupby
 
 
 def main(args: t.Optional[t.Sequence[str]]=None) -> int:
-    parser = argparse.ArgumentParser()
+    """
+    Main entry-point for the application. Takes the list of *args* passed on
+    the command line, and returns the exit code for the application.
+    """
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         'config', type=argparse.FileType('r'),
         help="The configuration file to execute")
@@ -38,49 +52,106 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
         comment_prefixes=('#',),
         interpolation=ExtendedInterpolation())
     config.read_file(options.config)
-    rules = [
+
+    rules = get_rules(config)
+    sources = get_sources(rules)
+    boxes = Boxes()
+    matches = get_matches(sources, boxes)
+
+    for source, messages in matches.items():
+        logging.info('Matched %d messages in %s', len(messages), source)
+    run_actions(
+        matches, boxes,
+        dry_run=options.dry_run, verbose=options.verbose)
+    boxes.close()
+    return 0
+
+
+def get_rules(config: ConfigParser) -> list[Rule]:
+    """
+    Given *config*, the parsed input configuration, compile and return the
+    list of :class:`Rule` defined.
+    """
+    return [
         Rule.from_section(config[section])
         for section in config
         if 'source' in config[section]
     ]
-    sources: dict[Path, list[Rule]] = {}
-    matches: dict[Path, dict[str, list[Rule]]] = {}
-    boxes = Boxes()
-    for rule in rules:
-        sources.setdefault(rule.source, []).append(rule)
 
-    for source, source_rules in sources.items():
-        logging.info('Scanning mailbox under %s', source)
-        for key, msg in boxes[source].iteritems():
-            for rule in source_rules:
-                if rule.match(msg):
-                    logging.debug('Key %s matches %s', key, rule)
-                    matches.setdefault(
-                        source, {}).setdefault(key, []).append(rule)
-        logging.info('Matched %d messages', len(matches.get(source, {})))
+
+def get_sources(rules: list[Rule]) -> dict[Path, list[Rule]]:
+    """
+    Given *rules*, the list of :class:`Rule` compiled from the input
+    configuration, re-arrange it into a mapping of source folders to the
+    list of rules associated with that folder.
+
+    This permits more efficient scanning as we only iterate over each source
+    folder a single time.
+    """
+    rules = sorted(rules, key=itemgetter('source'))
+    return {
+        source: list(rules)
+        for source, rules in groupby(rules, key=itemgetter('source'))
+    }
+
+
+def get_matches(
+    sources: dict[Path, list[Rule]],
+    boxes: Boxes
+) -> dict[Path, dict[str, list[Rule]]]:
+    """
+    Given *sources*, the mapping returned by :func:`get_sources` of source
+    folders to :class:`Rule` lists, iterate over each source folder and
+    calculate which messages match which rules.
+
+    *boxes* is the mapping of source paths to mailboxes. The result is a
+    mapping of source :class:`~pathlib.Path` to a mapping of message key to a
+    list of :class:`Rule` that that message matched.
+    """
+    return {
+        source: {
+            key: [rule for rule in source_rules if rule.match(msg)]
+            for key, msg in boxes[source].iteritems()
+        }
+        for source, source_rules in sources.items()
+    }
+
+
+def run_actions(
+    matches: dict[Path, dict[str, list[Rule]]],
+    boxes: Boxes,
+    *, dry_run: bool=False, verbose: bool=False
+) -> None:
+    """
+    Given the *matches* returned by :func:`get_matches`, and the set of
+    mail *boxes*, execute the actions dictated by each rule matched.
+
+    This function checks that conflicted actions have not been found before
+    attempting to execute actions. If *dry_run* is :data:`True`, then log
+    messages will still be produced by actions will not actually run. If
+    *verbose* is :data:`True`, more log messages will be produced.
+    """
     with boxes:
         for source, keys in matches.items():
-            for key, rules in keys.items():
+            for key, matched_rules in keys.items():
                 try:
-                    if len(rules) > 1:
-                        conflicts(rules)
+                    if len(matched_rules) > 1:
+                        conflicts(matched_rules)
                 except ConflictError as exc:
                     msg = boxes[source][key]
                     logging.warning('Message matches conflicting rules:')
                     logging.warning('%s', format_message(msg))
                     for rule in exc.rules:
                         logging.warning('%s', rule)
-                for rule in rules:
-                    if options.verbose:
+                for rule in matched_rules:
+                    if verbose:
                         msg = boxes[source][key]
                         logging.info('Processing %s', format_message(msg))
-                    if not options.dry_run:
+                    if not dry_run:
                         rule.execute(key, boxes)
-        if not options.dry_run:
+        if not dry_run:
             boxes.clean()
             boxes.flush()
-    boxes.close()
-    return 0
 
 
 class Boxes(abc.Mapping[Path, mailbox.Maildir]):
@@ -130,10 +201,14 @@ class Boxes(abc.Mapping[Path, mailbox.Maildir]):
         for box in self._boxes.values():
             box.unlock()
 
+    # Required by mypy --strict
+    # pylint: disable=useless-return
     def __enter__(self) -> None:
         self.lock()
         return None
 
+    # Required by mypy --strict
+    # pylint: disable=useless-return
     def __exit__(
         self,
         type_: type[BaseException] | None,
@@ -202,6 +277,10 @@ class Rule(t.NamedTuple):
 
     @classmethod
     def from_section(cls, section: SectionProxy) -> Rule:
+        """
+        Construct a :class:`Rule` from the provided *section* of a
+        configuration file.
+        """
         if 'test' in section:
             test = section['test']
             parsed = parse(test)
@@ -227,6 +306,8 @@ class Rule(t.NamedTuple):
         Return a :class:`bool` indicating whether the *message* matches the
         rule's test.
         """
+        # Yes, it's using eval, but the code is not arbitrary
+        # pylint: disable=eval-used
         return bool(eval(self.code, {'msg': message}))
 
     def execute(self, key: str, boxes: Boxes) -> None:
@@ -294,6 +375,7 @@ class Peek(t.Generic[T]):
     """
     def __init__(self, it: t.Iterable[T]):
         self._it: t.Iterator[T] = iter(it)
+        self._peek: T
         self._peeked: bool = False
 
     def __iter__(self) -> t.Iterator[T]:
@@ -371,17 +453,18 @@ def unquote(s: str) -> str:
     """
     try:
         qchar = s[0]
-    except IndexError:
-        raise ValueError('empty string literal')
-    else:
-        return s[1:-1].replace('\\' + qchar, qchar)
+    except IndexError as exc:
+        raise ValueError('empty string literal') from exc
+    return s[1:-1].replace('\\' + qchar, qchar)
 
 
 def tokenize(s: str) -> t.Iterable[Token]:
     """
     Split the input string *s* into a stream of :class:`Token` tuples.
     """
-    identity = lambda x: x
+    V = t.TypeVar('V')
+    def identity(x: V) -> V:
+        return x
     table: list[tuple[str, t.Callable[[str], str], re.Pattern[str]]] = [
         # token    xform     regex
         ('COMPOP', identity, re.compile(r'(==|!=|in)')),
@@ -428,9 +511,9 @@ def parse(s: str) -> ast.Expression:
     """
     tokens = Peek(token for token in tokenize(s) if token.token != 'WS')
     node = _parse_expression(tokens)
-    for t in tokens:
-        if t.token != 'EOF':
-            raise ParserError(f'unexpected {t.source!r}', t)
+    for token in tokens:
+        if token.token != 'EOF':
+            raise ParserError(f'unexpected {token.source!r}', token)
     ast.fix_missing_locations(node)
     return ast.Expression(body=node)
 
@@ -492,6 +575,8 @@ def _parse_set(tokens: Peek[Token]) -> ast.AST:
             elements.append(_parse_value(tokens))
         else:
             break
+    else:
+        raise ParserError('unexpected end of set', start)
     if sep.token != 'RPAR':
         raise ParserError('missing closing ")" for "("', start)
     return ast.List(elts=elements, ctx=ast.Load())
@@ -499,17 +584,16 @@ def _parse_set(tokens: Peek[Token]) -> ast.AST:
 
 def _parse_value(tokens: Peek[Token]) -> ast.AST:
     # VALUE -> CONST | IDENT
-    t = next(tokens)
-    if t.token == 'CONST':
-        return ast.Constant(value=t.value)
-    elif t.token == 'IDENT':
+    token = next(tokens)
+    if token.token == 'CONST':
+        return ast.Constant(value=token.value)
+    if token.token == 'IDENT':
         return ast.Subscript(
             value=ast.Name('msg', ctx=ast.Load()),
-            slice=ast.Constant(value=t.value),
+            slice=ast.Constant(value=token.value),
             ctx=ast.Load())
-    else:
-        raise ParserError(
-            f'unexpected {t.source!r}; expected string or header', t)
+    raise ParserError(
+        f'unexpected {token.source!r}; expected string or header', token)
 
 
 if __name__ == '__main__':
