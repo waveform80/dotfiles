@@ -1,6 +1,8 @@
-[paths]
+[DEFAULT]
 root = ~/.mail/work
-inbox = ${root}/INBOX
+source = ${root}/INBOX
+
+[paths]
 trash = ${root}/[Gmail].Trash
 uploads = ${root}/uploads
 events = ${root}/events
@@ -8,55 +10,51 @@ events = ${root}/events
 u-boot = ${root}/u-boot
 kernel-team = ${root}/kernel-team
 bluetooth = ${root}/bluetooth
+release = ${root}/ubuntu-release
 
 [u-boot list]
-source = ${paths:inbox}
-move = ${paths:u-boot}
 test = List-Id == 'U-Boot discussion <u-boot.lists.denx.de>'
+move = ${paths:u-boot}
 
 [kernel-team list]
-source = ${paths:inbox}
-move = ${paths:kernel-team}
 test = List-Id == 'Kernel team discussions <kernel-team.lists.ubuntu.com>'
+move = ${paths:kernel-team}
+
+[release list]
+test = List-Id == 'Ubuntu release co-ordination and discussion <ubuntu-release.lists.ubuntu.com>'
+move = ${paths:release}
 
 [bluetooth list]
-source = ${paths:inbox}
-move = ${paths:bluetooth}
 test = List-Id == '<linux-bluetooth.vger.kernel.org>'
+move = ${paths:bluetooth}
 
 [events]
-source = ${paths:inbox}
-move = ${paths:events}
 test = From == 'noreply+events@canonical.com'
+move = ${paths:events}
 
 [skipper-team]
-source = ${paths:inbox}
-move = ${paths:trash}
 test = X-Launchpad-Message-For == 'skipper-screen-team'
+move = ${paths:trash}
 
 [lexbuilder]
-source = ${paths:inbox}
-move = ${paths:trash}
 test = X-Launchpad-Bug-Reporter == 'OEM Taipei Bot (oem-taipei-bot)'
+move = ${paths:trash}
 
 [failed-builds1]
-source = ${paths:inbox}
-move = ${paths:trash}
 test =
     X-Launchpad-Notification-Type == 'ci-build-status' and
     X-Launchpad-Message-For == 'variants-wg'
+move = ${paths:trash}
 
 [failed-builds2]
-source = ${paths:inbox}
-move = ${paths:trash}
 test =
     X-Launchpad-Notification-Type == 'snap-build-status' and
     X-Launchpad-Message-For == 'ubuntu-core-service'
+move = ${paths:trash}
 
 [accepted-uploads]
-source = ${paths:inbox}
-move = ${paths:uploads}
 test =
     X-Launchpad-Message-For == 'waveform' and
     X-Launchpad-Notification-Type == 'package-upload' and
     X-Launchpad-Archive == 'ubuntu'
+move = ${paths:uploads}
