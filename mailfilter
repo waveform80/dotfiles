@@ -21,7 +21,8 @@ from pathlib import Path
 from collections import abc
 from email.utils import parsedate_to_datetime
 from types import TracebackType, CodeType
-from operator import itemgetter
+from contextlib import contextmanager, closing
+from operator import attrgetter
 from itertools import groupby
 
 
@@ -75,7 +76,7 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
     matches = get_matches(sources, boxes)
 
     for source, messages in matches.items():
-        logging.info('Matched %d messages in %s', len(messages), source)
+        logging.info('Matched %d message(s) in %s', len(messages), source)
     run_actions(
         matches, boxes,
         dry_run=options.dry_run, verbose=options.verbose)
@@ -87,10 +88,17 @@ def get_rules(config: conf.ConfigParser) -> list[Rule]:
     """
     Given *config*, the parsed input configuration, compile and return the list
     of :class:`Rule` defined. All sections, except "paths" and "DEFAULT" are
-    considered potentially valid rules.
+    considered potentially valid rules::
+
+        >>> with _test_rig() as test:
+        ...     parser = conf.ConfigParser()
+        ...     parser.read_string(test['config'])
+        ...     rules = get_rules(parser)
+        >>> rules
+        [<Rule: X-Flag == 'spam'>]
     """
     return [
-        Rule.from_section(config[section])
+        Rule.from_section(section)
         for title, section in config.items()
         if title not in ('paths', conf.DEFAULTSECT)
     ]
@@ -100,15 +108,22 @@ def get_sources(rules: list[Rule]) -> dict[Path, list[Rule]]:
     """
     Given *rules*, the list of :class:`Rule` compiled from the input
     configuration, re-arrange it into a mapping of source folders to the
-    list of rules associated with that folder.
+    list of rules associated with that folder::
+
+        >>> with _test_rig() as test:
+        ...     parser = conf.ConfigParser()
+        ...     parser.read_string(test['config'])
+        ...     sources = get_sources(get_rules(parser))
+        >>> sources # doctest: +ELLIPSIS
+        {PosixPath('.../INBOX'): [<Rule: X-Flag == 'spam'>]}
 
     This permits more efficient scanning as we only iterate over each source
     folder a single time.
     """
-    rules = sorted(rules, key=itemgetter('source'))
+    rules = sorted(rules, key=attrgetter('source'))
     return {
         source: list(rules)
-        for source, rules in groupby(rules, key=itemgetter('source'))
+        for source, rules in groupby(rules, key=attrgetter('source'))
     }
 
 
@@ -125,12 +140,20 @@ def get_matches(
     mapping of source :class:`~pathlib.Path` to a mapping of message key to a
     list of :class:`Rule` that that message matched.
     """
-    return {
+    matches = {
         source: {
             key: [rule for rule in source_rules if rule.match(msg)]
             for key, msg in boxes[source].iteritems()
         }
         for source, source_rules in sources.items()
+    }
+    return {
+        source: {
+            key: rules
+            for key, rules in matches.items()
+            if rules
+        }
+        for source, matches in matches.items()
     }
 
 
@@ -175,7 +198,17 @@ class Boxes(abc.Mapping[Path, mailbox.Maildir]):
     """
     A trivial class representing a mapping of :class:`pathlib.Path` to
     mailboxes. Constructs :class:`~mailbox.Mailbox` instances on request of
-    paths.
+    paths::
+
+        >>> with _test_rig() as test:
+        ...     with closing(Boxes()) as boxes:
+        ...        assert len(boxes) == 0
+        ...        inbox = boxes[test['inbox_path']]
+        ...        assert isinstance(inbox, mailbox.Mailbox)
+        ...        assert len(boxes) == 1
+        ...        assert inbox is boxes[test['inbox_path']]
+        ...        list(boxes.keys()) # doctest: +ELLIPSIS
+        [PosixPath('.../INBOX')]
     """
     def __init__(self) -> None:
         self._boxes: dict[Path, mailbox.Maildir] = {}
@@ -296,7 +329,23 @@ class Rule(t.NamedTuple):
     def from_section(cls, section: conf.SectionProxy) -> Rule:
         """
         Construct a :class:`Rule` from the provided *section* of a
-        configuration file.
+        configuration file. For example::
+
+            >>> spam = '''\\
+            ... [spam]
+            ... source = /home/fred/.mail/INBOX
+            ... move = /home/fred/.mail/Spam
+            ... test = Subject == "YOU'VE WON THE LOTTERY"
+            ... '''
+            >>> config = conf.ConfigParser()
+            >>> config.read_string(spam)
+            >>> rule = Rule.from_section(config['spam'])
+            >>> rule.source
+            PosixPath('/home/fred/.mail/INBOX')
+            >>> rule.move
+            PosixPath('/home/fred/.mail/Spam')
+            >>> rule.test
+            'Subject == "YOU\\'VE WON THE LOTTERY"'
         """
         if 'test' in section:
             test = section['test']
@@ -351,7 +400,7 @@ def format_message(message: mailbox.Message) -> str:
     Return a short string representing the email *message* containing a
     truncated (if necessary) subject line, and delivery date.
     """
-    subj = message['Subject']
+    subj = message['Subject'] or '<No Subject>'
     if len(subj) > 60:
         subj = f'{subj[:30]}…{subj[-30:]}'
     date = parsedate_to_datetime(message['Date'])
@@ -524,7 +573,19 @@ def tokenize(s: str) -> t.Iterable[Token]:
 def parse(s: str) -> ast.Expression:
     """
     Parse the input string *s* into an executable filter expression, returned
-    as a Python :class:`~ast.AST`.
+    as a Python :class:`~ast.Expression`::
+
+        >>> _dump_ast(parse("(A == 'foo')"))
+        Expression(
+            body=Compare(
+                left=Subscript(
+                    value=Name(id='msg', ctx=Load()),
+                    slice=Constant(value='A'),
+                    ctx=Load()),
+                ops=[
+                    Eq()],
+                comparators=[
+                    Constant(value='foo')]))
     """
     tokens = Peek(token for token in tokenize(s) if token.token != 'WS')
     node = _parse_expression(tokens)
@@ -712,6 +773,70 @@ def _test_main() -> bool:
     return bool(failures)
 
 
+@contextmanager
+def _test_rig() -> t.Iterator[dict[str, t.Any]]:
+    """
+    Generate context for all tests.
+
+    This consists of a temporary directory containing an INBOX with two
+    messages, a spam folder with none, and a configuration which will move one
+    of the messages to the spam folder when executed. The test rig functions
+    as a context manager which will clean up the temporary directory on exit.
+    """
+    import email
+    import email.policy
+    import tempfile
+    from textwrap import dedent
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        inbox_path = tmp_path / 'INBOX'
+        spam_path = tmp_path / 'spam'
+        with (
+            closing(mailbox.Maildir(inbox_path, create=True)) as inbox,
+            closing(mailbox.Maildir(spam_path, create=True)) as spam
+        ):
+            template = dedent(
+                """\
+                From: {sender}
+                To: Fred Flintstone <fred@bedrockquarries.com>
+                X-Flag: {flag}
+                Subject: {subject}
+
+                Test message
+                """)
+            test_mails = [
+                ('foo@bar.com', 'Definitely not spam!', 'spam'),
+                ('Barney Rubble <barney@rubble.me>', 'Bowling tournament', 'ham')
+            ]
+            for sender, subject, flag in test_mails:
+                msg = email.message_from_string(
+                    template.format(sender=sender, subject=subject, flag=flag),
+                    _class=mailbox.MaildirMessage, policy=email.policy.default)
+                inbox.add(msg)
+            config = dedent(
+                f"""\
+                [paths]
+                spam = {spam_path}
+
+                [move_spam]
+                source = {inbox_path}
+                test = X-Flag == 'spam'
+                move = ${{paths:spam}}
+                """)
+            config_path = tmp_path / 'filters.conf'
+            config_path.write_text(config)
+            yield {
+                'tmp_path': tmp_path,
+                'inbox_path': inbox_path,
+                'spam_path': spam_path,
+                'config_path': config_path,
+                'inbox': inbox,
+                'spam': spam,
+                'config': config,
+            }
+
+
 def _dump_ast(node: ast.AST) -> None:
     """
     Pretty-print the given asbtract syntax tree. This function is primarily
@@ -767,6 +892,46 @@ __test__ = {
                     slice=Constant(value='Subject'),
                     ctx=Load())],
             ctx=Load())
+    """,
+
+    'bad-python-version': """
+    What happens when Python is too old?
+    ::
+
+        >>> from unittest import mock
+        >>> with mock.patch('sys.version_info', (3, 5)):
+        ...     main()
+        Traceback (most recent call last):
+          File "./mailfilter", line 34, in main
+            raise SystemExit('This script requires Python 3.10 or later')
+        SystemExit: This script requires Python 3.10 or later
+    """,
+
+    'main --help': """
+    Running with --help produces help output on stdout::
+
+        >>> import os
+        >>> os.environ['TEST'] = '0' # don't run the test-suite recursively!
+        >>> try:
+        ...     main(['--help']) # doctest: +ELLIPSIS
+        ... except SystemExit:
+        ...     pass
+        usage: mailfilter [-h] [--dry-run] [-v] config
+        ...
+    """,
+
+    'main works': """
+    Running main does what it's supposed to do::
+
+        >>> import os
+        >>> os.environ['TEST'] = '0' # don't run the test-suite recursively!
+        >>> with _test_rig() as test:
+        ...     assert len(test['inbox']) == 2
+        ...     assert len(test['spam']) == 0
+        ...     args = [str(test['config_path'])]
+        ...     assert main(args) == 0
+        ...     assert len(test['inbox']) == 1
+        ...     assert len(test['spam']) == 1
     """,
 }
 
