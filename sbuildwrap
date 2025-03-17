@@ -49,9 +49,17 @@ def main(args=None):
         level=logging.INFO if config.verbose else logging.WARNING)
 
     try:
-        if not 'DEBEMAIL' in os.environ:
-            logging.error('DEBEMAIL is not set; aborting')
-            return 1
+        if 'DEBEMAIL' in os.environ:
+            result = sp.run([
+                '/usr/bin/gpg',
+                '--batch', '--no-options', '--no-tty',
+                '--sign', '--local-user', os.environ['DEBEMAIL'],
+            ], input=b'foo\n', stdout=sp.DEVNULL)
+            if result.returncode != 0:
+                logging.fatal('Cannot sign result as {os.environ["DEBEMAIL"]}')
+                return 1
+        else:
+            logging.warning('DEBEMAIL is not set')
         with get_source(config.source) as pkg_path:
             logging.info('Parsing debian/changelog')
             with tempfile.TemporaryFile() as changelog:
@@ -78,15 +86,17 @@ def main(args=None):
         cmd_line = [
             'sbuild',
             '--maintainer', config.maintainer,
-            '--keyid', os.environ['DEBEMAIL'],
             '--no-clean-source',
             '--debbuildopt', f'-v{config.last_version}',
             '--dist', config.distribution,
-        ] + (
-            ['--verbose'] if config.verbose else []
-        ) + remaining
-        logging.info(shlex.join(cmd_line))
-        os.execvp(cmd_line[0], cmd_line)
+        ]
+        if config.verbose:
+            cmd_line.append('--verbose')
+        if 'DEBEMAIL' in os.environ:
+            cmd_line.extend(['--keyid', os.environ['DEBEMAIL']])
+        cmd_line.extend(remaining)
+        logging.info('sbuild command-line: %s', shlex.join(cmd_line))
+        os.execv('/usr/bin/sbuild', cmd_line)
     except Exception as err:
         if int(os.environ.get('DEBUG', '0')):
             raise

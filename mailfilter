@@ -1,23 +1,54 @@
 #!/usr/bin/python3
 
+"""
+A rudimentary mail filtering application. Designed to work with Maildir style
+storage, and configurable with a simple INI-style format. Permits filtering
+individual mails by boolean expressions against their headers.
+"""
+
 from __future__ import annotations
 
 import re
+import os
 import sys
 import ast
 import logging
 import mailbox
 import argparse
 import typing as t
+import configparser as conf
 from pathlib import Path
 from collections import abc
-from configparser import ConfigParser, SectionProxy, ExtendedInterpolation
 from email.utils import parsedate_to_datetime
 from types import TracebackType, CodeType
+from contextlib import contextmanager, closing
+from operator import attrgetter
+from itertools import groupby
 
 
 def main(args: t.Optional[t.Sequence[str]]=None) -> int:
-    parser = argparse.ArgumentParser()
+    """
+    Main entry-point for the application. Takes the list of *args* passed on
+    the command line, and returns the exit code for the application.
+    """
+    if sys.version_info < (3, 10):
+        raise SystemExit('This script requires Python 3.10 or later')
+
+    if int(os.environ.get('TEST', '0')):
+        # To run the test-suite (via the built-in doctest module):
+        #
+        # $ TEST=1 ./mailfilter
+        #
+        # Optionally, if you have python3-coverage installed, you may track
+        # coverage list so:
+        #
+        # $ TEST=1 python3-coverage run --source=. ./mailfilter
+        # $ python3-coverage report --show-missing
+        return _test_main()
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         'config', type=argparse.FileType('r'),
         help="The configuration file to execute")
@@ -33,61 +64,151 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
     logging.basicConfig(
         stream=sys.stderr, format='%(message)s',
         level=logging.INFO if options.verbose else logging.WARNING)
-    config = ConfigParser(
+    config = conf.ConfigParser(
         delimiters=('=',),
         comment_prefixes=('#',),
-        interpolation=ExtendedInterpolation())
+        interpolation=conf.ExtendedInterpolation())
     config.read_file(options.config)
-    rules = [
-        Rule.from_section(config[section])
-        for section in config
-        if 'source' in config[section]
-    ]
-    sources: dict[Path, list[Rule]] = {}
-    matches: dict[Path, dict[str, list[Rule]]] = {}
-    boxes = Boxes()
-    for rule in rules:
-        sources.setdefault(rule.source, []).append(rule)
 
-    for source, source_rules in sources.items():
-        logging.info('Scanning mailbox under %s', source)
-        for key, msg in boxes[source].iteritems():
-            for rule in source_rules:
-                if rule.match(msg):
-                    logging.debug('Key %s matches %s', key, rule)
-                    matches.setdefault(
-                        source, {}).setdefault(key, []).append(rule)
-        logging.info('Matched %d messages', len(matches.get(source, {})))
+    rules = get_rules(config)
+    sources = get_sources(rules)
+    boxes = Boxes()
+    matches = get_matches(sources, boxes)
+
+    for source, messages in matches.items():
+        logging.info('Matched %d message(s) in %s', len(messages), source)
+    run_actions(
+        matches, boxes,
+        dry_run=options.dry_run, verbose=options.verbose)
+    boxes.close()
+    return 0
+
+
+def get_rules(config: conf.ConfigParser) -> list[Rule]:
+    """
+    Given *config*, the parsed input configuration, compile and return the list
+    of :class:`Rule` defined. All sections, except "paths" and "DEFAULT" are
+    considered potentially valid rules::
+
+        >>> with _test_rig() as test:
+        ...     parser = conf.ConfigParser()
+        ...     parser.read_string(test['config'])
+        ...     rules = get_rules(parser)
+        >>> rules
+        [<Rule: X-Flag == 'spam'>]
+    """
+    return [
+        Rule.from_section(section)
+        for title, section in config.items()
+        if title not in ('paths', conf.DEFAULTSECT)
+    ]
+
+
+def get_sources(rules: list[Rule]) -> dict[Path, list[Rule]]:
+    """
+    Given *rules*, the list of :class:`Rule` compiled from the input
+    configuration, re-arrange it into a mapping of source folders to the
+    list of rules associated with that folder::
+
+        >>> with _test_rig() as test:
+        ...     parser = conf.ConfigParser()
+        ...     parser.read_string(test['config'])
+        ...     sources = get_sources(get_rules(parser))
+        >>> sources # doctest: +ELLIPSIS
+        {PosixPath('.../INBOX'): [<Rule: X-Flag == 'spam'>]}
+
+    This permits more efficient scanning as we only iterate over each source
+    folder a single time.
+    """
+    rules = sorted(rules, key=attrgetter('source'))
+    return {
+        source: list(rules)
+        for source, rules in groupby(rules, key=attrgetter('source'))
+    }
+
+
+def get_matches(
+    sources: dict[Path, list[Rule]],
+    boxes: Boxes
+) -> dict[Path, dict[str, list[Rule]]]:
+    """
+    Given *sources*, the mapping returned by :func:`get_sources` of source
+    folders to :class:`Rule` lists, iterate over each source folder and
+    calculate which messages match which rules.
+
+    *boxes* is the mapping of source paths to mailboxes. The result is a
+    mapping of source :class:`~pathlib.Path` to a mapping of message key to a
+    list of :class:`Rule` that that message matched.
+    """
+    matches = {
+        source: {
+            key: [rule for rule in source_rules if rule.match(msg)]
+            for key, msg in boxes[source].iteritems()
+        }
+        for source, source_rules in sources.items()
+    }
+    return {
+        source: {
+            key: rules
+            for key, rules in matches.items()
+            if rules
+        }
+        for source, matches in matches.items()
+    }
+
+
+def run_actions(
+    matches: dict[Path, dict[str, list[Rule]]],
+    boxes: Boxes,
+    *, dry_run: bool=False, verbose: bool=False
+) -> None:
+    """
+    Given the *matches* returned by :func:`get_matches`, and the set of
+    mail *boxes*, execute the actions dictated by each rule matched.
+
+    This function checks that conflicted actions have not been found before
+    attempting to execute actions. If *dry_run* is :data:`True`, then log
+    messages will still be produced by actions will not actually run. If
+    *verbose* is :data:`True`, more log messages will be produced.
+    """
     with boxes:
         for source, keys in matches.items():
-            for key, rules in keys.items():
+            for key, matched_rules in keys.items():
                 try:
-                    if len(rules) > 1:
-                        conflicts(rules)
+                    if len(matched_rules) > 1:
+                        conflicts(matched_rules)
                 except ConflictError as exc:
                     msg = boxes[source][key]
                     logging.warning('Message matches conflicting rules:')
                     logging.warning('%s', format_message(msg))
                     for rule in exc.rules:
                         logging.warning('%s', rule)
-                for rule in rules:
-                    if options.verbose:
+                for rule in matched_rules:
+                    if verbose:
                         msg = boxes[source][key]
                         logging.info('Processing %s', format_message(msg))
-                    if not options.dry_run:
+                    if not dry_run:
                         rule.execute(key, boxes)
-        if not options.dry_run:
+        if not dry_run:
             boxes.clean()
             boxes.flush()
-    boxes.close()
-    return 0
 
 
 class Boxes(abc.Mapping[Path, mailbox.Maildir]):
     """
     A trivial class representing a mapping of :class:`pathlib.Path` to
     mailboxes. Constructs :class:`~mailbox.Mailbox` instances on request of
-    paths.
+    paths::
+
+        >>> with _test_rig() as test:
+        ...     with closing(Boxes()) as boxes:
+        ...        assert len(boxes) == 0
+        ...        inbox = boxes[test['inbox_path']]
+        ...        assert isinstance(inbox, mailbox.Mailbox)
+        ...        assert len(boxes) == 1
+        ...        assert inbox is boxes[test['inbox_path']]
+        ...        list(boxes.keys()) # doctest: +ELLIPSIS
+        [PosixPath('.../INBOX')]
     """
     def __init__(self) -> None:
         self._boxes: dict[Path, mailbox.Maildir] = {}
@@ -130,10 +251,14 @@ class Boxes(abc.Mapping[Path, mailbox.Maildir]):
         for box in self._boxes.values():
             box.unlock()
 
+    # Required by mypy --strict
+    # pylint: disable=useless-return
     def __enter__(self) -> None:
         self.lock()
         return None
 
+    # Required by mypy --strict
+    # pylint: disable=useless-return
     def __exit__(
         self,
         type_: type[BaseException] | None,
@@ -201,7 +326,27 @@ class Rule(t.NamedTuple):
     unmark: set[str]
 
     @classmethod
-    def from_section(cls, section: SectionProxy) -> Rule:
+    def from_section(cls, section: conf.SectionProxy) -> Rule:
+        """
+        Construct a :class:`Rule` from the provided *section* of a
+        configuration file. For example::
+
+            >>> spam = '''\\
+            ... [spam]
+            ... source = /home/fred/.mail/INBOX
+            ... move = /home/fred/.mail/Spam
+            ... test = Subject == "YOU'VE WON THE LOTTERY"
+            ... '''
+            >>> config = conf.ConfigParser()
+            >>> config.read_string(spam)
+            >>> rule = Rule.from_section(config['spam'])
+            >>> rule.source
+            PosixPath('/home/fred/.mail/INBOX')
+            >>> rule.move
+            PosixPath('/home/fred/.mail/Spam')
+            >>> rule.test
+            'Subject == "YOU\\'VE WON THE LOTTERY"'
+        """
         if 'test' in section:
             test = section['test']
             parsed = parse(test)
@@ -227,6 +372,8 @@ class Rule(t.NamedTuple):
         Return a :class:`bool` indicating whether the *message* matches the
         rule's test.
         """
+        # Yes, it's using eval, but the code is not arbitrary
+        # pylint: disable=eval-used
         return bool(eval(self.code, {'msg': message}))
 
     def execute(self, key: str, boxes: Boxes) -> None:
@@ -253,7 +400,7 @@ def format_message(message: mailbox.Message) -> str:
     Return a short string representing the email *message* containing a
     truncated (if necessary) subject line, and delivery date.
     """
-    subj = message['Subject']
+    subj = message['Subject'] or '<No Subject>'
     if len(subj) > 60:
         subj = f'{subj[:30]}…{subj[-30:]}'
     date = parsedate_to_datetime(message['Date'])
@@ -294,6 +441,7 @@ class Peek(t.Generic[T]):
     """
     def __init__(self, it: t.Iterable[T]):
         self._it: t.Iterator[T] = iter(it)
+        self._peek: T
         self._peeked: bool = False
 
     def __iter__(self) -> t.Iterator[T]:
@@ -371,17 +519,18 @@ def unquote(s: str) -> str:
     """
     try:
         qchar = s[0]
-    except IndexError:
-        raise ValueError('empty string literal')
-    else:
-        return s[1:-1].replace('\\' + qchar, qchar)
+    except IndexError as exc:
+        raise ValueError('empty string literal') from exc
+    return s[1:-1].replace('\\' + qchar, qchar)
 
 
 def tokenize(s: str) -> t.Iterable[Token]:
     """
     Split the input string *s* into a stream of :class:`Token` tuples.
     """
-    identity = lambda x: x
+    V = t.TypeVar('V')
+    def identity(x: V) -> V:
+        return x
     table: list[tuple[str, t.Callable[[str], str], re.Pattern[str]]] = [
         # token    xform     regex
         ('COMPOP', identity, re.compile(r'(==|!=|in)')),
@@ -418,24 +567,66 @@ def tokenize(s: str) -> t.Iterable[Token]:
             else:
                 column += 1
     # Add an EOF token to simplify EOF handling in the parser
-    yield Token('EOF', 'EOF', 'EOF', line, column)
+    yield Token('EOF', '', '', line, column)
 
 
 def parse(s: str) -> ast.Expression:
     """
     Parse the input string *s* into an executable filter expression, returned
-    as a Python :class:`~ast.AST`.
+    as a Python :class:`~ast.Expression`::
+
+        >>> _dump_ast(parse("(A == 'foo')"))
+        Expression(
+            body=Compare(
+                left=Subscript(
+                    value=Name(id='msg', ctx=Load()),
+                    slice=Constant(value='A'),
+                    ctx=Load()),
+                ops=[
+                    Eq()],
+                comparators=[
+                    Constant(value='foo')]))
     """
     tokens = Peek(token for token in tokenize(s) if token.token != 'WS')
     node = _parse_expression(tokens)
-    for t in tokens:
-        if t.token != 'EOF':
-            raise ParserError(f'unexpected {t.source!r}', t)
+    for token in tokens:
+        if token.token != 'EOF':
+            raise ParserError(f'unexpected {token.source!r}', token)
     ast.fix_missing_locations(node)
     return ast.Expression(body=node)
 
 
 def _parse_expression(tokens: Peek[Token]) -> ast.AST:
+    """
+    Parse a boolean expression of one or more comparisons combined with the
+    boolean and/or operators. This is the "top" of the parsing tree, and is the
+    function called directly from :func:`parse`::
+
+        >>> tokens = tokenize("(A == 'foo') and (B != 'bar')")
+        >>> tokens = Peek([t for t in tokens if t.token != 'WS'])
+        >>> _dump_ast(_parse_expression(tokens))
+        BoolOp(
+            op=And(),
+            values=[
+                Compare(
+                    left=Subscript(
+                        value=Name(id='msg', ctx=Load()),
+                        slice=Constant(value='A'),
+                        ctx=Load()),
+                    ops=[
+                        Eq()],
+                    comparators=[
+                        Constant(value='foo')]),
+                Compare(
+                    left=Subscript(
+                        value=Name(id='msg', ctx=Load()),
+                        slice=Constant(value='B'),
+                        ctx=Load()),
+                    ops=[
+                        NotEq()],
+                    comparators=[
+                        Constant(value='bar')])])
+    """
     # EXPR -> COMP and EXPR
     # EXPR -> COMP or EXPR
     # EXPR -> COMP
@@ -449,14 +640,33 @@ def _parse_expression(tokens: Peek[Token]) -> ast.AST:
 
 
 def _parse_compare(tokens: Peek[Token]) -> ast.AST:
+    """
+    Parse a comparison of two values, or a parenthesized expression from the
+    head of the *tokens* sequence, returning a Python :class:`~ast.AST` object
+    to execute the comparison in an expression::
+
+        >>> _dump_ast(_parse_compare(Peek(tokenize("A=='foo'"))))
+        Compare(
+            left=Subscript(
+                value=Name(id='msg', ctx=Load()),
+                slice=Constant(value='A'),
+                ctx=Load()),
+            ops=[
+                Eq()],
+            comparators=[
+                Constant(value='foo')])
+        >>> _dump_ast(_parse_compare(Peek(tokenize("('foo')"))))
+        Constant(value='foo')
+    """
     # COMP -> VALUE ==/!= VALUE
     # COMP -> VALUE in SET
     # COMP -> (EXPR)
     if tokens.peek().token == 'LPAR':
         start = next(tokens)
         node = _parse_expression(tokens)
-        if next(tokens).token != 'RPAR':
-            raise ParserError('missing closing ")" for "("', start)
+        finish = next(tokens)
+        if finish.token != 'RPAR':
+            raise ParserError('missing closing ")"', finish)
     else:
         node = _parse_value(tokens)
         if tokens.peek().token == 'COMPOP':
@@ -476,6 +686,31 @@ def _parse_compare(tokens: Peek[Token]) -> ast.AST:
 
 
 def _parse_set(tokens: Peek[Token]) -> ast.AST:
+    """
+    Parse a set of values (a comma-separated, parenthesized sequence of
+    string literal constants, or identifiers) from the head of the *tokens*
+    sequence, returning a Python :class:`~ast.AST` object to load the value
+    of the set into an expression::
+
+        >>> _dump_ast(_parse_set(Peek(tokenize("('foo','bar')"))))
+        List(
+            elts=[
+                Constant(value='foo'),
+                Constant(value='bar')],
+            ctx=Load())
+        >>> _dump_ast(_parse_set(Peek(tokenize("(From,Subject)"))))
+        List(
+            elts=[
+                Subscript(
+                    value=Name(id='msg', ctx=Load()),
+                    slice=Constant(value='From'),
+                    ctx=Load()),
+                Subscript(
+                    value=Name(id='msg', ctx=Load()),
+                    slice=Constant(value='Subject'),
+                    ctx=Load())],
+            ctx=Load())
+    """
     # SET -> (VALUE, VALUE, ...)
     start = next(tokens)
     if start.token != 'LPAR':
@@ -492,24 +727,213 @@ def _parse_set(tokens: Peek[Token]) -> ast.AST:
             elements.append(_parse_value(tokens))
         else:
             break
+    else:
+        assert False
     if sep.token != 'RPAR':
-        raise ParserError('missing closing ")" for "("', start)
+        raise ParserError('missing closing ")"', sep)
     return ast.List(elts=elements, ctx=ast.Load())
 
 
 def _parse_value(tokens: Peek[Token]) -> ast.AST:
+    """
+    Parse a value (a string literal constant, or an identifier) from the head
+    of the *tokens* sequence, returning a Python :class:`~ast.AST` object to
+    load the value into an expression::
+
+        >>> _dump_ast(_parse_value(Peek(tokenize("'foo'"))))
+        Constant(value='foo')
+        >>> _dump_ast(_parse_value(Peek(tokenize("Subject"))))
+        Subscript(
+            value=Name(id='msg', ctx=Load()),
+            slice=Constant(value='Subject'),
+            ctx=Load())
+    """
     # VALUE -> CONST | IDENT
-    t = next(tokens)
-    if t.token == 'CONST':
-        return ast.Constant(value=t.value)
-    elif t.token == 'IDENT':
+    token = next(tokens)
+    if token.token == 'CONST':
+        return ast.Constant(value=token.value)
+    if token.token == 'IDENT':
         return ast.Subscript(
             value=ast.Name('msg', ctx=ast.Load()),
-            slice=ast.Constant(value=t.value),
+            slice=ast.Constant(value=token.value),
             ctx=ast.Load())
-    else:
-        raise ParserError(
-            f'unexpected {t.source!r}; expected string or header', t)
+    raise ParserError(
+        f'unexpected {token.source!r}; expected string or header', token)
+
+
+def _test_main() -> bool:
+    """
+    Run the test suite via doctest
+    """
+    # All functions from here on are purely for the benefit of the test suite
+    # pylint: disable=import-outside-toplevel, unused-variable
+    import doctest
+
+    failures, total = doctest.testmod()
+    return bool(failures)
+
+
+@contextmanager
+def _test_rig() -> t.Iterator[dict[str, t.Any]]:
+    """
+    Generate context for all tests.
+
+    This consists of a temporary directory containing an INBOX with two
+    messages, a spam folder with none, and a configuration which will move one
+    of the messages to the spam folder when executed. The test rig functions
+    as a context manager which will clean up the temporary directory on exit.
+    """
+    import email
+    import email.policy
+    import tempfile
+    from textwrap import dedent
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        inbox_path = tmp_path / 'INBOX'
+        spam_path = tmp_path / 'spam'
+        with (
+            closing(mailbox.Maildir(inbox_path, create=True)) as inbox,
+            closing(mailbox.Maildir(spam_path, create=True)) as spam
+        ):
+            template = dedent(
+                """\
+                From: {sender}
+                To: Fred Flintstone <fred@bedrockquarries.com>
+                X-Flag: {flag}
+                Subject: {subject}
+
+                Test message
+                """)
+            test_mails = [
+                ('foo@bar.com', 'Definitely not spam!', 'spam'),
+                ('Barney Rubble <barney@rubble.me>', 'Bowling tournament', 'ham')
+            ]
+            for sender, subject, flag in test_mails:
+                msg = email.message_from_string(
+                    template.format(sender=sender, subject=subject, flag=flag),
+                    _class=mailbox.MaildirMessage, policy=email.policy.default)
+                inbox.add(msg)
+            config = dedent(
+                f"""\
+                [paths]
+                spam = {spam_path}
+
+                [move_spam]
+                source = {inbox_path}
+                test = X-Flag == 'spam'
+                move = ${{paths:spam}}
+                """)
+            config_path = tmp_path / 'filters.conf'
+            config_path.write_text(config)
+            yield {
+                'tmp_path': tmp_path,
+                'inbox_path': inbox_path,
+                'spam_path': spam_path,
+                'config_path': config_path,
+                'inbox': inbox,
+                'spam': spam,
+                'config': config,
+            }
+
+
+def _dump_ast(node: ast.AST) -> None:
+    """
+    Pretty-print the given asbtract syntax tree. This function is primarily
+    used for debugging and for the test-suite.
+    """
+    print(ast.dump(node, indent=4))
+
+
+__test__ = {
+    'bad-expressions': """
+    Attempt to parse various bad expressions, and ensure ParserError is raised
+    appropriately::
+
+        >>> parse('==')
+        Traceback (most recent call last):
+          File "./mailfilter", line 697, in _parse_value
+            raise ParserError(
+        ParserError: unexpected '=='; expected string or header
+        >>> parse('A in ("foo", "bar" "baz"')
+        Traceback (most recent call last):
+          File "./mailfilter", line 670, in _parse_set
+            raise ParserError('missing closing ")"', sep)
+        ParserError: missing closing ")"
+        >>> parse('A in "foo", "bar" "baz"')
+        Traceback (most recent call last):
+          File "./mailfilter", line 654, in _parse_set
+            raise ParserError(f'unexpected {start.source!r}; expected "("', start)
+        ParserError: unexpected '"foo"'; expected "("
+        >>> parse('(A == "foo" "bar")')
+        Traceback (most recent call last):
+          File "./mailfilter", line 606, in _parse_compare
+            raise ParserError('missing closing ")", finish)
+        ParserError: missing closing ")"
+        >>> parse('A == "foo" "bar"')
+        Traceback (most recent call last):
+          File "./mailfilter", line 533, in parse
+            raise ParserError(f'unexpected {token.source!r}', token)
+        ParserError: unexpected '"bar"'
+    """,
+
+    'trailing-set-comma': """
+    A trailing comma in a parenthesized set is fine::
+
+        >>> _dump_ast(_parse_set(Peek(tokenize("(From,Subject,)"))))
+        List(
+            elts=[
+                Subscript(
+                    value=Name(id='msg', ctx=Load()),
+                    slice=Constant(value='From'),
+                    ctx=Load()),
+                Subscript(
+                    value=Name(id='msg', ctx=Load()),
+                    slice=Constant(value='Subject'),
+                    ctx=Load())],
+            ctx=Load())
+    """,
+
+    'bad-python-version': """
+    What happens when Python is too old?
+    ::
+
+        >>> from unittest import mock
+        >>> with mock.patch('sys.version_info', (3, 5)):
+        ...     main()
+        Traceback (most recent call last):
+          File "./mailfilter", line 34, in main
+            raise SystemExit('This script requires Python 3.10 or later')
+        SystemExit: This script requires Python 3.10 or later
+    """,
+
+    'main --help': """
+    Running with --help produces help output on stdout::
+
+        >>> import os
+        >>> os.environ['TEST'] = '0' # don't run the test-suite recursively!
+        >>> try:
+        ...     main(['--help']) # doctest: +ELLIPSIS
+        ... except SystemExit:
+        ...     pass
+        usage: mailfilter [-h] [--dry-run] [-v] config
+        ...
+    """,
+
+    'main works': """
+    Running main does what it's supposed to do::
+
+        >>> import os
+        >>> os.environ['TEST'] = '0' # don't run the test-suite recursively!
+        >>> with _test_rig() as test:
+        ...     assert len(test['inbox']) == 2
+        ...     assert len(test['spam']) == 0
+        ...     args = [str(test['config_path'])]
+        ...     assert main(args) == 0
+        ...     assert len(test['inbox']) == 1
+        ...     assert len(test['spam']) == 1
+    """,
+}
 
 
 if __name__ == '__main__':

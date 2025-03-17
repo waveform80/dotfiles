@@ -1,25 +1,60 @@
-[paths]
+[DEFAULT]
 root = ~/.mail/work
-inbox = ${root}/INBOX
-trash = ${root}/[Gmail].Trash
+source = ${root}/INBOX
 
-[skipper]
-source = ${paths:inbox}
+[paths]
+trash = ${root}/[Gmail].Trash
+uploads = ${root}/uploads
+events = ${root}/events
+# Mailing lists
+u-boot = ${root}/u-boot
+kernel-team = ${root}/kernel-team
+bluetooth = ${root}/bluetooth
+release = ${root}/ubuntu-release
+
+[u-boot list]
+test = List-Id == 'U-Boot discussion <u-boot.lists.denx.de>'
+move = ${paths:u-boot}
+
+[kernel-team list]
+test = List-Id == 'Kernel team discussions <kernel-team.lists.ubuntu.com>'
+move = ${paths:kernel-team}
+
+[release list]
+test = List-Id == 'Ubuntu release co-ordination and discussion <ubuntu-release.lists.ubuntu.com>'
+move = ${paths:release}
+
+[bluetooth list]
+test = List-Id == '<linux-bluetooth.vger.kernel.org>'
+move = ${paths:bluetooth}
+
+[events]
+test = From == 'noreply+events@canonical.com'
+move = ${paths:events}
+
+[skipper-team]
 test = X-Launchpad-Message-For == 'skipper-screen-team'
 move = ${paths:trash}
 
 [lexbuilder]
-source = ${paths:inbox}
 test = X-Launchpad-Bug-Reporter == 'OEM Taipei Bot (oem-taipei-bot)'
 move = ${paths:trash}
 
-[failedbuilds]
-source = ${paths:inbox}
-test = (
-      X-Launchpad-Notification-Type == 'ci-build-status' and
-      X-Launchpad-Message-For == 'variants-wg'
-  ) or (
-      X-Launchpad-Notification-Type == 'snap-build-status' and
-      X-Launchpad-Message-For == 'ubuntu-core-service'
-  )
+[failed-builds1]
+test =
+    X-Launchpad-Notification-Type == 'ci-build-status' and
+    X-Launchpad-Message-For == 'variants-wg'
 move = ${paths:trash}
+
+[failed-builds2]
+test =
+    X-Launchpad-Notification-Type == 'snap-build-status' and
+    X-Launchpad-Message-For == 'ubuntu-core-service'
+move = ${paths:trash}
+
+[accepted-uploads]
+test =
+    X-Launchpad-Message-For == 'waveform' and
+    X-Launchpad-Notification-Type == 'package-upload' and
+    X-Launchpad-Archive == 'ubuntu'
+move = ${paths:uploads}
