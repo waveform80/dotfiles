@@ -24,7 +24,7 @@ def defaults() -> Any:
     # function definitions used for more information
     class defaults:
         SOURCE = Path('/mnt/archive/audio')
-        TARGET = Path('/media/dave/Media')
+        TARGET = Path('/media/dave/media')
         FOLDER_MAP = {
             TARGET / 'Books':           by_album(SOURCE / 'books'),
             TARGET / 'Music By Artist': as_is(SOURCE / 'music'),
