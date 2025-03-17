@@ -27,7 +27,9 @@ from launchpadlib.launchpad import Launchpad
 def main(args=None):
     info = distro_info.UbuntuDistroInfo()
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         'source', nargs='?', default=None, type=Path,
         help="The Debian source package (dsc) to build. If not specified, "
@@ -80,20 +82,25 @@ def main(args=None):
                     break
         if not info.valid(config.distribution):
             config.distribution = info.devel()
-        config.last_version = get_last_version(
-            config.package, config.distribution, config.cache_dir)
+        try:
+            config.last_version = get_last_version(
+                config.package, config.distribution, config.cache_dir)
+        except ValueError as exc:
+            config.last_version = None
+            logging.warning(str(exc))
 
         cmd_line = [
             'sbuild',
             '--maintainer', config.maintainer,
             '--no-clean-source',
-            '--debbuildopt', f'-v{config.last_version}',
             '--dist', config.distribution,
         ]
         if config.verbose:
             cmd_line.append('--verbose')
         if 'DEBEMAIL' in os.environ:
             cmd_line.extend(['--keyid', os.environ['DEBEMAIL']])
+        if config.last_version:
+            cmd_line.extend(['--debbuildopt', f'-v{config.last_version}'])
         cmd_line.extend(remaining)
         logging.info('sbuild command-line: %s', shlex.join(cmd_line))
         os.execv('/usr/bin/sbuild', cmd_line)
@@ -122,15 +129,15 @@ def get_source(source):
         yield Path('.')
 
 
-def get_last_version(package, series, cache_dir):
+def get_last_version(package, release, cache_dir):
     logging.info(
-        'Querying Launchpad for last publication of %s in %s', package, series)
+        'Querying Launchpad for last publication of %s in %s', package, release)
     lp = Launchpad.login_anonymously(
         'get-livefs', 'production', str(cache_dir),
         version='devel')
     ubuntu = lp.distributions['ubuntu']
     archive = ubuntu.getArchive(name='primary')
-    series = ubuntu.getSeries(name_or_version=series)
+    series = ubuntu.getSeries(name_or_version=release)
     spph = archive.getPublishedSources(
         distro_series=series,
         source_name=package,
@@ -139,7 +146,8 @@ def get_last_version(package, series, cache_dir):
     for record in spph:
         if record.pocket != 'Proposed':
             return record.source_package_version
-    raise ValueError('Could not determine last published version')
+    raise ValueError(
+        f'Could not determine last published version of {package} in {release}')
 
 
 if __name__ == '__main__':
