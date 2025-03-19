@@ -6,7 +6,7 @@ name=Dave Jones
 primary_email=dave.jones@canonical.com
 
 [new]
-tags=unread;inbox;
+tags=unread;inbox;new
 ignore=
 
 [search]
