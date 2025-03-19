@@ -150,10 +150,8 @@ bind index < vfolder-window-backward
 bind index > vfolder-window-forward
 
 macro index gi "<change-folder>+INBOX<enter>" "Go to Inbox"
-macro index ga "<change-folder>+[Gmail].All<tab><enter>" "Go to All Mail"
 macro index gd "<change-folder>+[Gmail].Drafts<enter>" "Go to Drafts"
 macro index gs "<change-folder>+[Gmail].Starred<enter>" "Go to Starred messages"
 macro index gf "<change-folder>?" "Go to folder..."
-macro index e "<save-message>+[Gmail].All<tab><enter><enter>" "Archive"
 macro index v "<save-message>?" "Move message to folder..."
 macro index,pager m "<save-message>?" "Move message to folder..."
