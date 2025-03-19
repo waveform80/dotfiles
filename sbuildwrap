@@ -42,6 +42,11 @@ def main(args=None):
         '-v', '--verbose', action='store_true',
         help="Output more detail")
     parser.add_argument(
+        '--last-version', default=None,
+        help="The version from which to build the changelog. If not "
+        "specified, queries Launchpad for the last release in the target "
+        "distribution")
+    parser.add_argument(
         '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
         help=argparse.SUPPRESS)
 
@@ -82,12 +87,13 @@ def main(args=None):
                     break
         if not info.valid(config.distribution):
             config.distribution = info.devel()
-        try:
-            config.last_version = get_last_version(
-                config.package, config.distribution, config.cache_dir)
-        except ValueError as exc:
-            config.last_version = None
-            logging.warning(str(exc))
+        if config.last_version is None:
+            try:
+                config.last_version = get_last_version(
+                    config.package, config.distribution, config.cache_dir)
+            except ValueError as exc:
+                config.last_version = None
+                logging.warning(str(exc))
 
         cmd_line = [
             'sbuild',
