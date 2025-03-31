@@ -26,6 +26,9 @@ from launchpadlib.launchpad import Launchpad
 
 def main(args=None):
     info = distro_info.UbuntuDistroInfo()
+    default_arch = sp.run(
+        ['dpkg', '--print-architecture'],
+        check=True, text=True, capture_output=True).stdout.strip()
 
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -38,6 +41,13 @@ def main(args=None):
         '-d', '--dist', dest='distribution', default=None,
         help="The distribution series to build for (default: derived from "
         f"debian/changelog header or {info.devel()})")
+    parser.add_argument(
+        '--arch', default=default_arch,
+        help="The architecture build on and for (default: {default_arch})")
+    parser.add_argument(
+        '-c', '--chroot', default=None,
+        help="Manually specify the chroot to use (default: derived from the "
+        "target distribution and specified/default architecture)")
     parser.add_argument(
         '-v', '--verbose', action='store_true',
         help="Output more detail")
@@ -57,18 +67,22 @@ def main(args=None):
 
     try:
         if 'DEBEMAIL' in os.environ:
+            logging.info(
+                'Testing signing with DEBEMAIL=%s', os.environ['DEBEMAIL'])
             result = sp.run([
                 '/usr/bin/gpg',
                 '--batch', '--no-options', '--no-tty',
                 '--sign', '--local-user', os.environ['DEBEMAIL'],
             ], input=b'foo\n', stdout=sp.DEVNULL)
             if result.returncode != 0:
-                logging.fatal('Cannot sign result as {os.environ["DEBEMAIL"]}')
+                logging.fatal(
+                    'Cannot sign result as %s', os.environ["DEBEMAIL"])
                 return 1
         else:
             logging.warning('DEBEMAIL is not set')
+
         with get_source(config.source) as pkg_path:
-            logging.info('Parsing debian/changelog')
+            logging.info('Parsing d/changelog for source package and version')
             with tempfile.TemporaryFile() as changelog:
                 sp.run([
                     'dpkg-parsechangelog',
@@ -81,16 +95,32 @@ def main(args=None):
                     if config.distribution is None:
                         config.distribution = section['Distribution']
                     break
+            logging.info('Parsing d/control for maintainer')
             with (pkg_path / 'debian/control').open() as control:
                 for section in Deb822.iter_paragraphs(control):
                     config.maintainer = section['Maintainer']
                     break
-        if not info.valid(config.distribution):
+
+        # Deal with -backports weirdness
+        if config.distribution.endswith('-backports'):
+            real_distribution = config.distribution[:-len('-backports')]
+        else:
+            real_distribution = config.distribution
+        if not info.valid(real_distribution):
             config.distribution = info.devel()
+            logging.warning(
+                '%s is not a valid Ubuntu release; replaced with %s',
+                real_distribution, config.distribution)
+            real_distribution = config.distribution
+
+        # Figure out the chroot, if required
+        if config.chroot is None:
+            config.chroot = f'{real_distribution}-{config.arch}'
+
         if config.last_version is None:
             try:
                 config.last_version = get_last_version(
-                    config.package, config.distribution, config.cache_dir)
+                    config.package, real_distribution, config.cache_dir)
             except ValueError as exc:
                 config.last_version = None
                 logging.warning(str(exc))
@@ -100,6 +130,7 @@ def main(args=None):
             '--maintainer', config.maintainer,
             '--no-clean-source',
             '--dist', config.distribution,
+            '--chroot', config.chroot,
         ]
         if config.verbose:
             cmd_line.append('--verbose')
