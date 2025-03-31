@@ -1,0 +1,62 @@
+[HeaderMatchingFilter.0]
+message = Tag u-boot mailing-list messages
+header = List-Id
+pattern = <u-boot\.lists\.denx\.de>
+tags = +lists;+uboot
+
+[HeaderMatchingFilter.1]
+message = Tag kernel-team mailing-list messages
+header = List-Id
+pattern = <kernel-team\.lists\.ubuntu\.com>
+tags = +lists;+kernel
+
+[HeaderMatchingFilter.2]
+message = Tag ubuntu-release mailing-list messages
+header = List-Id
+pattern = <ubuntu-release\.lists\.ubuntu\.com>
+tags = +lists;+release
+
+[HeaderMatchingFilter.3]
+message = Tag bluez mailing-list messages
+header = List-Id
+pattern = <linux-bluetooth\.vger\.kernel\.org>
+tags = +lists;+bluetooth
+
+[HeaderMatchingFilter.4]
+message = Tag ubuntu-devel mailing-list messages
+header = List-Id
+pattern = <ubuntu-devel\.lists\.ubuntu\.com>
+tags = +lists;+devel
+
+[Filter.5]
+message = Tag Canonical event messages
+query = from:noreply+events@canonical.com
+tags = +events
+
+[Filter.6]
+message = Tag JIRA crap
+query = subject:/^\[JIRA\]/
+tags = +jira
+
+[HeaderMatchingFilter.7]
+message = Tag logs we don't care about
+header = X-Launchpad-Message-For
+pattern = oem-solutions
+tags = +trash
+
+[InboxFilter]
+
+[MailMover]
+folders = INBOX
+rename = True
+max_age = 30
+
+INBOX =
+  'tag:uboot':u-boot
+  'tag:bluetooth':bluetooth
+  'tag:release':ubuntu-release
+  'tag:devel':ubuntu-devel
+  'tag:kernel':kernel-team
+  'tag:events':events
+  'tag:jira':jira-crap
+  'tag:trash':[Gmail].Trash

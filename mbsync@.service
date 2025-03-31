@@ -6,6 +6,9 @@ ConditionPathExists=%t/isync-%i
 [Service]
 Type=oneshot
 Environment=NOTMUCH_CONFIG=%h/.mail/%i/.notmuch-config
+Environment=XDG_CONFIG_HOME=%h/.mail/%i/.notmuch
 ExecStart=/usr/bin/mbsync -V %i
-ExecStart=/usr/local/bin/mailfilter -v %h/dotfiles/filters.%i
+ExecStart=/usr/bin/notmuch new
+ExecStart=/usr/bin/afew --new --verbose --tag
+ExecStart=/usr/bin/afew --new --verbose --move-mails
 ExecStart=/usr/bin/notmuch new

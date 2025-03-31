@@ -40,6 +40,12 @@ move = ${paths:trash}
 test = X-Launchpad-Bug-Reporter == 'OEM Taipei Bot (oem-taipei-bot)'
 move = ${paths:trash}
 
+[oem-solutions]
+test =
+    X-Launchpad-Message-For == 'oem-solutions-infrastructure' or
+    X-Launchpad-Message-For == 'oem-solutions'
+move = ${paths:trash}
+
 [failed-builds1]
 test =
     X-Launchpad-Notification-Type == 'ci-build-status' and
