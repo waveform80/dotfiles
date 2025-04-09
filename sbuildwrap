@@ -18,6 +18,7 @@ import tempfile
 import subprocess as sp
 from pathlib import Path
 from contextlib import contextmanager
+from urllib.parse import urlsplit, urlunsplit
 
 import distro_info
 from debian.deb822 import Deb822
@@ -56,6 +57,11 @@ def main(args=None):
         help="The version from which to build the changelog. If not "
         "specified, queries Launchpad for the last release in the target "
         "distribution")
+    parser.add_argument(
+        '--git-merge', default=None,
+        help="The remote/branch to include tags for git-ubuntu to merge. If "
+        "specified, the remote/branch given must match the current HEAD "
+        "commit")
     parser.add_argument(
         '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
         help=argparse.SUPPRESS)
@@ -138,6 +144,24 @@ def main(args=None):
             cmd_line.extend(['--keyid', os.environ['DEBEMAIL']])
         if config.last_version:
             cmd_line.extend(['--debbuildopt', f'-v{config.last_version}'])
+        if config.git_merge:
+            try:
+                remote, branch = config.git_merge.split('/')
+            except ValueError:
+                raise ValueError(
+                    f'Expected remote/branch instead of {config.git_merge!r}')
+            local_head = get_commit('HEAD')
+            remote_head = get_commit(config.git_merge)
+            remote_url = get_remote_url(remote)
+            if local_head != remote_head:
+                raise ValueError(
+                    f'Local HEAD commit ({local_head}) does not match '
+                    f'specified remote commit {remote}/{branch}')
+            cmd_line.extend([
+                '--debbuildopt', f'--changes-option=-DVcs-Git-Commit={remote_head}',
+                '--debbuildopt', f'--changes-option=-DVcs-Git-Ref=refs/remotes/{branch}',
+                '--debbuildopt', f'--changes-option=-DVcs-Git={remote_url}',
+            ])
         cmd_line.extend(remaining)
         logging.info('sbuild command-line: %s', shlex.join(cmd_line))
         os.execv('/usr/bin/sbuild', cmd_line)
@@ -164,6 +188,30 @@ def get_source(source):
                     yield d
     else:
         yield Path('.')
+
+
+def get_commit(ref):
+    proc = sp.run(
+        ['git', 'rev-parse', ref],
+        text=True, capture_output=True, check=True)
+    return proc.stdout.strip()
+
+
+def get_remote_url(remote):
+    logging.info('Calculating URL for git remote %s', remote)
+    proc = sp.run(
+        ['git', 'remote', 'get-url', remote],
+        text=True, capture_output=True, check=True)
+    url = urlsplit(proc.stdout.strip())
+    if url.scheme != 'https':
+        url = url._replace(scheme='https')
+    if url.username or url.password:
+        url = url._replace(netloc=url.hostname)
+    if url.netloc != 'git.launchpad.net':
+        raise ValueError(
+            f'Expected remote URL to point to git.launchpad.net but found '
+            f'{url.netloc}')
+    return urlunsplit(url)
 
 
 def get_last_version(package, release, cache_dir):
