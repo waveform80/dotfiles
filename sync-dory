@@ -204,7 +204,7 @@ class M3UPlaylist:
             if lines.pop(0).rstrip() != '#EXTM3U':
                 raise ValueError(f'invalid playlist: {self.path}')
             item = M3UEntry()
-            info_re = re.compile('^#EXTINF:(?P<duration>\d+),(?P<title>.*)$')
+            info_re = re.compile(r'^#EXTINF:(?P<duration>\d+),(?P<title>.*)$')
             while lines:
                 line = lines.pop(0).rstrip()
                 match = info_re.match(line)
