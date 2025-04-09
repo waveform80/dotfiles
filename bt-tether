@@ -79,7 +79,7 @@ def main(args=None):
                 config.mac = mac
                 break
         else:
-            raise ValueError(f'Unable to find device {name!r}')
+            raise ValueError(f'Unable to find device {config.name!r}')
 
     {'start': start, 'stop': stop}[config.action](config)
 
