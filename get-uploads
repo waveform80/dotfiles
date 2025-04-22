@@ -17,8 +17,8 @@ from textwrap import fill
 from itertools import groupby
 from typing import NamedTuple
 
+import distro_info
 from colorzero import Color
-from distro_info import UbuntuDistroInfo
 from launchpadlib.launchpad import Launchpad
 
 
@@ -45,7 +45,12 @@ class Event(NamedTuple):
 
 
 def main(args=None):
-    info = UbuntuDistroInfo()
+    info = distro_info.UbuntuDistroInfo()
+    try:
+        devel_series = info.devel()
+    except distro_info.DistroDataOutdated:
+        # Recent release; just use last supported
+        devel_series = info.supported()[-1]
 
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -57,7 +62,7 @@ def main(args=None):
         'version', nargs='?',
         help="The optional version of the package to query")
     parser.add_argument(
-        '-s', '--series', default=info.devel(),
+        '-s', '--series', default=devel_series,
         help="Limit results to the specified release (default: %(default)s)")
     parser.add_argument(
         '-v', '--verbose', action='store_true',

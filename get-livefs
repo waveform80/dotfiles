@@ -16,8 +16,8 @@ from pathlib import Path
 from itertools import islice
 from collections import deque
 
+import distro_info
 from colorzero import Color
-from distro_info import UbuntuDistroInfo
 from launchpadlib.launchpad import Launchpad
 from dateutil.relativedelta import relativedelta
 
@@ -45,7 +45,12 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
     Main entry-point for the application. Takes the list of the command line
     *args* and returns the exit code of the application.
     """
-    info = UbuntuDistroInfo()
+    info = distro_info.UbuntuDistroInfo()
+    try:
+        devel_series = info.devel()
+    except distro_info.DistroDataOutdated:
+        # Recent release; just use last supported
+        devel_series = info.supported()[-1]
 
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -58,7 +63,7 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
         help="Limit results to livefs owned by the specified team "
         "(default: %(default)s)")
     parser.add_argument(
-        '-s', '--series', default=info.devel(),
+        '-s', '--series', default=devel_series,
         help="Limit results to the specified release (default: %(default)s)")
     parser.add_argument(
         '--archs', default=[], type=lambda s: s.split(','),

@@ -27,6 +27,11 @@ from launchpadlib.launchpad import Launchpad
 
 def main(args=None):
     info = distro_info.UbuntuDistroInfo()
+    try:
+        devel_series = info.devel()
+    except distro_info.DistroDataOutdated:
+        # Recent release; just use last supported
+        devel_series = info.supported()[-1]
     default_arch = sp.run(
         ['dpkg', '--print-architecture'],
         check=True, text=True, capture_output=True).stdout.strip()
@@ -41,10 +46,10 @@ def main(args=None):
     parser.add_argument(
         '-d', '--dist', dest='distribution', default=None,
         help="The distribution series to build for (default: derived from "
-        f"debian/changelog header or {info.devel()})")
+        f"debian/changelog header or {devel_series})")
     parser.add_argument(
         '--arch', default=default_arch,
-        help="The architecture build on and for (default: {default_arch})")
+        help=f"The architecture build on and for (default: {default_arch})")
     parser.add_argument(
         '-c', '--chroot', default=None,
         help="Manually specify the chroot to use (default: derived from the "
@@ -113,7 +118,7 @@ def main(args=None):
         else:
             real_distribution = config.distribution
         if not info.valid(real_distribution):
-            config.distribution = info.devel()
+            config.distribution = devel_series
             logging.warning(
                 '%s is not a valid Ubuntu release; replaced with %s',
                 real_distribution, config.distribution)
