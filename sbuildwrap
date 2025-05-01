@@ -128,13 +128,15 @@ def main(args=None):
         if config.chroot is None:
             config.chroot = f'{real_distribution}-{config.arch}'
 
+        # Figure out the last version, if required
         if config.last_version is None:
-            try:
-                config.last_version = get_last_version(
-                    config.package, real_distribution, config.cache_dir)
-            except ValueError as exc:
-                config.last_version = None
-                logging.warning(str(exc))
+            if not config.distribution.endswith('-backports'):
+                try:
+                    config.last_version = get_last_version(
+                        config.package, real_distribution, config.cache_dir)
+                except ValueError as exc:
+                    config.last_version = None
+                    logging.warning(str(exc))
 
         cmd_line = [
             'sbuild',
