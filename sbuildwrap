@@ -166,7 +166,7 @@ def main(args=None):
                     f'specified remote commit {remote}/{branch}')
             cmd_line.extend([
                 '--debbuildopt', f'--changes-option=-DVcs-Git-Commit={remote_head}',
-                '--debbuildopt', f'--changes-option=-DVcs-Git-Ref=refs/remotes/{branch}',
+                '--debbuildopt', f'--changes-option=-DVcs-Git-Ref=refs/heads/{branch}',
                 '--debbuildopt', f'--changes-option=-DVcs-Git={remote_url}',
             ])
         cmd_line.extend(remaining)
