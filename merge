@@ -188,7 +188,7 @@ EOF
 			cat <<- EOF
 			Rebase the "clean" set of changes onto new/debian and review with:
 			$RESET
-			\$ git rebase -i --onto new/debian old/debian
+			\$ git rebase -i old/debian --onto new/debian
 			\$ merge review
 			EOF
 		elif ! tag_exists candidate/"$new_ubuntu_tag"; then
