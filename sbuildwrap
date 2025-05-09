@@ -153,7 +153,7 @@ def main(args=None):
             cmd_line.extend(['--debbuildopt', f'-v{config.last_version}'])
         if config.git_merge:
             try:
-                remote, branch = config.git_merge.split('/')
+                remote, branch = config.git_merge.split('/', 1)
             except ValueError:
                 raise ValueError(
                     f'Expected remote/branch instead of {config.git_merge!r}')
