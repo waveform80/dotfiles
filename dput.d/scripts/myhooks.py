@@ -2,9 +2,11 @@
 # https://git.launchpad.net/~ubuntu-server/+git/ubuntu-helpers/tree/cpaelzer/.dput.d/scripts/mymistakes.py
 
 import re
+from pathlib import Path
 
 from distro_info import UbuntuDistroInfo
 from dput.exceptions import HookException
+from launchpadlib.launchpad import Launchpad
 from colorzero import Color
 
 
@@ -76,6 +78,67 @@ def check_bug_ref(changes, profile, interface):
             stop('no bugs referenced')
 
 
+def check_bug_sru(changes, profile, interface):
+    """
+    If upload is targetting an older release, ensure all bugs marked fixed
+    follow the SRU template.
+    """
+    source_pkg_type = 'https://api.launchpad.net/devel/#source_package'
+    info = UbuntuDistroInfo()
+    # Strip pockets (-proposed, -backports, ...)
+    codename, *_ = changes['Distribution'].split('-')
+    if codename != info.devel():
+        # This is an SRU (probably?)
+        bug_ids = {
+            int(num)
+            for num in changes.get('Launchpad-Bugs-Fixed', '').split()
+        }
+        cache_dir = Path.home() / '.cache' / 'ubuntu-dev-tools'
+        lp = Launchpad.login_anonymously(
+            'dput-ng', 'production', str(cache_dir), version='devel')
+        ubuntu = lp.distributions['ubuntu']
+        distro_series = ubuntu.getSeries(name_or_version=codename)
+
+        for bug_id in bug_ids:
+            bug = lp.bugs[bug_id]
+            if not matches_sru_template(bug):
+                message = f'Upload with SRU template in LP: #{bug_id}?'
+                if not ask(interface, message):
+                    stop(f'missing SRU template in LP: #{bug_id}')
+            for task in bug.bug_tasks:
+                if task.resource_type_link != source_pkg_type:
+                    continue
+                if task.target.distribution != ubuntu:
+                    continue
+                if task.target.distroseries != distro_series:
+                    continue
+                if task.target.name != changes['Source']:
+                    continue
+                break
+            else:
+                message = (
+                    f'Upload with no target for {changes["Source"]} in '
+                    f'Ubuntu {distro_series.name}?')
+                if not ask(interface, message):
+                    stop(f'missing target for Ubuntu {distro_series.name}')
+
+
+def matches_sru_template(bug):
+    """
+    Checks if the specified *bug* matches the typical SRU template (title
+    and headings in the description)
+    """
+    return (
+        bug.title.startswith('[SRU]') and
+        re.search(r'\[ *Impact *\]', bug.description, re.IGNORECASE) and
+        re.search(r'\[ *Test Plan *\]', bug.description, re.IGNORECASE) and (
+            re.search(r'\[ *Where Things Could Go Wrong *\]', bug.description, re.IGNORECASE) or
+            re.search(r'\[ *Where Problems Could Occur *\]', bug.description, re.IGNORECASE) or
+            re.search(r'\[ *Regression Potential *\]', bug.description, re.IGNORECASE)
+        )
+    )
+
+
 def check_update_maintainer(changes, profile, interface):
     """
     If the version mentions Ubuntu changes, most likely update-maintainer
@@ -118,7 +181,7 @@ def check_ubuntu_release(changes, profile, interface):
     ver_release = ver_release[-1]
 
     info = UbuntuDistroInfo()
-    # Strip pockets (-proposed, -updates, ...)
+    # Strip pockets (-proposed, -backports, ...)
     codename, *_ = changes['Distribution'].split('-')
     dist_release = info.version(codename)
     # LTS versions are represented as, for example, "20.04 LTS"

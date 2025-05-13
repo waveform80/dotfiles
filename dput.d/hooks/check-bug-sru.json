@@ -1,0 +1,5 @@
+{
+    "description": "Stop if uploading with no SRU template and/or targetting",
+    "path": "myhooks.check_bug_sru",
+    "pre": true
+}

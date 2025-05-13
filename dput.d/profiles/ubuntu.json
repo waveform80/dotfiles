@@ -3,6 +3,7 @@
         "bad-author",
         "check-for-ppa",
         "check-buf-ref",
+        "check-bug-sru",
         "check-git-ubuntu",
         "check-update-maintainer",
         "check-ubuntu-release"
