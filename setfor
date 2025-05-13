@@ -60,6 +60,9 @@ EOF
             sudo systemctl stop nut-monitor.service || true
             sudo systemctl disable nut-monitor.service || true
         fi
+        if [ -e /etc/netplan/tunnel-waveform.yaml.bak ]; then
+            sudo mv /etc/netplan/tunnel-waveform.yaml.bak /etc/netplan/tunnel-waveform.yaml
+        fi
         ;;
 
     home)
@@ -76,6 +79,9 @@ EOF
         if grep -q "Raspberry Pi" /proc/cpuinfo; then
             uncomment 'dtoverlay=gpio-fan' /boot/firmware/config.txt
             sudo systemctl enable nut-monitor.service || true
+        fi
+        if [ -e /etc/netplan/tunnel-waveform.yaml ]; then
+            sudo mv /etc/netplan/tunnel-waveform.yaml /etc/netplan/tunnel-waveform.yaml.bak
         fi
         ;;
 
