@@ -205,6 +205,8 @@ class Application:
     controls = {
         'off': 'Power Off',
         'reboot': 'Reboot',
+        'tether': 'Tether on',
+        'untether': 'Tether off',
     }
     statuses = {
         'load': load_status,
@@ -262,6 +264,8 @@ class Application:
                 run({
                     'off': ['poweroff'],
                     'reboot': ['reboot'],
+                    'tether': ['bt-tether', 'start', "Dave's Pixel"],
+                    'untether': ['bt-tether', 'stop', "Dave's Pixel"],
                 }[self.control])
             else:
                 self.refresh()
