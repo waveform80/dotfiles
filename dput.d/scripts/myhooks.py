@@ -129,9 +129,12 @@ def matches_sru_template(bug):
     and headings in the description)
     """
     return (
-        bug.title.startswith('[SRU]') and
-        re.search(r'\[ *Impact *\]', bug.description, re.IGNORECASE) and
-        re.search(r'\[ *Test Plan *\]', bug.description, re.IGNORECASE) and (
+        '[SRU]' in bug.title and
+        re.search(r'\[ *Impact *\]', bug.description, re.IGNORECASE) and (
+            re.search(r'\[ *Test Plan *\]', bug.description, re.IGNORECASE) or
+            re.search(r'\[ *Testing *\]', bug.description, re.IGNORECASE)
+        ) and (
+            re.search(r'\[ *What Can Go Wrong *\]', bug.description, re.IGNORECASE) or
             re.search(r'\[ *Where Things Could Go Wrong *\]', bug.description, re.IGNORECASE) or
             re.search(r'\[ *Where Problems Could Occur *\]', bug.description, re.IGNORECASE) or
             re.search(r'\[ *Regression Potential *\]', bug.description, re.IGNORECASE)
