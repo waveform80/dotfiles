@@ -102,11 +102,11 @@ def check_bug_sru(changes, profile, interface):
         for bug_id in bug_ids:
             bug = lp.bugs[bug_id]
             if not matches_sru_template(bug):
-                message = f'Upload with SRU template in LP: #{bug_id}?'
+                message = f'Upload without SRU template in LP: #{bug_id}?'
                 if not ask(interface, message):
                     stop(f'missing SRU template in LP: #{bug_id}')
             for task in bug.bug_tasks:
-                if task.resource_type_link != source_pkg_type:
+                if task.target.resource_type_link != source_pkg_type:
                     continue
                 if task.target.distribution != ubuntu:
                     continue
