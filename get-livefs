@@ -141,7 +141,9 @@ def filter_subarchs(builds, subarchs):
     *subarchs* is empty, nothing is filtered.
     """
     for build in builds:
-        subarch = build.metadata_override.get('subarch')
+        subarch = None
+        if build.metadata_override is not None:
+            subarch = build.metadata_override.get('subarch')
         if not subarchs or subarch in subarchs:
             yield build
 
