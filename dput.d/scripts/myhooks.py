@@ -129,8 +129,9 @@ def matches_sru_template(bug):
     and headings in the description)
     """
     return (
-        '[SRU]' in bug.title and
-        re.search(r'\[ *Impact *\]', bug.description, re.IGNORECASE) and (
+        '[SRU]' in bug.title and (
+            re.search(r'\[ *Impact *\]', bug.description, re.IGNORECASE)
+        ) and (
             re.search(r'\[ *Test Plan *\]', bug.description, re.IGNORECASE) or
             re.search(r'\[ *Testing *\]', bug.description, re.IGNORECASE)
         ) and (
