@@ -30,6 +30,10 @@ def main(args=None):
                 config.wlan_ssid = query('wlan0 AP name')
             if config.wlan_password is None:
                 config.wlan_password = query('wlan0 AP password')
+    if config.swap is None:
+        config.swap = query(
+            'swapfile size', choices={'0': '', '1': '1G', '2': '2G'},
+            default='0')
 
     cloud_config = build_cloud_config(config)
     network_config = build_network_config(config)
@@ -74,6 +78,12 @@ def build_cloud_config(config):
         cloud_config['package_upgrade'] = True
     if config.install:
         cloud_config['packages'] = config.install
+    if config.swap:
+        cloud_config['swap'] = {
+            'filename': '/swapfile',
+            'size': config.swap,
+            'maxsize': config.swap,
+        }
     return cloud_config
 
 
@@ -174,6 +184,10 @@ def get_parser():
         '--wlan-password', action='store',
         help="Specifies the Wifi AP password. Required if --wlan is anything "
         "other than 'ignored'")
+    parser.add_argument(
+        '--swap', action='store', default='0',
+        help="If specified, create a swap-file of the given size (in "
+        "gigabytes). Default is not to create a swapfile")
     return parser
 
 
