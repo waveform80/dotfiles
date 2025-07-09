@@ -38,12 +38,16 @@ def main(args=None):
             'get-patches', 'production', str(config.cache_dir),
             version='devel')
         bug = lp.bugs[config.bug]
-        for attachment in bug.attachments_collection:
+        attachments = {
+            attachment.title: attachment
+            for attachment in bug.attachments_collection
+        }
+        for filename, attachment in attachments.items():
             if config.filter(attachment):
-                print(f'Downloading {attachment.title}', flush=True)
+                print(f'Downloading {filename}', flush=True)
                 with (
                     urlopen(attachment.data_link) as source,
-                    open(attachment.title, 'wb') as target
+                    open(filename, 'wb') as target
                 ):
                     copyfileobj(source, target)
     except Exception as err:
