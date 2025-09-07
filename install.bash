@@ -122,8 +122,11 @@ task_pack() {
             echo 0
             ;;
         packages)
-            echo ubuntu-dev-tools packaging-dev sbuild shellcheck dput-ng
-            echo python3-colorzero python3-dateutil
+            if [ "$DISTRO" = "Ubuntu" ]; then
+                echo ubuntu-dev-tools ubuntu-packaging-guide autopkgtest
+            fi
+            echo debian-policy developers-reference git-buildpackage shellcheck
+            echo dput-ng python3-colorzero python3-dateutil
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
@@ -544,13 +547,14 @@ task_zsh() {
             ;;
         postinst)
             ln -sf "$HOME"/dotfiles/zshrc "$HOME"/.zshrc
-            sudo chsh -s /usr/bin/zsh "$USER"
             pushd "$(mktemp -d)"
             git clone https://github.com/powerline/fonts
             sudo cp fonts/Terminus/PSF/*.psf.gz /usr/share/consolefonts/
             popd
             rm -fr "$OLDPWD"
-            sudo sh -c 'echo FONT="/usr/share/consolefonts/ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
+            if ! grep "^FONT=.*ter-powerline-v16b" /etc/default/console-setup; then
+                sudo sh -c 'echo FONT="/usr/share/consolefonts/ter-powerline-v16b.psf.gz" >> /etc/default/console-setup'
+            fi
             zsh_plugins="$HOME"/.zsh
             mkdir -p "$zsh_plugins" "$zsh_plugins"/themes
             [ -d "$zsh_plugins"/agnoster-zsh-theme ] || git clone https://github.com/agnoster/agnoster-zsh-theme "$zsh_plugins"/agnoster-zsh-theme
