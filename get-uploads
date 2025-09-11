@@ -185,7 +185,7 @@ def get_uploaders(lp, upload):
 
     proc = sp.run(
         ['gpg', '--batch', '--status-fd', '1', '--verify', '-'],
-        check=True, capture_output=True, text=True,
+        check=True, capture_output=True, encoding='utf-8', errors='replace',
         input=signed_upload)
     for line in proc.stdout.splitlines():
         if line.startswith('[GNUPG:]'):
