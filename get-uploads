@@ -71,7 +71,9 @@ def main(args=None):
         help="The optional version of the package to query")
     parser.add_argument(
         '-s', '--series', default=devel_series,
-        help="Limit results to the specified release (default: %(default)s)")
+        help="Limit results to the specified release, or all supported series "
+        "if 'supported' is specified, or every series if 'all' is "
+        "specified (default: %(default)s)")
     parser.add_argument(
         '-v', '--verbose', action='store_true',
         help="Produce more output")
@@ -89,18 +91,31 @@ def main(args=None):
             version='devel')
         ubuntu = lp.distributions['ubuntu']
         logging.info('Found Ubuntu distribution')
-        series = ubuntu.getSeries(name_or_version=config.series)
-        logging.info('Found %s series', config.series)
-        uploads = series.getPackageUploads(
-            archive=series.main_archive, name=config.package,
-            version=config.version)
-        logging.info('Found %d uploads for %s', len(uploads), config.package)
-        events = []
-        for event in get_events(lp, uploads, config.package, config.version):
-            events.append(event)
-            if not len(events) % 10:
-                logging.info('Found %d events', len(events))
-        dump_events(events)
+        if config.series == 'supported':
+            series = [
+                serie for serie in
+                ubuntu.series_collection
+                if serie.status != 'Obsolete'
+           ]
+        elif config.series == 'all':
+            series = list(ubuntu.series_collection)
+        else:
+            series = [ubuntu.getSeries(name_or_version=config.series)]
+        for serie in series:
+            logging.info('Found %s series', config.series)
+            if len(series) > 1:
+                print(f'For {serie.fullseriesname} ({serie.version}):')
+                print()
+            uploads = serie.getPackageUploads(
+                archive=serie.main_archive, name=config.package,
+                version=config.version)
+            logging.info('Found %d uploads for %s', len(uploads), config.package)
+            events = []
+            for event in get_events(lp, uploads, config.package, config.version):
+                events.append(event)
+                if not len(events) % 10:
+                    logging.info('Found %d events', len(events))
+            dump_events(events)
     except Exception as err:
         if int(os.environ.get('DEBUG', '0')):
             raise
