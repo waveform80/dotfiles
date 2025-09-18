@@ -101,11 +101,8 @@ def main(args=None):
             series = list(ubuntu.series_collection)
         else:
             series = [ubuntu.getSeries(name_or_version=config.series)]
-        for serie in series:
+        for serie in reversed(series):
             logging.info('Found %s series', config.series)
-            if len(series) > 1:
-                print(f'For {serie.fullseriesname} ({serie.version}):')
-                print()
             uploads = serie.getPackageUploads(
                 archive=serie.main_archive, name=config.package,
                 version=config.version)
@@ -115,6 +112,9 @@ def main(args=None):
                 events.append(event)
                 if not len(events) % 10:
                     logging.info('Found %d events', len(events))
+            if len(series) > 1 and events:
+                print(f'For {serie.fullseriesname} ({serie.version}):')
+                print()
             dump_events(events)
     except Exception as err:
         if int(os.environ.get('DEBUG', '0')):
