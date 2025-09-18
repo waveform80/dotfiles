@@ -150,9 +150,11 @@ if has("autocmd") && has("eval")
 	" Change some settings for certain languages
 	autocmd FileType vim set noet tw=79
 	autocmd FileType mail setlocal formatoptions=2awtcq spell
-	autocmd FileType xhtml set et sw=2 sts=2
 	autocmd FileType html set et sw=2 sts=2
+	autocmd FileType xhtml set et sw=2 sts=2
+	autocmd FileType xsl set et sw=2 sts=2
 	autocmd FileType xml set et sw=2 sts=2
+	autocmd FileType js set et sw=2 sts=2
 	autocmd FileType make set noet sw=8 ts=8
 	autocmd FileType rst set tw=79
 	autocmd BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
