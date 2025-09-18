@@ -17,6 +17,12 @@ from typing import Any, Optional, Union, Generator, NamedTuple
 from mutagen import mp3, mp4
 
 
+# NOTE: For dory not to complain about ext4 partitions, disable the ext4
+# orphan_file option:
+#
+# mkfs.ext4 -O ^orphan_file /dev/foo
+
+
 def defaults() -> Any:
     # This weird setup is just so we can use the handler functions declared
     # later below. The FOLDER_MAP is the important bit. It maps folders under

@@ -9,7 +9,7 @@ import sys
 import argparse
 from pathlib import Path
 
-from ruamel.yaml import dump
+from ruamel.yaml import YAML
 
 
 NIC_STATES = {'i': 'ignored', 'o': 'optional', 'r': 'required'}
@@ -38,11 +38,12 @@ def main(args=None):
     cloud_config = build_cloud_config(config)
     network_config = build_network_config(config)
 
+    yaml = YAML(pure=True)
     with (config.seed_path / 'user-data').open('w') as f:
         f.write('#cloud-config\n\n')
-        dump(cloud_config, f)
+        yaml.dump(cloud_config, f)
     with (config.seed_path / 'network-config').open('w') as f:
-        dump(network_config, f)
+        yaml.dump(network_config, f)
     return 0
 
 
