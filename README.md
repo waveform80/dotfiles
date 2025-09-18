@@ -11,3 +11,6 @@ Bear in mind I run a pretty vanilla Ubuntu setup, so if you're on something
 else like Kubuntu, Arch, Gentoo, Mac OS X, whatever you'll definitely need to
 tweak stuff (yet another reason not to go cloning wholesale!).
 
+## License
+
+I disclaim any copyright for stuff in here: it's public domain.
