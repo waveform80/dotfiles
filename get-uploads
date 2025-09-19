@@ -197,11 +197,38 @@ def get_uploaders(lp, upload):
                 break
     else:
         return uploader, ''
+    return uploader, get_sponsor(lp, signed_upload)
 
-    proc = sp.run(
-        ['gpg', '--batch', '--status-fd', '1', '--verify', '-'],
-        check=True, capture_output=True, encoding='utf-8', errors='replace',
-        input=signed_upload)
+
+def get_sponsor(lp, signed_upload):
+    # Attempt to verify the signature
+    try:
+        proc = sp.run(
+            ['gpg', '--batch', '--status-fd', '1', '--verify', '-'],
+            check=True, capture_output=True, encoding='utf-8', errors='replace',
+            input=signed_upload)
+    except sp.CalledProcessError as err:
+        if err.returncode != 2:
+            raise
+        # There's a signature, but no embedded public key...
+        for line in err.stderr.splitlines():
+            if line.startswith('[GNUPG:]'):
+                prefix, command, *args = line.split()
+                if command == 'NO_PUBKEY':
+                    key_id = args[0]
+                    break
+        else:
+            return ''
+        # Attempt to grab the key-id from keyserver.ubuntu.com
+        proc = sp.run(
+            ['gpg', '--keyserver', 'keyserver.ubuntu.com', '--recv-key', key_id],
+            check=True)
+        # And re-attempt the verification
+        proc = sp.run(
+            ['gpg', '--batch', '--status-fd', '1', '--verify', '-'],
+            check=True, capture_output=True, encoding='utf-8', errors='replace',
+            input=signed_upload)
+
     for line in proc.stdout.splitlines():
         if line.startswith('[GNUPG:]'):
             prefix, command, *args = line.split()
@@ -209,7 +236,9 @@ def get_uploaders(lp, upload):
                 key_id = args[0]
                 break
     else:
-        return uploader, ''
+        return ''
+
+    # Attempt to convert the email address of the sponsor to a launchpad user
     proc = sp.run(
         ['gpg', '--batch', '--with-colons', '--list-sigs', key_id],
         check=True, capture_output=True, text=True)
@@ -220,9 +249,9 @@ def get_uploaders(lp, upload):
             person = lp.people.getByEmail(email=sponsor_email)
             if person is not None:
                 sponsor = person.name
-                return uploader, sponsor
+                return sponsor
     else:
-        return uploader, ''
+        return ''
 
 
 def dump_events(all_events):
