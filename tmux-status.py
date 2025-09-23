@@ -10,8 +10,15 @@ import subprocess as sp
 from pathlib import Path
 from getpass import getuser
 from functools import lru_cache
+from itertools import tee
 
 import cbor2
+
+
+def pairwise(it):
+    a, b = tee(it)
+    next(b, None)
+    return zip(a, b)
 
 
 def bar(value):
@@ -264,6 +271,31 @@ class PiBatteryStat(Stat):
     bg = '#ff6600'
     addr = 0x36
     scale = 78.125 / 1_000_000
+    cap_volts = {
+        # Current values from discharge curve of Samsung 35E cells
+        # %cap volts
+        100:   4.2,
+        90.9:  4.07,
+        81.8:  4.05,
+        72.7:  3.96,
+        63.6:  3.89,
+        54.5:  3.8,
+        45.5:  3.74,
+        36.4:  3.66,
+        27.3:  3.6,
+        18.2:  3.51,
+        9.1:   3.42,
+        0:     3.21,
+    }
+
+    @classmethod
+    def _convert_volts(cls, v):
+        for (hi_cap, hi_v), (lo_cap, lo_v) in pairwise(cls.cap_volts.items()):
+            if v > hi_v:
+                return hi_cap
+            elif v > lo_v:
+                return lo_cap + ((v - lo_v) / (hi_v - lo_v)) * (hi_cap - lo_cap)
+        return lo_cap
 
     def _format_value(self, value):
         volts, capacity = value
@@ -290,9 +322,11 @@ class PiBatteryStat(Stat):
             # Byte-swap big-endian value
             value, = struct.unpack('<H', struct.pack('>H', value))
             volts = value * self.scale
-            # Assumes linear relationship between volts and capacity (which is
-            # reasonably true for chemistries like Li-NMC, but not LiFePo4)
-            return volts, percent(volts, 3.2, 4.16)
+            cap = self._convert_volts(volts)
+            now = dt.datetime.now()
+            with (Path.home() / 'bat.out').open('a') as f:
+                f.write(f'{now:%Y-%m-%d %H:%M:%S},{volts},{cap}\n')
+            return volts, self._convert_volts(volts)
         finally:
             bus.close()
 
