@@ -151,6 +151,9 @@ def main(args=None):
             cmd_line.extend(['--keyid', os.environ['DEBEMAIL']])
         if config.last_version:
             cmd_line.extend(['--debbuildopt', f'-v{config.last_version}'])
+        if config.version.endswith('ubuntu1'):
+            if '--force-orig-source' not in cmd_line:
+                cmd_line.append('--force-orig-source')
         if config.git_merge:
             try:
                 remote, branch = config.git_merge.split('/', 1)
