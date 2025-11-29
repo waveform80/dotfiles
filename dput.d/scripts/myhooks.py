@@ -130,7 +130,7 @@ def matches_sru_template(bug):
     """
     return (
         '[SRU]' in bug.title and (
-            re.search(r'\[ *Impact *\]', bug.description, re.IGNORECASE)
+            re.search(r'\[ *(User )?Impact *\]', bug.description, re.IGNORECASE)
         ) and (
             re.search(r'\[ *Test (Plan|Case) *\]', bug.description, re.IGNORECASE) or
             re.search(r'\[ *Testing *\]', bug.description, re.IGNORECASE)
