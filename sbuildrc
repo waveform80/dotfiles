@@ -22,10 +22,11 @@ $log_dir = $ENV{'PWD'} . '/..';
 push @{$lintian_opts}, '--pedantic';
 
 # schroot setup
-$chroot_mode = 'schroot';
+#$chroot_mode = 'schroot';
 
 # unshare setup
-#$chroot_mode = 'unshare';
+$chroot_mode = 'unshare';
+$unshare_mmdebstrap_keep_tarball = 1;
 
 ## lxd setup
 #$chroot_mode = 'autopkgtest';
