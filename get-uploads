@@ -140,7 +140,7 @@ def get_events(lp, uploads, package, version):
             (True,  True):  'source+binary',
             (True,  False): 'binary',
             (False, True):  'source',
-            (False, False): '???',
+            (False, False): 'empty',
         }[(upload.contains_build, upload.contains_source)]
         action = 'copy' if upload.contains_copy else 'upload'
         component = (
