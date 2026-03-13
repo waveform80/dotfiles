@@ -112,9 +112,11 @@ def main(args=None):
                     config.maintainer = section['Maintainer']
                     break
 
-        # Deal with -backports weirdness
-        if config.distribution.endswith('-backports'):
-            real_distribution = config.distribution[:-len('-backports')]
+        # Accept valid pocket suffixes
+        for suffix in ('-backports', '-proposed', '-security'):
+            if config.distribution.endswith(suffix):
+                real_distribution = config.distribution[:-len(suffix)]
+                break
         else:
             real_distribution = config.distribution
         if not info.valid(real_distribution):

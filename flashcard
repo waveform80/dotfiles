@@ -80,7 +80,7 @@ fix_config() {
                     --kb-layout gb \
                     --kb-options ctrl:nocaps \
                     --ssh-import-id lp:waveform \
-                    --apt-cache http://acng.waveform.org.uk:3142 \
+                    --apt-cache http://proxy.waveform.org.uk:3128 \
                     --update --upgrade \
                     --install avahi-daemon \
                     "$boot_mount"

@@ -97,7 +97,8 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
             series.getDistroArchSeries(archtag=arch)
             for arch in config.archs
         ]
-        logging.info('Found %s arch(s)', ', '.join(config.archs))
+        if archs:
+            logging.info('Found %s arch(s)', ', '.join(config.archs))
         team = lp.people[config.owner]
         logging.info('Found %s owner', config.owner)
         fs = lp.livefses.getByName(
@@ -105,14 +106,18 @@ def main(args: t.Optional[t.Sequence[str]]=None) -> int:
         logging.info(
             'Found %d builds; filtering and listing %d',
             len(fs.builds_collection), config.limit)
-        builds = filter_archs(fs.builds_collection, archs)
-        builds = filter_subarchs(builds, config.subarchs)
+        builds = fs.builds_collection
+        if archs:
+            builds = filter_archs(builds, archs)
+        if config.subarchs:
+            builds = filter_subarchs(builds, config.subarchs)
         for build in islice(builds, config.limit):
             print(f'{STATUS[build.buildstate]} {build.title} '
-                  f'{since(build.datebuilt)}')
+                  f'{"pending" if build.datebuilt is None else since(build.datebuilt)}')
             if config.verbose:
-                print(f'  Finished: {build.datebuilt:%Y-%m-%d %H:%M:%S} '
-                      f'({build.duration})')
+                if build.datebuilt is not None:
+                    print(f'  Finished: {build.datebuilt:%Y-%m-%d %H:%M:%S} '
+                          f'({build.duration})')
                 print(f'  Status:   {build.buildstate}')
                 print(f'  Link:     {build.web_link}')
                 print()
