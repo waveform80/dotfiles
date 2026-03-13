@@ -70,6 +70,9 @@ def main(args=None):
         'version', nargs='?',
         help="The optional version of the package to query")
     parser.add_argument(
+        '-l', '--lpinstance', default='production',
+        help="The Launchpad instance to connect to (default: %(default)s)")
+    parser.add_argument(
         '-s', '--series', default=devel_series,
         help="Limit results to the specified release, or all supported series "
         "if 'supported' is specified, or every series if 'all' is "
@@ -87,7 +90,9 @@ def main(args=None):
 
     try:
         lp = Launchpad.login_anonymously(
-            'get-uploads', 'production', str(config.cache_dir),
+            'get-uploads',
+            service_root=config.lpinstance,
+            launchpadlib_dir=str(config.cache_dir),
             version='devel')
         ubuntu = lp.distributions['ubuntu']
         logging.info('Found Ubuntu distribution')
@@ -102,7 +107,7 @@ def main(args=None):
         else:
             series = [ubuntu.getSeries(name_or_version=config.series)]
         for serie in reversed(series):
-            logging.info('Found %s series', config.series)
+            logging.info('Found %s series', serie)
             uploads = serie.getPackageUploads(
                 archive=serie.main_archive, name=config.package,
                 version=config.version)
