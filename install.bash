@@ -410,33 +410,25 @@ task_kmscon() {
         default)
             echo 0
             ;;
-        packages)
-            echo fonts-powerline fonts-ubuntu kmscon
+        after)
+            echo task_fonts
             ;;
-        preinst)
-            if [ "$DISTRO" = "Ubuntu" ]; then
-                # kmscon is already packaged in kinetic onwards
-                if [[ "$RELEASE" < "22.10" ]]; then
-                    sudo add-apt-repository -y ppa:waveform/kmscon
-                fi
-            else
-                cat << EOF | sudo sh -c 'cat > /etc/apt/sources.list.d/kmscon.list'
-deb http://ppa.launchpad.net/waveform/kmscon/ubuntu hirsute main
-# deb-src http://ppa.launchpad.net/waveform/kmscon/ubuntu hirsute main
-EOF
-            fi
+        packages)
+            echo kmscon
             ;;
         postinst)
             sudo mkdir -p /etc/kmscon
             cat << EOF | sudo sh -c 'cat >> /etc/kmscon/kmscon.conf'
 xkb-repeat-delay=200
 xkb-repeat-rate=25
-
 drm
-
+EOF
+            if [ -d /usr/share/fonts/truetype/ubuntu ]; then
+                cat << EOF | sudo sh -c 'cat >> /etc/kmscon/kmscon.conf'
 font-name=Ubuntu Mono
 font-size=14
 EOF
+            fi
             REBOOT_REQUIRED=1
             ;;
     esac
