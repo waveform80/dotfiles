@@ -23,6 +23,9 @@ from collections import namedtuple, deque
 from time import monotonic, sleep
 
 
+user_agent = 'sync-images/1.0'
+
+
 def main(args=None):
     if sys.version_info < (3, 6):
         raise SystemExit('This script requires Python 3.6 or later')
@@ -150,10 +153,9 @@ def refresh_image(image, buf_size=65536, rate_limit=None):
                     cksum.update(buf)
                 else:
                     break
+            headers = {'User-Agent': user_agent}
             if size:
-                headers = {'Range': f'bytes={size}-{image.size - 1}'}
-            else:
-                headers = {}
+                headers |= {'Range': f'bytes={size}-{image.size - 1}'}
             if (
                 size > image.size or
                 (size == image.size and cksum.hexdigest().lower() != image.cksum)
@@ -289,8 +291,10 @@ def get_index(url):
     # cdimage.ubuntu.com; if extra tables or columns are introduced or
     # re-ordered this will need revisiting...
     parser = TableParser()
+    headers = {'User-Agent': user_agent}
+    request = Request(url, headers=headers)
     try:
-        with urlopen(url) as page:
+        with urlopen(request) as page:
             parser.feed(page.read().decode('utf-8'))
     except HTTPError:
         raise ValueError(
@@ -309,12 +313,13 @@ def get_index(url):
             # Evidently not a file row
             continue
         cksum = None
-        request = Request(url + name, method='HEAD')
+        request = Request(url + name, method='HEAD', headers=headers)
         with urlopen(request) as head:
             size = int(head.getheader('Content-Length', '0'))
         entries[name] = Image(url + name, name, modified, cksum, size)
     if 'SHA256SUMS' in entries:
-        with urlopen(url + 'SHA256SUMS') as hashes:
+        request = Request(url + 'SHA256SUMS', headers=headers)
+        with urlopen(request) as hashes:
             for line in hashes:
                 line = line.decode('utf-8').strip()
                 if not line:
