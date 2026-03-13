@@ -21,7 +21,7 @@ $log_dir = $ENV{'PWD'} . '/..';
 # Make lintian even more bloody verbose
 push @{$lintian_opts}, '--pedantic';
 
-# schroot setup
+## schroot setup
 #$chroot_mode = 'schroot';
 
 # unshare setup
