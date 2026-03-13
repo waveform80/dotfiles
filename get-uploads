@@ -87,7 +87,7 @@ def main(args=None):
 
     try:
         lp = Launchpad.login_anonymously(
-            'get-queue', 'production', str(config.cache_dir),
+            'get-uploads', 'production', str(config.cache_dir),
             version='devel')
         ubuntu = lp.distributions['ubuntu']
         logging.info('Found Ubuntu distribution')
