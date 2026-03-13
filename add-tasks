@@ -1,0 +1,115 @@
+#!/usr/bin/python3
+
+"""
+Add the series of packages passed to the specified bug. Defaults to reading the
+package source names from stdin (to be piped from another process, typically).
+"""
+
+import os
+import sys
+import shutil
+import logging
+import argparse
+import datetime as dt
+from pathlib import Path
+from contextlib import contextmanager
+
+import distro_info
+from launchpadlib.launchpad import Launchpad
+
+
+def main(args=None):
+    info = distro_info.UbuntuDistroInfo()
+    try:
+        devel_series = info.devel()
+    except distro_info.DistroDataOutdated:
+        # Recent release; just use last supported
+        devel_series = info.supported()[-1]
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        'bug',
+        help="The bug number to add tasks to")
+    parser.add_argument(
+        'packages', default='-', nargs='?',
+        help="The file containing the list of source packages to add as "
+        "tasks on the specified bug. Reads stdin by default")
+    parser.add_argument(
+        '-l', '--lpinstance', default='production',
+        help="The Launchpad instance to connect to (default: %(default)s)")
+    parser.add_argument(
+        '-s', '--series', default=None,
+        help="Add tasks for this series specifically. The default is to "
+        "target the non-specific development series")
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help="Produce more output")
+    parser.add_argument(
+        '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
+        help=argparse.SUPPRESS)
+    config = parser.parse_args(args)
+    logging.basicConfig(
+        stream=sys.stderr, format='%(message)s',
+        level=logging.INFO if config.verbose else logging.WARNING)
+    try:
+        lp = Launchpad.login_with(
+            'add-tasks',
+            service_root=config.lpinstance,
+            launchpadlib_dir=str(config.cache_dir),
+            version='devel')
+        with open_file(config.packages) as packages:
+            ubuntu = lp.distributions['ubuntu']
+            logging.info('Found Ubuntu distribution')
+            if config.series is not None:
+                series = ubuntu.getSeries(name_or_version=config.series)
+                logging.info('Found %s series', config.series)
+            else:
+                series = None
+            bug = lp.bugs[config.bug]
+            logging.info('Found bug LP: #%s -- %s', config.bug, bug.title)
+            targets = {
+                task.target
+                for task in bug.bug_tasks
+            }
+            for package in packages:
+                package = package.rstrip()
+                if series is None:
+                    source = ubuntu.getSourcePackage(name=package)
+                else:
+                    source = series.getSourcePackage(name=package)
+                if source is None:
+                    logging.warning('Skipped source %s (not found'), package)
+                if source in targets:
+                    logging.warning(
+                        'Skipped source %s (already a task)', source.name)
+                else:
+                    logging.info('Adding source %s', source.name)
+                    bug.addTask(target=source)
+    except Exception as err:
+        if int(os.environ.get('DEBUG', '0')):
+            raise
+        else:
+            print(str(err), file=sys.stderr)
+            return 1
+
+    return 0
+
+
+@contextmanager
+def open_file(filename, mode='r'):
+    if filename == '-':
+        file = sys.stdin if set(mode) & set('r+') else sys.stdout
+        file = file.buffer if 'b' in mode else file
+    else:
+        file = open(filename, mode)
+    try:
+        yield file
+    finally:
+        if filename != '-':
+            file.close()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
