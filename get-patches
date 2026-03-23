@@ -43,6 +43,7 @@ def main(args=None):
             for attachment in bug.attachments_collection
         }
         for filename, attachment in attachments.items():
+            filename = filename.replace('/', '-').replace(' ', '_')
             if config.filter(attachment):
                 print(f'Downloading {filename}', flush=True)
                 with (
