@@ -35,7 +35,7 @@ cleanup() {
 
 
 main() {
-    local archive
+    local archive read_only
 
     if [ $# -gt 1 ]; then
         echo "Usage: ${0##*/} [image-file|archive|device]" >&2
@@ -47,6 +47,7 @@ main() {
         exec sudo -- "$0" "$@"
     fi
 
+    read_only=""
     if [ $# -eq 0 ]; then
         info "Waiting for SD card... "
         DEVICE=$(wait_for_sd)
@@ -62,8 +63,9 @@ main() {
             trap cleanup EXIT
             info "Unpacking $archive"
             unpack "$archive" > "$IMAGE"
+            read_only="--read-only"
         fi
-        DEVICE=$(losetup --read-only --partscan --find --show "$IMAGE")
+        DEVICE=$(losetup $read_only --partscan --find --show "$IMAGE")
         echo "Looped onto $DEVICE" >&2
     fi
     echo >&2
