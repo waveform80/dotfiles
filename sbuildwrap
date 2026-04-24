@@ -120,11 +120,16 @@ def main(args=None):
         else:
             real_distribution = config.distribution
         if not info.valid(real_distribution):
-            config.distribution = devel_series
-            logging.warning(
-                '%s is not a valid Ubuntu release; replaced with %s',
-                real_distribution, config.distribution)
-            real_distribution = config.distribution
+            deb_info = distro_info.DebianDistroInfo()
+            if deb_info.valid(real_distribution):
+                config.distribution = devel_series
+                logging.warning(
+                    '%s is a Debian release; replaced with %s',
+                    real_distribution, config.distribution)
+            else:
+                logging.warning(
+                    '%s is not a valid Ubuntu release, build may fail',
+                    real_distribution)
 
         # Figure out the chroot, if required
         if config.chroot is None:
