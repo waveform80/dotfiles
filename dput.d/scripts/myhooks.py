@@ -4,7 +4,7 @@
 import re
 from pathlib import Path
 
-from distro_info import UbuntuDistroInfo
+import distro_info
 from dput.exceptions import HookException
 from launchpadlib.launchpad import Launchpad
 from colorzero import Color
@@ -84,10 +84,15 @@ def check_bug_sru(changes, profile, interface):
     follow the SRU template.
     """
     source_pkg_type = 'https://api.launchpad.net/devel/#source_package'
-    info = UbuntuDistroInfo()
+    info = distro_info.UbuntuDistroInfo()
     # Strip pockets (-proposed, -backports, ...)
     codename, *_ = changes['Distribution'].split('-')
-    if codename != info.devel():
+    try:
+        devel_series = info.devel()
+    except distro_info.DistroDataOutdated:
+        # Recent release; just use last supported
+        devel_series = info.supported()[-1]
+    if codename != devel_series:
         # This is an SRU (probably?)
         bug_ids = {
             int(num)
