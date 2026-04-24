@@ -129,10 +129,11 @@ task_pack() {
             echo dput-ng python3-colorzero python3-dateutil
             ;;
         postinst)
+            mkdir -p "$XDG_CONFIG_HOME"/sbuild
             ln -sf "$HOME"/dotfiles/gbp.conf "$HOME"/.gbp.conf
             ln -sf "$HOME"/dotfiles/quiltrc-dpkg "$HOME"/.quiltrc-dpkg
             ln -sfn "$HOME"/dotfiles/dput.d "$HOME"/.dput.d
-            ln -sf "$HOME"/dotfiles/sbuildrc "$HOME"/.sbuildrc
+            ln -sf "$HOME"/dotfiles/sbuildrc "$XDG_CONFIG_HOME"/sbuild/config.pl
             ln -sf "$HOME"/dotfiles/mk-sbuildrc "$HOME"/.mk-sbuild.rc
             ln -sf "$HOME"/dotfiles/reportbugrc "$HOME"/.reportbugrc
             sudo install "$HOME"/dotfiles/merge "$DESTDIR"/bin/
