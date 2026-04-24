@@ -6,7 +6,10 @@ if (defined $ENV{'DEBEMAIL'}) {
 }
 
 # Use the development distribution as the default
-$distribution = `distro-info --devel`;
+$distribution = `distro-info --devel 2>/dev/null`;
+if ($? != 0) {
+    $distribution = `distro-info --supported | tail -1`
+}
 $distribution =~ s/\s+$//;
 
 $build_arch_all = 1;
