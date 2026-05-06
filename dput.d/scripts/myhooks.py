@@ -189,7 +189,7 @@ def check_ubuntu_release(changes, profile, interface):
     # a suffix
     ver_release = ver_release[-1]
 
-    info = UbuntuDistroInfo()
+    info = distro_info.UbuntuDistroInfo()
     # Strip pockets (-proposed, -backports, ...)
     codename, *_ = changes['Distribution'].split('-')
     dist_release = info.version(codename)
