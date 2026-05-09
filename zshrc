@@ -144,8 +144,13 @@ alias sba="sbuildwrap --arch-any --arch-all --source"
 
 function sync() {
     local profile="$1"
+    NOTMUCH_CONFIG="$HOME"/.mail/"$profile"/.notmuch-config
+    XDG_CONFIG_HOME="$HOME"/.mail/"$profile"/.notmuch
     mbsync "$profile" && \
-        NOTMUCH_CONFIG="$HOME"/.mail/"$profile"/.notmuch-config notmuch new
+        notmuch new && \
+        afew --new --verbose --tag && \
+        afew --new --verbose --move-mails && \
+        notmuch new
 }
 
 function mutt() {
