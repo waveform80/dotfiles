@@ -194,7 +194,11 @@ def main(args=None):
 
 @contextmanager
 def get_source(source):
-    if source is not None:
+    if source is None:
+        yield Path('.')
+    elif source.is_dir():
+            yield Path(source)
+    else:
         with tempfile.TemporaryDirectory(dir='.') as temp_dir:
             logging.info('Unpacking source in temp dir %s', temp_dir)
             sp.run(
@@ -203,8 +207,6 @@ def get_source(source):
             for d in Path(temp_dir).iterdir():
                 if d.is_dir():
                     yield d
-    else:
-        yield Path('.')
 
 
 def get_commit(ref):
