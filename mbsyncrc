@@ -8,15 +8,13 @@ IMAPAccount gmail-home-account
 Host imap.gmail.com
 User dave@waveform.org.uk
 PassCmd "/usr/bin/gpg -q -d --batch --no-tty --for-your-eyes-only $XDG_RUNTIME_DIR/isync-home 2>/dev/null"
-SSLType IMAPS
-SSLVersions TLSv1.2
+TLSType IMAPS
 
 IMAPAccount gmail-work-account
 Host imap.gmail.com
 User dave.jones@canonical.com
 PassCmd "/usr/bin/gpg -q -d --batch --no-tty --for-your-eyes-only $XDG_RUNTIME_DIR/isync-work 2>/dev/null"
-SSLType IMAPS
-SSLVersions TLSv1.2
+TLSType IMAPS
 
 IMAPStore gmail-home
 Account gmail-home-account
