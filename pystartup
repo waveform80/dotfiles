@@ -5,7 +5,7 @@ import atexit
 import readline
 import rlcompleter
 
-history_path = os.path.expanduser('~/.pyhistory')
+history_path = os.path.expanduser('~/.python_history')
 
 def load_history(filename=history_path):
     readline.parse_and_bind('tab: complete')
@@ -39,7 +39,8 @@ def init_prompt():
             sys.ps1 = red + '>>> ' + reset
             sys.ps2 = green + '... ' + reset
 
-load_history()
-init_prompt()
+if sys.version_info < (3, 14):
+    load_history()
+    init_prompt()
 
 del code, os, sys, atexit, readline, rlcompleter, load_history, save_history, init_prompt, history_path
