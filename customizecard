@@ -50,15 +50,13 @@ def main(args=None):
 def build_cloud_config(config):
     cloud_config = {
         'hostname': config.hostname,
+        'user': {
+            'name': config.username,
+            'plain_text_passwd': config.password,
+            'lock_passwd': False,
+        },
         'chpasswd': {
             'expire': config.expire,
-            'users': [
-                {
-                    'name': config.username,
-                    'password': config.password,
-                    'type': 'text',
-                },
-            ],
         },
         'keyboard': {
             'model': config.kb_model,

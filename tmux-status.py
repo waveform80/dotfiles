@@ -12,7 +12,10 @@ from getpass import getuser
 from functools import lru_cache
 from itertools import tee
 
-import cbor2
+try:
+    from cbor2 import load, dump
+except ImportError:
+    from marshal import load, dump
 
 
 def pairwise(it):
@@ -95,7 +98,7 @@ class Stat:
             except StaleError:
                 value = self._raw_value()
                 with self._cache_file().open('wb') as f:
-                    cbor2.dump(value, f)
+                    dump(value, f)
         except ValueError:
             return ''
         return self._format_value(value)
@@ -111,7 +114,7 @@ class Stat:
         except FileNotFoundError:
             raise StaleError()
         with path.open('rb') as f:
-            return cbor2.load(f)
+            return load(f)
 
     def _raw_value(self):
         raise NotImplementedError
@@ -160,7 +163,7 @@ class UpdatesStat(Stat):
                             if line.startswith('Inst')
                         )
                         with temp_file.open('wb') as f:
-                            cbor2.dump(count, f)
+                            dump(count, f)
                         temp_file.rename(cache_file)
             except FileExistsError:
                 pass
@@ -170,7 +173,7 @@ class UpdatesStat(Stat):
                 raise SystemExit(0)
         try:
             with cache_file.open('rb') as f:
-                return cbor2.load(f)
+                return load(f)
         except FileNotFoundError:
             return 0
 
@@ -193,7 +196,7 @@ class UpdatesStat(Stat):
             if dt.datetime.now().timestamp() - cache_stat.st_mtime > self.timeout:
                 raise StaleError()
         with cache_file.open('rb') as f:
-            return cbor2.load(f)
+            return load(f)
 
 
 class UptimeStat(Stat):
