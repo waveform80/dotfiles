@@ -169,6 +169,17 @@ function abook() {
     /usr/bin/abook --datafile "$book" "$@"
 }
 
+function setcam() {
+    local exposure="${1:-300}"
+    # Compensate for backlight, 50Hz powerline frequency, and force exposure
+    # to 300
+    v4l2-ctl \
+        --set-ctrl=backlight_compensation=1 \
+        --set-ctrl=power_line_frequency=1 \
+        --set-ctrl=auto_exposure=1 \
+        --set-ctrl=exposure_time_absolute=$exposure
+}
+
 function rm-sbuild() {
     sudo rm -fr /var/lib/schroot/chroots/"$1"
     sudo rm -f /etc/schroot/chroot.d/sbuild-"$1"
