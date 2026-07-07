@@ -170,14 +170,46 @@ function abook() {
 }
 
 function setcam() {
-    local exposure="${1:-300}"
-    # Compensate for backlight, 50Hz powerline frequency, and force exposure
-    # to 300
+    local gain=$(v4l2-ctl --get-ctrl=gain | cut -f2 -d" ")
+    local exposure=$(v4l2-ctl --get-ctrl=exposure_time_absolute | cut -f2 -d" ")
+    local focus=$(v4l2-ctl --get-ctrl=focus_absolute | cut -f2 -d" ")
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            bright|day)
+                gain=16
+                exposure=128
+                ;;
+            mid|cloudy)
+                gain=64
+                exposure=256
+                ;;
+            dark|night)
+                gain=128
+                exposure=256
+                ;;
+            wide)
+                focus=50
+                ;;
+            close|macro)
+                focus=120
+                ;;
+            *)
+                echo "Unknown setting '$1'" 2>&1
+                return 1
+        esac
+        shift
+    done
+    # Compensate for backlight, 50Hz powerline frequency, and bump saturation
     v4l2-ctl \
         --set-ctrl=backlight_compensation=1 \
         --set-ctrl=power_line_frequency=1 \
         --set-ctrl=auto_exposure=1 \
+        --set-ctrl=gain=$gain \
+        --set-ctrl=saturation=160 \
+        --set-ctrl=focus_automatic_continuous=0 \
         --set-ctrl=exposure_time_absolute=$exposure
+    v4l2-ctl --set-ctrl=focus_absolute=$focus
 }
 
 function rm-sbuild() {
