@@ -154,6 +154,7 @@ if has("autocmd") && has("eval")
 	autocmd FileType xhtml set et sw=2 sts=2
 	autocmd FileType xsl set et sw=2 sts=2
 	autocmd FileType xml set et sw=2 sts=2
+	autocmd FileType yaml set et sw=2 sts=2
 	autocmd FileType js set et sw=2 sts=2
 	autocmd FileType make set noet sw=8 ts=8
 	autocmd FileType rst set tw=79
