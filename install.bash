@@ -523,6 +523,9 @@ task_gui() {
             echo gobby veusz wireshark xdot usb-creator-gtk gnome-games
             echo wl-clipboard
             ;;
+        postinst)
+            sudo install "$HOME"/dotfiles/setcam "$DESTDIR"/bin/
+            ;;
     esac
 }
 
