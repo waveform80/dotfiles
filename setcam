@@ -72,7 +72,7 @@ v4l2-ctl \
     --set-ctrl=power_line_frequency=1 \
     --set-ctrl=auto_exposure=1 \
     --set-ctrl=gain=$GAIN \
-    --set-ctrl=saturation=160 \
+    --set-ctrl=saturation=128 \
     --set-ctrl=focus_automatic_continuous=0 \
     --set-ctrl=exposure_time_absolute=$EXPOSURE
 # Focus must be set *after* auto-focus has been disabled
