@@ -349,8 +349,10 @@ inoremap <Leader>7/8 ⅞
 inoremap <Leader>2r √
 inoremap <Leader>3r ∛
 inoremap <Leader>4r ∜
+inoremap <Leader>P ¶
 inoremap <Leader>p ʹ
 inoremap <leader>pp ʺ
+inoremap <leader>S §
 inoremap <Leader>**0 ⁰
 inoremap <Leader>**1 ¹
 inoremap <Leader>**2 ²
