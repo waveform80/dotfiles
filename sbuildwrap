@@ -68,6 +68,11 @@ def main(args=None):
         "specified, the remote/branch given must match the current HEAD "
         "commit")
     parser.add_argument(
+        '--git-dir', default=None,
+        help="The directory containing the git-ubuntu repo. This is never "
+        "normally required, but may be useful when building a merge manually "
+        "in a separate directory (such as for annoying v1 packages)")
+    parser.add_argument(
         '--cache-dir', default=Path.home() / '.cache' / 'ubuntu-dev-tools',
         help=argparse.SUPPRESS)
 
@@ -162,14 +167,19 @@ def main(args=None):
             if '--force-orig-source' not in cmd_line:
                 cmd_line.append('--force-orig-source')
         if config.git_merge:
+            if config.git_dir is None:
+                proc = sp.run(
+                    ['git', 'rev-parse', '--show-toplevel'],
+                    text=True, capture_output=True, check=True)
+                config.git_dir = proc.stdout.strip()
             try:
                 remote, branch = config.git_merge.split('/', 1)
             except ValueError:
                 raise ValueError(
                     f'Expected remote/branch instead of {config.git_merge!r}')
-            local_head = get_commit('HEAD')
-            remote_head = get_commit(config.git_merge)
-            remote_url = get_remote_url(remote)
+            local_head = get_commit('HEAD', config.git_dir)
+            remote_head = get_commit(config.git_merge, config.git_dir)
+            remote_url = get_remote_url(remote, config.git_dir)
             if local_head != remote_head:
                 raise ValueError(
                     f'Local HEAD commit ({local_head}) does not match '
@@ -197,7 +207,7 @@ def get_source(source):
     if source is None:
         yield Path('.')
     elif source.is_dir():
-            yield Path(source)
+        yield Path(source)
     else:
         with tempfile.TemporaryDirectory(dir='.') as temp_dir:
             logging.info('Unpacking source in temp dir %s', temp_dir)
@@ -209,18 +219,18 @@ def get_source(source):
                     yield d
 
 
-def get_commit(ref):
+def get_commit(ref, repo):
     proc = sp.run(
         ['git', 'rev-parse', ref],
-        text=True, capture_output=True, check=True)
+        cwd=repo, text=True, capture_output=True, check=True)
     return proc.stdout.strip()
 
 
-def get_remote_url(remote):
+def get_remote_url(remote, repo):
     logging.info('Calculating URL for git remote %s', remote)
     proc = sp.run(
         ['git', 'remote', 'get-url', remote],
-        text=True, capture_output=True, check=True)
+        cwd=repo, text=True, capture_output=True, check=True)
     url = urlsplit(proc.stdout.strip())
     if url.scheme != 'https':
         url = url._replace(scheme='https')
