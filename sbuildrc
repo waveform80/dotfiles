@@ -30,6 +30,7 @@ push @{$lintian_opts}, '--pedantic';
 # unshare setup
 $chroot_mode = 'unshare';
 $unshare_mmdebstrap_keep_tarball = 1;
+push @{$unshare_mmdebstrap_extra_args}, "*", ["--aptopt=Acquire::http::Proxy \"http://proxy.waveform.org.uk:3128\""];
 
 ## lxd setup
 #$chroot_mode = 'autopkgtest';
