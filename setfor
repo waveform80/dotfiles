@@ -48,6 +48,7 @@ EOF
         comment 'leela[^ \t]*:' /etc/fstab
         comment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
         comment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
+        comment 'push.*unshare_mmdebstrap' "$HOME"/.config/sbuild/config.pl
         for src in $(schroot -l --all-source-chroots); do
             in_chroot="schroot -u root -d / -c $src --"
             if $in_chroot test -e /etc/apt/apt.conf.d/99-mk-sbuild-proxy; then
@@ -69,6 +70,7 @@ EOF
         uncomment 'leela[^ \t]*:' /etc/fstab
         uncomment 'Acquire::http' /etc/apt/apt.conf.d/00proxy
         uncomment 'DEBOOTSTRAP_PROXY' "$HOME"/.mk-sbuild.rc
+        uncomment 'push.*unshare_mmdebstrap' "$HOME"/.config/sbuild/config.pl
         for src in $(schroot -l --all-source-chroots); do
             in_chroot="schroot -u root -d / -c $src --"
             config=/etc/apt/apt.conf.d/99mk-sbuild-proxy
