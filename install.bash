@@ -301,7 +301,7 @@ task_fs() {
             echo 0
             ;;
         packages)
-            echo atool ncdu entr inotify-tools ranger shed mc lz4 zstd
+            echo atool ncdu entr inotify-tools vifm ranger shed mc lz4 zstd
             echo p7zip-full moreutils python3-ruamel.yaml lsscsi
             ;;
         postinst)
@@ -522,6 +522,9 @@ task_gui() {
             echo simple-scan openscad librecad imagemagick meld git-gui gitk
             echo gobby veusz wireshark xdot usb-creator-gtk gnome-games
             echo wl-clipboard
+            ;;
+        postinst)
+            sudo install "$HOME"/dotfiles/setcam "$DESTDIR"/bin/
             ;;
     esac
 }

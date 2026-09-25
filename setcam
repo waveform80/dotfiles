@@ -1,0 +1,102 @@
+#!/bin/sh
+
+DEVICE=$(v4l2-ctl --list-devices | awk '
+    BEGIN { found=0; }
+    /C920/ && !found { found=1; next; }
+    found && /\/dev\/video/ { print $0; exit 0; }' -)
+
+if [ -z "$DEVICE" ]; then
+    echo "C920 webcam not found" 2>&1
+    exit 1
+
+fi
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help|help)
+            cat << EOF
+$0 mode...
+
+Sets the C920 webcam up for operation in my "challenging" conditions (tons of
+backlight, occasionally changing). The "mode" is one (or more) of the following:
+
+0-4           -- Set gain from lowest to highest
+bright        -- Equivalent to gain 0
+day           -- Equivalent to gain 1
+dim           -- Equivalent to gain 2
+dark          -- Equivalent to gain 3
+night         -- Equivalent to gain 4
+close / macro -- Set manual focus to close-range
+default       -- Set manual focus to mid-range
+far / wide    -- Set manual focus to infinite
+EOF
+            exit 0
+            ;;
+        reset)
+            v4l2-ctl \
+                --set-ctrl=backlight_compensation=0 \
+                --set-ctrl=power_line_frequency=1 \
+                --set-ctrl=auto_exposure=3 \
+                --set-ctrl=gain=0 \
+                --set-ctrl=saturation=128 \
+                --set-ctrl=focus_automatic_continuous=1 \
+                --set-ctrl=exposure_dynamic_framerate=0
+            exit 0
+            ;;
+        0|bright)
+            GAIN=16
+            EXPOSURE=256
+            SATURATION=128
+            ;;
+        1|day)
+            GAIN=64
+            EXPOSURE=256
+            SATURATION=128
+            ;;
+        2|dim)
+            GAIN=128
+            EXPOSURE=256
+            SATURATION=160
+            ;;
+        3|dark)
+            GAIN=256
+            EXPOSURE=256
+            SATURATION=160
+            ;;
+        4|night)
+            GAIN=256
+            EXPOSURE=512
+            SATURATION=160
+            ;;
+        close|macro)
+            FOCUS=120
+            ;;
+        default)
+            FOCUS=50
+            ;;
+        far|wide)
+            FOCUS=0
+            ;;
+        *)
+            echo "Unknown setting '$1'" 2>&1
+            exit 1
+    esac
+    shift
+done
+
+GAIN=${GAIN:-$(v4l2-ctl --get-ctrl=gain | cut -f2 -d" ")}
+EXPOSURE=${EXPOSURE:-$(v4l2-ctl --get-ctrl=exposure_time_absolute | cut -f2 -d" ")}
+SATURATION=${SATURATION:-$(v4l2-ctl --get-ctrl=saturation | cut -f2 -d" ")}
+FOCUS=${FOCUS:-$(v4l2-ctl --get-ctrl=focus_absolute | cut -f2 -d" ")}
+
+# Compensate for backlight, 50Hz powerline frequency, and bump saturation
+v4l2-ctl \
+    --set-ctrl=backlight_compensation=1 \
+    --set-ctrl=power_line_frequency=1 \
+    --set-ctrl=auto_exposure=1 \
+    --set-ctrl=gain=$GAIN \
+    --set-ctrl=saturation=$SATURATION \
+    --set-ctrl=focus_automatic_continuous=0 \
+    --set-ctrl=exposure_time_absolute=$EXPOSURE
+# Focus must be set *after* auto-focus has been disabled
+v4l2-ctl --set-ctrl=focus_absolute=$FOCUS
