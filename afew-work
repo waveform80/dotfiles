@@ -1,7 +1,7 @@
 [HeaderMatchingFilter.0]
 message = Tag u-boot mailing-list messages
 header = List-Id
-pattern = <u-boot\.lists\.denx\.de>
+pattern = <u-boot\.lists\.u-boot-project\.org>
 tags = +lists;+uboot
 
 [HeaderMatchingFilter.1]
