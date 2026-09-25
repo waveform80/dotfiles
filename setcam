@@ -1,11 +1,14 @@
 #!/bin/sh
 
-DEVICE=$(v4l2-ctl --list-devices | awk '
+# Only pick the first /dev/NODE associated with each C920 (they usually have
+# two and we're only interested in the first)
+DEVICES=$(v4l2-ctl --list-devices | awk '
     BEGIN { found=0; }
     /C920/ && !found { found=1; next; }
-    found && /\/dev\/video/ { print $0; exit 0; }' -)
+    found && /\/dev\/video/ { print $0; found=0; }' -)
+DEVICE=
 
-if [ -z "$DEVICE" ]; then
+if [ -z "$DEVICES" ]; then
     echo "C920 webcam not found" 2>&1
     exit 1
 
@@ -13,12 +16,35 @@ fi
 
 while [ $# -gt 0 ]; do
     case "$1" in
+        -l|--list)
+            echo $DEVICES
+            exit 0
+            ;;
+        -d|--device)
+            for dev in $DEVICES; do
+                if [ "$dev" = "$2" ]; then
+                    DEVICE=$2
+                    break
+                fi
+            done
+            if [ -z "$DEVICE" ]; then
+                echo "$2 is not a valid C920 webcam device"
+                exit 1
+            fi
+            shift
+            ;;
         -h|--help|help)
             cat << EOF
-$0 mode...
+$0 [-h|--help] [-l|--list] [-d|--device DEV] mode...
 
 Sets the C920 webcam up for operation in my "challenging" conditions (tons of
-backlight, occasionally changing). The "mode" is one (or more) of the following:
+backlight, occasionally changing). The options are as follows:
+
+-h, --help    Display this help text
+-l, --list    List all the C920 webcam devices found
+-d, --device  Only operate on the specified device instead of all webcams
+
+The "mode" is one (or more) of the following:
 
 0-4           -- Set gain from lowest to highest
 bright        -- Equivalent to gain 0
@@ -33,14 +59,17 @@ EOF
             exit 0
             ;;
         reset)
-            v4l2-ctl \
-                --set-ctrl=backlight_compensation=0 \
-                --set-ctrl=power_line_frequency=1 \
-                --set-ctrl=auto_exposure=3 \
-                --set-ctrl=gain=0 \
-                --set-ctrl=saturation=128 \
-                --set-ctrl=focus_automatic_continuous=1 \
-                --set-ctrl=exposure_dynamic_framerate=0
+            for dev in $DEVICES; do
+                v4l2-ctl \
+                    -d $dev \
+                    --set-ctrl=backlight_compensation=0 \
+                    --set-ctrl=power_line_frequency=1 \
+                    --set-ctrl=auto_exposure=3 \
+                    --set-ctrl=gain=0 \
+                    --set-ctrl=saturation=128 \
+                    --set-ctrl=focus_automatic_continuous=1 \
+                    --set-ctrl=exposure_dynamic_framerate=0
+            done
             exit 0
             ;;
         0|bright)
@@ -68,8 +97,11 @@ EOF
             EXPOSURE=512
             SATURATION=160
             ;;
-        close|macro)
+        macro)
             FOCUS=120
+            ;;
+        close)
+            FOCUS=75
             ;;
         default)
             FOCUS=50
@@ -89,14 +121,20 @@ EXPOSURE=${EXPOSURE:-$(v4l2-ctl --get-ctrl=exposure_time_absolute | cut -f2 -d" 
 SATURATION=${SATURATION:-$(v4l2-ctl --get-ctrl=saturation | cut -f2 -d" ")}
 FOCUS=${FOCUS:-$(v4l2-ctl --get-ctrl=focus_absolute | cut -f2 -d" ")}
 
-# Compensate for backlight, 50Hz powerline frequency, and bump saturation
-v4l2-ctl \
-    --set-ctrl=backlight_compensation=1 \
-    --set-ctrl=power_line_frequency=1 \
-    --set-ctrl=auto_exposure=1 \
-    --set-ctrl=gain=$GAIN \
-    --set-ctrl=saturation=$SATURATION \
-    --set-ctrl=focus_automatic_continuous=0 \
-    --set-ctrl=exposure_time_absolute=$EXPOSURE
-# Focus must be set *after* auto-focus has been disabled
-v4l2-ctl --set-ctrl=focus_absolute=$FOCUS
+if [ -n "$DEVICE" ]; then
+    DEVICES=$DEVICE
+fi
+for dev in $DEVICES; do
+    # Compensate for backlight, 50Hz powerline frequency, and bump saturation
+    v4l2-ctl \
+        -d $dev \
+        --set-ctrl=backlight_compensation=1 \
+        --set-ctrl=power_line_frequency=1 \
+        --set-ctrl=auto_exposure=1 \
+        --set-ctrl=gain=$GAIN \
+        --set-ctrl=saturation=$SATURATION \
+        --set-ctrl=focus_automatic_continuous=0 \
+        --set-ctrl=exposure_time_absolute=$EXPOSURE
+    # Focus must be set *after* auto-focus has been disabled
+    v4l2-ctl -d $dev --set-ctrl=focus_absolute=$FOCUS
+done
