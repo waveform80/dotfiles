@@ -123,7 +123,7 @@ task_pack() {
             ;;
         packages)
             if [ "$DISTRO" = "Ubuntu" ]; then
-                echo ubuntu-dev-tools ubuntu-packaging-guide autopkgtest
+                echo ubuntu-dev-tools autopkgtest
             fi
             echo debian-policy developers-reference git-buildpackage shellcheck
             echo dput-ng python3-colorzero python3-dateutil
