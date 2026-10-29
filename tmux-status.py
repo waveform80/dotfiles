@@ -258,7 +258,7 @@ class LaptopBatteryStat(Stat):
         return super()._format_value(f'{volts:.1f}V#[bright]{bar(capacity)}#[nobright]')
 
     def _raw_value(self):
-        bat_path = Path('/sys/class/power_supply/BAT1')
+        bat_path = Path('/sys/class/power_supply/sbs-12-000b')
         try:
             capacity = int((bat_path / 'capacity').read_text())
             volts = int((bat_path / 'voltage_now').read_text()) / 1_000_000
